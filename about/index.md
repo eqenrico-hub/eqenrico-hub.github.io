@@ -5,11 +5,9 @@ title: About
 
 # About
 
-Sono Enrico Quaglia.
-
-Scrivo per dare forma a pensieri che altrimenti resterebbero intrappolati. Creo per lasciare tracce.
-
 Questo sito raccoglie i miei testi e le mie creazioni digitali.
+
+<p style="font-style: italic; color: #888; margin-top: 2rem;">So dove sto andando, ma scelgo di non fissare il vuoto.</p>
 
 ---
 
