@@ -18,6 +18,9 @@ collections:
   testi:
     output: true
     permalink: /testi/:name/
+  testi-en:
+    output: true
+    permalink: /en/texts/:name/
 
 # Defaults
 defaults:
@@ -26,3 +29,14 @@ defaults:
       type: "testi"
     values:
       layout: "testo"
+      lang: "it"
+  - scope:
+      path: ""
+      type: "testi-en"
+    values:
+      layout: "testo-en"
+      lang: "en"
+  - scope:
+      path: "en"
+    values:
+      lang: "en"

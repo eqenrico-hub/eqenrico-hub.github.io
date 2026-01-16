@@ -63,6 +63,18 @@ nav {
   color: var(--text);
 }
 
+.nav-links .lang-switch {
+  border: 1px solid #ddd;
+  padding: 0.2rem 0.5rem;
+  border-radius: 3px;
+  font-size: 0.8rem;
+  margin-left: 0.5rem;
+}
+
+.nav-links .lang-switch:hover {
+  background: #f5f5f5;
+}
+
 /* Main Content */
 main {
   flex: 1;

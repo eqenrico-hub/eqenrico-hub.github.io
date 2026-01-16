@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="{{ page.lang | default: 'it' }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,11 +8,19 @@
 </head>
 <body>
   <nav>
-    <a href="{{ '/' | relative_url }}" class="site-title">{{ site.title }}</a>
+    <a href="{% if page.lang == 'en' %}{{ '/en/' | relative_url }}{% else %}{{ '/' | relative_url }}{% endif %}" class="site-title">{{ site.title }}</a>
     <div class="nav-links">
-      <a href="{{ '/testi/' | relative_url }}">Testi</a>
-      <a href="{{ '/app/' | relative_url }}">App</a>
-      <a href="{{ '/about/' | relative_url }}">About</a>
+      {% if page.lang == 'en' %}
+        <a href="{{ '/en/texts/' | relative_url }}">Texts</a>
+        <a href="{{ '/en/app/' | relative_url }}">Apps</a>
+        <a href="{{ '/en/about/' | relative_url }}">About</a>
+        <a href="{{ '/' | relative_url }}" class="lang-switch">IT</a>
+      {% else %}
+        <a href="{{ '/testi/' | relative_url }}">Testi</a>
+        <a href="{{ '/app/' | relative_url }}">App</a>
+        <a href="{{ '/about/' | relative_url }}">About</a>
+        <a href="{{ '/en/' | relative_url }}" class="lang-switch">EN</a>
+      {% endif %}
     </div>
   </nav>
 
