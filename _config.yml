@@ -1,0 +1,28 @@
+title: Enrico Quaglia
+description: Testi, idee e creazioni
+author: Enrico Quaglia
+url: "https://eqenrico-hub.github.io"
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+
+# Exclude from build
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+
+# Collections
+collections:
+  testi:
+    output: true
+    permalink: /testi/:name/
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+      type: "testi"
+    values:
+      layout: "testo"

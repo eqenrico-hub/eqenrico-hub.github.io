@@ -1,0 +1,19 @@
+---
+layout: default
+title: Testi
+---
+
+<h1>Testi</h1>
+
+<ul class="testi-list">
+  {% assign sorted_testi = site.testi | sort: "order" %}
+  {% for testo in sorted_testi %}
+  <li>
+    <a href="{{ testo.url | relative_url }}">
+      <h3>{{ testo.title }}</h3>
+      {% if testo.subtitle %}<p class="subtitle" style="color: #888; font-style: italic; margin-bottom: 0.5rem; font-size: 0.9rem;">{{ testo.subtitle }}</p>{% endif %}
+      <p class="excerpt">{{ testo.excerpt }}</p>
+    </a>
+  </li>
+  {% endfor %}
+</ul>

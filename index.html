@@ -1,0 +1,32 @@
+---
+layout: default
+title: Home
+---
+
+<div class="intro">
+  <h1>Enrico Quaglia</h1>
+  <p class="tagline">Testi, idee e creazioni</p>
+</div>
+
+<div class="section">
+  <h2>Testi</h2>
+  <ul class="testi-list">
+    {% assign sorted_testi = site.testi | sort: "order" %}
+    {% for testo in sorted_testi limit:3 %}
+    <li>
+      <a href="{{ testo.url | relative_url }}">
+        <h3>{{ testo.title }}</h3>
+        <p class="excerpt">{{ testo.excerpt }}</p>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  <p><a href="{{ '/testi/' | relative_url }}">Tutti i testi &rarr;</a></p>
+</div>
+
+<div class="section">
+  <h2>App</h2>
+  <div class="app-placeholder">
+    <p>Prossimamente</p>
+  </div>
+</div>
