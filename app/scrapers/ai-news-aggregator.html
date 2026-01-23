@@ -1,48 +1,131 @@
 ---
 layout: app-detail
-title: AI News Aggregator
-tagline: AI-powered news research with OpenAI web search
+title: Research & Dev Expert Factory
+tagline: AI-powered research system with expert personas, PDF analysis, and podcast generation
 category: Scrapers
 status: development
 ---
 
 <div class="section">
   <h2>What It Does</h2>
-  <p>A customizable news research tool that uses OpenAI's web search capabilities to find and summarize the latest news on any topic you specify.</p>
+  <p>A comprehensive AI research assistant that transforms your objectives into actionable guides. Upload PDFs, get AI-generated expert personas who analyze the literature, and receive both academic and practical step-by-step guides. Now with Obsidian export and AI podcast generation.</p>
 </div>
 
 <div class="section">
   <h2>Problem It Solves</h2>
-  <p>Staying informed on fast-moving topics requires constant searching. This automates the research and delivers AI-summarized updates with source links.</p>
+  <p>Research is overwhelming. You have dozens of PDFs, scattered notes, and no clear path forward. This system creates virtual expert panels who synthesize literature, answer your questions, and produce actionable implementation guides.</p>
 </div>
 
 <div class="section">
   <h2>Key Features</h2>
   <ul>
-    <li>Custom topic prompts (enter any subject)</li>
-    <li>OpenAI web search integration</li>
-    <li>AI-powered summarization with bullet points</li>
-    <li>Source link extraction (3-8 links per query)</li>
-    <li>Simple web interface</li>
+    <li><strong>10-Stage Research Pipeline</strong> - From objective to implementation guide</li>
+    <li><strong>AI Expert Personas</strong> - Virtual experts for each topic with generated portraits</li>
+    <li><strong>PDF Intelligence</strong> - Extract key findings from academic papers</li>
+    <li><strong>Dynamic Extraction Schemas</strong> - Custom fields based on your objective</li>
+    <li><strong>Two Guide Types</strong> - Literature-grounded (academic) + Simple step-by-step (practical)</li>
+    <li><strong>Interactive Expert Chat</strong> - Ask follow-up questions to your panel</li>
+    <li><strong>Obsidian Export</strong> - Full vault with backlinks, frontmatter, and graph-ready structure</li>
+    <li><strong>AI Podcast Generation</strong> - Convert guides to audio with TTS (single narrator or two-host discussion)</li>
+    <li><strong>Cost Tracking</strong> - Real-time budget monitoring in EUR</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>System Architecture</h2>
+  <div class="architecture-box">
+┌─────────────────────────────────────────────────────────────────┐
+│                     10-STAGE RESEARCH PIPELINE                   │
+├─────────────────────────────────────────────────────────────────┤
+│  1. Objective Input    →  2. Topic Planning  →  3. PDF Upload   │
+│  4. Expert Generation  →  5. Q&A Session     →  6. Refined Goal │
+│  7. Extraction Schema  →  8. Article Analysis → 9. Guide Build  │
+│  10. Chat + Export                                               │
+└─────────────────────────────────────────────────────────────────┘
+           │                    │                    │
+           ▼                    ▼                    ▼
+    ┌──────────────┐   ┌───────────────┐   ┌────────────────┐
+    │  Word Docs   │   │   Obsidian    │   │   AI Podcast   │
+    │  (.docx)     │   │   Vault       │   │   (MP3 + TTS)  │
+    └──────────────┘   └───────────────┘   └────────────────┘</div>
+</div>
+
+<div class="section">
+  <h2>Output Formats</h2>
+  <ul>
+    <li><strong>Word Documents</strong> - Literature guide + Simple guide (.docx)</li>
+    <li><strong>Obsidian Vault</strong> - Topics, articles, experts, guides with wikilinks</li>
+    <li><strong>Audio Podcasts</strong> - Single narrator or two-host discussion format</li>
+    <li><strong>JSON Exports</strong> - All extracted data for programmatic use</li>
   </ul>
 </div>
 
 <div class="section">
   <h2>Tech Stack</h2>
   <div class="tech-stack">
-    <span class="tech-tag">HTML/CSS/JS</span>
-    <span class="tech-tag">OpenAI API</span>
+    <span class="tech-tag">Python</span>
+    <span class="tech-tag">Streamlit</span>
+    <span class="tech-tag">OpenAI GPT-4</span>
+    <span class="tech-tag">OpenAI TTS</span>
+    <span class="tech-tag">PyPDF2</span>
+    <span class="tech-tag">python-docx</span>
+    <span class="tech-tag">pydub</span>
   </div>
 </div>
 
 <div class="section">
   <h2>API Costs</h2>
   <ul>
-    <li><strong>OpenAI API</strong> - Paid (~$0.03/1K tokens for GPT-4)</li>
+    <li><strong>OpenAI GPT-4</strong> - ~$0.03/1K tokens (main reasoning)</li>
+    <li><strong>OpenAI GPT-4 Mini</strong> - ~$0.0004/1K tokens (fast tasks)</li>
+    <li><strong>OpenAI TTS HD</strong> - ~$0.03/1K characters (podcast audio)</li>
+    <li><strong>OpenAI Image Gen</strong> - ~$0.02/image (expert portraits)</li>
+    <li><strong>ElevenLabs</strong> - Optional, higher quality TTS (~$0.30/1K chars)</li>
   </ul>
+  <p><em>Built-in cost tracking with budget alerts. Typical research session: $2-5 EUR.</em></p>
+</div>
+
+<div class="section">
+  <h2>Podcast Modes</h2>
+  <table class="competitors-table">
+    <tr>
+      <th>Mode</th>
+      <th>Description</th>
+    </tr>
+    <tr>
+      <td>Single Narrator</td>
+      <td>Professional voiceover of your guide, like a documentary</td>
+    </tr>
+    <tr>
+      <td>Two Hosts + Expert</td>
+      <td>Alex and Jamie discuss findings with your AI expert guest</td>
+    </tr>
+  </table>
 </div>
 
 <div class="section">
   <h2>Why I Built This</h2>
-  <p>I wanted a quick way to get AI-curated news summaries on specific topics without manually searching multiple sites.</p>
+  <p>PhD research means reading hundreds of papers across multiple topics. I needed a system that could synthesize literature into actionable steps, with experts I could consult. The podcast feature lets me "listen to my research" during commutes. Obsidian export creates a permanent knowledge base that grows with each project.</p>
+</div>
+
+<div class="section">
+  <h2>Similar Tools</h2>
+  <table class="competitors-table">
+    <tr>
+      <th>Name</th>
+      <th>How This Differs</th>
+    </tr>
+    <tr>
+      <td><a href="https://elicit.org" target="_blank">Elicit</a></td>
+      <td>Virtual expert personas, podcast generation, Obsidian export</td>
+    </tr>
+    <tr>
+      <td><a href="https://www.semanticscholar.org" target="_blank">Semantic Scholar</a></td>
+      <td>Custom extraction schemas, actionable guides, cost tracking</td>
+    </tr>
+    <tr>
+      <td><a href="https://notebooklm.google.com" target="_blank">NotebookLM</a></td>
+      <td>Multi-topic expert panels, two-guide output system</td>
+    </tr>
+  </table>
 </div>
