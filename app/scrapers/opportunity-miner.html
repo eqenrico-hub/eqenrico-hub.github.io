@@ -1,29 +1,36 @@
 ---
 layout: app-detail
 title: Opportunity Miner
-tagline: Job and grant opportunity scraper and matcher
+tagline: Autonomous YouTube scanner for product opportunities
 category: Scrapers
 status: development
 ---
 
 <div class="section">
   <h2>What It Does</h2>
-  <p>Scrapes job postings, grants, and funding opportunities from multiple sources and uses AI to match them with your profile and interests.</p>
+  <p>A fully autonomous system that discovers YouTube channels in your fields of interest, analyzes videos for product opportunities, and surfaces market gaps - running continuously without intervention.</p>
 </div>
 
 <div class="section">
   <h2>Problem It Solves</h2>
-  <p>Relevant opportunities are scattered across dozens of websites. This consolidates them and uses smart matching to surface the best fits for your profile.</p>
+  <p>Product ideas are hidden in YouTube comments, video content, and creator discussions. Manual research is time-consuming. This automates the discovery of unmet needs and product opportunities.</p>
+</div>
+
+<div class="section">
+  <h2>Data Sources</h2>
+  <ul>
+    <li><strong>YouTube</strong> - Channel discovery, video transcripts, comments</li>
+  </ul>
 </div>
 
 <div class="section">
   <h2>Key Features</h2>
   <ul>
-    <li>Multi-platform opportunity scraping</li>
-    <li>Profile-based matching algorithm</li>
-    <li>Deadline tracking and alerts</li>
-    <li>Application requirement extraction</li>
-    <li>Priority scoring</li>
+    <li>Autonomous channel discovery by field (audio production, trading, etc.)</li>
+    <li>Video transcript analysis for pain points</li>
+    <li>Three modes: Full (API), Local (Ollama), Basic (no API)</li>
+    <li>Web dashboard for monitoring</li>
+    <li>Docker-based deployment</li>
   </ul>
 </div>
 
@@ -31,13 +38,15 @@ status: development
   <h2>Tech Stack</h2>
   <div class="tech-stack">
     <span class="tech-tag">Python</span>
-    <span class="tech-tag">Scrapy</span>
+    <span class="tech-tag">YouTube API</span>
+    <span class="tech-tag">OpenAI/Anthropic/Ollama</span>
     <span class="tech-tag">PostgreSQL</span>
-    <span class="tech-tag">FastAPI</span>
+    <span class="tech-tag">Redis</span>
+    <span class="tech-tag">Docker</span>
   </div>
 </div>
 
 <div class="section">
   <h2>Why I Built This</h2>
-  <p>As a PhD student, I'm always looking for grants and opportunities. Manual searching is inefficient, so I automated it.</p>
+  <p>I wanted to discover product opportunities in niches I care about without spending hours watching YouTube videos and reading comments.</p>
 </div>
