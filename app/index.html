@@ -1,11 +1,276 @@
 ---
 layout: default
-title: App
+title: Apps & Projects
 ---
 
-<h1>App</h1>
+<h1>Apps & Projects</h1>
 
-<div class="app-placeholder">
-  <p>Questa sezione e in costruzione.</p>
-  <p style="margin-top: 1rem; font-size: 0.9rem;">Presto saranno disponibili le mie creazioni digitali.</p>
+<p class="intro">A collection of applications and tools I've built across various domains.</p>
+
+<style>
+  .apps-grid {
+    display: grid;
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+  .category {
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 1.5rem;
+    background: #1a1a1a;
+  }
+  .category h2 {
+    margin-top: 0;
+    color: #00d4ff;
+    font-size: 1.3rem;
+    border-bottom: 1px solid #333;
+    padding-bottom: 0.5rem;
+  }
+  .app-list {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  .app-card {
+    background: #252525;
+    padding: 1rem;
+    border-radius: 6px;
+    border-left: 3px solid #00d4ff;
+  }
+  .app-card h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+  }
+  .app-card p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #aaa;
+  }
+  .app-card .status {
+    display: inline-block;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    margin-top: 0.5rem;
+  }
+  .status.deployed { background: #1a472a; color: #4ade80; }
+  .status.development { background: #422006; color: #fbbf24; }
+  .intro {
+    color: #888;
+    font-size: 1.1rem;
+  }
+</style>
+
+<div class="apps-grid">
+
+  <!-- GAMES -->
+  <div class="category">
+    <h2>Games & Entertainment</h2>
+    <div class="app-list">
+      <div class="app-card">
+        <h3>Age of War (Python)</h3>
+        <p>Recreation of the classic flash game in Python with graphical interface</p>
+        <span class="status development">In Development</span>
+      </div>
+      <div class="app-card">
+        <h3>Age of War (Web)</h3>
+        <p>Browser-based recreation of Age of War with original assets</p>
+        <span class="status development">In Development</span>
+      </div>
+      <div class="app-card">
+        <h3>Chess Openings Trainer</h3>
+        <p>React app to practice and learn chess openings with spaced repetition</p>
+        <span class="status development">In Development</span>
+      </div>
+      <div class="app-card">
+        <h3>Truth Forge</h3>
+        <p>Logic puzzle game with story mode, 5 worlds, and 25 levels built in Phaser.js</p>
+        <span class="status development">In Development</span>
+      </div>
+      <div class="app-card">
+        <h3>Godot Roguelike</h3>
+        <p>Roguelike dungeon crawler built with Godot Engine</p>
+        <span class="status development">In Development</span>
+      </div>
+      <div class="app-card">
+        <h3>Flip7 Card Game</h3>
+        <p>Digital implementation of the Flip7 card game</p>
+        <span class="status development">In Development</span>
+      </div>
+      <div class="app-card">
+        <h3>Skull King Score Tracker</h3>
+        <p>Score tracking app for the Skull King card game</p>
+        <span class="status development">In Development</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI TOOLS -->
+  <div class="category">
+    <h2>AI & Automation</h2>
+    <div class="app-list">
+      <div class="app-card">
+        <h3>Terminal AI Assistant</h3>
+        <p>Command-line AI assistant for programming tasks</p>
+        <span class="status development">In Development</span>
+      </div>
+      <div class="app-card">
+        <h3>Story Engine Assistant</h3>
+        <p>AI-powered interactive story creation and management system</p>
+        <span class="status development">In Development</span>
+      </div>
+      <div class="app-card">
+        <h3>Expert Knowledge Chat</h3>
+        <p>Streamlit app for creating AI experts from knowledge bases</p>
+        <span class="status development">In Development</span>
+      </div>
+      <div class="app-card">
+        <h3>Screen Chat Assistant</h3>
+        <p>AI assistant that can see and interact with your screen</p>
+        <span class="status development">In Development</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESEARCH -->
+  <div class="category">
+    <h2>Research & Academic</h2>
+    <div class="app-list">
+      <div class="app-card">
+        <h3>FOI Responsiveness Dashboard</h3>
+        <p>Dashboard analyzing Freedom of Information request responsiveness across Belgian public administrations</p>
+        <span class="status development">In Development</span>
+      </div>
+      <div class="app-card">
+        <h3>Urban Dashboards Analysis</h3>
+        <p>Interactive dashboard for analyzing 86+ urban dashboard research articles with AI insights</p>
+        <span class="status development">In Development</span>
+      </div>
+      <div class="app-card">
+        <h3>AI Paper Assistants</h3>
+        <p>Tools for academic paper writing and research assistance</p>
+        <span class="status development">In Development</span>
+      </div>
+      <div class="app-card">
+        <h3>FOQUS Intelligence</h3>
+        <p>Research intelligence platform with multiple analysis dashboards</p>
+        <span class="status development">In Development</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEWS & SCRAPERS -->
+  <div class="category">
+    <h2>Data & Intelligence</h2>
+    <div class="app-list">
+      <div class="app-card">
+        <h3>AI News Aggregator</h3>
+        <p>Automated news aggregation with AI-powered summaries</p>
+        <span class="status development">In Development</span>
+      </div>
+      <div class="app-card">
+        <h3>Opportunity Miner</h3>
+        <p>Autonomous product opportunity scanner across YouTube, forums, and social media</p>
+        <span class="status development">In Development</span>
+      </div>
+      <div class="app-card">
+        <h3>Product Intelligence Platform</h3>
+        <p>SaaS for market analysis, competitive intelligence, and AI-powered idea generation</p>
+        <span class="status development">In Development</span>
+      </div>
+      <div class="app-card">
+        <h3>Scena</h3>
+        <p>Content recommendation platform with AI-powered suggestions</p>
+        <span class="status development">In Development</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MUSIC & AUDIO -->
+  <div class="category">
+    <h2>Music & Audio Production</h2>
+    <div class="app-list">
+      <div class="app-card">
+        <h3>Band Ritual VST</h3>
+        <p>VST3/AU plugin for audio processing - Available for Mac and Windows</p>
+        <span class="status deployed">Deployed</span>
+      </div>
+      <div class="app-card">
+        <h3>LevelLens VST</h3>
+        <p>Real-time event-based loudness normalizer - VST3/AU plugin</p>
+        <span class="status development">In Development</span>
+      </div>
+      <div class="app-card">
+        <h3>Lyrics Sentiment Analyzer</h3>
+        <p>Analyze song lyrics for sentiment, emotions, and themes with synced karaoke display</p>
+        <span class="status development">In Development</span>
+      </div>
+      <div class="app-card">
+        <h3>VST Idea Analyzer</h3>
+        <p>Tool for analyzing and organizing VST plugin ideas</p>
+        <span class="status development">In Development</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRODUCTIVITY -->
+  <div class="category">
+    <h2>Productivity & Utilities</h2>
+    <div class="app-list">
+      <div class="app-card">
+        <h3>ATLAS Research Assistant</h3>
+        <p>Academic research system with PDF management, Elicit integration, and AI analysis</p>
+        <span class="status development">In Development</span>
+      </div>
+      <div class="app-card">
+        <h3>Claude Browser Controller</h3>
+        <p>GUI for Claude Code Chrome integration and browser automation</p>
+        <span class="status development">In Development</span>
+      </div>
+      <div class="app-card">
+        <h3>ClaudeFS Email Copilot</h3>
+        <p>AI-powered email management and priority system</p>
+        <span class="status development">In Development</span>
+      </div>
+      <div class="app-card">
+        <h3>Email AI Copilot</h3>
+        <p>Smart email assistant with AI-powered responses</p>
+        <span class="status development">In Development</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- BUSINESS -->
+  <div class="category">
+    <h2>Business & Commercial</h2>
+    <div class="app-list">
+      <div class="app-card">
+        <h3>Trasporti Eccezionali</h3>
+        <p>Route planning system for oversized transport in Italy with infrastructure constraints</p>
+        <span class="status development">In Development</span>
+      </div>
+      <div class="app-card">
+        <h3>Local Business Website Generator</h3>
+        <p>AI-powered website generator for local businesses with Google integration</p>
+        <span class="status development">In Development</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEBSITES -->
+  <div class="category">
+    <h2>Websites & Web Apps</h2>
+    <div class="app-list">
+      <div class="app-card">
+        <h3>GiusyKitchen Recipes</h3>
+        <p>Recipe website with AI chef assistants, cooking mode, and photo analysis</p>
+        <span class="status deployed">Deployed</span>
+      </div>
+    </div>
+  </div>
+
 </div>
+
+<p style="margin-top: 3rem; color: #666; font-size: 0.85rem;">
+  Last updated: January 2026 | Total projects: 35
+</p>
