@@ -5,7 +5,7 @@ title: Apps & Projects
 
 <h1>Apps & Projects</h1>
 
-<p class="intro">A collection of applications and tools I've built across various domains.</p>
+<p class="intro">A collection of applications and tools I've built across various domains. Click on any project to see details.</p>
 
 <style>
   .apps-grid {
@@ -36,10 +36,19 @@ title: Apps & Projects
     padding: 1rem;
     border-radius: 6px;
     border-left: 3px solid #00d4ff;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .app-card:hover {
+    transform: translateX(5px);
+    border-left-color: #4ade80;
   }
   .app-card h3 {
     margin: 0 0 0.5rem 0;
     font-size: 1.1rem;
+    color: #fff;
   }
   .app-card p {
     margin: 0;
@@ -67,6 +76,11 @@ title: Apps & Projects
   <div class="category">
     <h2>Games & Entertainment</h2>
     <div class="app-list">
+      <a href="/app/games/chess-openings-trainer.html" class="app-card">
+        <h3>Chess Openings Trainer</h3>
+        <p>Learn and practice chess openings with spaced repetition</p>
+        <span class="status development">In Development</span>
+      </a>
       <div class="app-card">
         <h3>Age of War (Python)</h3>
         <p>Recreation of the classic flash game in Python with graphical interface</p>
@@ -75,11 +89,6 @@ title: Apps & Projects
       <div class="app-card">
         <h3>Age of War (Web)</h3>
         <p>Browser-based recreation of Age of War with original assets</p>
-        <span class="status development">In Development</span>
-      </div>
-      <div class="app-card">
-        <h3>Chess Openings Trainer</h3>
-        <p>React app to practice and learn chess openings with spaced repetition</p>
         <span class="status development">In Development</span>
       </div>
       <div class="app-card">
@@ -136,11 +145,11 @@ title: Apps & Projects
   <div class="category">
     <h2>Research & Academic</h2>
     <div class="app-list">
-      <div class="app-card">
+      <a href="/app/research/foi-dashboard.html" class="app-card">
         <h3>FOI Responsiveness Dashboard</h3>
         <p>Dashboard analyzing Freedom of Information request responsiveness across Belgian public administrations</p>
         <span class="status development">In Development</span>
-      </div>
+      </a>
       <div class="app-card">
         <h3>Urban Dashboards Analysis</h3>
         <p>Interactive dashboard for analyzing 86+ urban dashboard research articles with AI insights</p>
@@ -190,16 +199,16 @@ title: Apps & Projects
   <div class="category">
     <h2>Music & Audio Production</h2>
     <div class="app-list">
-      <div class="app-card">
+      <a href="/app/audio/band-ritual-vst.html" class="app-card">
         <h3>Band Ritual VST</h3>
         <p>VST3/AU plugin for audio processing - Available for Mac and Windows</p>
         <span class="status deployed">Deployed</span>
-      </div>
-      <div class="app-card">
+      </a>
+      <a href="/app/audio/levellens-vst.html" class="app-card">
         <h3>LevelLens VST</h3>
         <p>Real-time event-based loudness normalizer - VST3/AU plugin</p>
         <span class="status development">In Development</span>
-      </div>
+      </a>
       <div class="app-card">
         <h3>Lyrics Sentiment Analyzer</h3>
         <p>Analyze song lyrics for sentiment, emotions, and themes with synced karaoke display</p>
@@ -244,11 +253,11 @@ title: Apps & Projects
   <div class="category">
     <h2>Business & Commercial</h2>
     <div class="app-list">
-      <div class="app-card">
+      <a href="/app/business/trasporti-eccezionali.html" class="app-card">
         <h3>Trasporti Eccezionali</h3>
         <p>Route planning system for oversized transport in Italy with infrastructure constraints</p>
         <span class="status development">In Development</span>
-      </div>
+      </a>
       <div class="app-card">
         <h3>Local Business Website Generator</h3>
         <p>AI-powered website generator for local businesses with Google integration</p>
@@ -261,11 +270,11 @@ title: Apps & Projects
   <div class="category">
     <h2>Websites & Web Apps</h2>
     <div class="app-list">
-      <div class="app-card">
+      <a href="/app/websites/giusykitchen.html" class="app-card">
         <h3>GiusyKitchen Recipes</h3>
         <p>Recipe website with AI chef assistants, cooking mode, and photo analysis</p>
         <span class="status deployed">Deployed</span>
-      </div>
+      </a>
     </div>
   </div>
 

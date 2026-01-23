@@ -1,0 +1,52 @@
+---
+layout: app-detail
+title: LevelLens VST
+tagline: Real-time event-based loudness normalizer
+category: Music & Audio
+status: development
+---
+
+<div class="section">
+  <h2>What It Does</h2>
+  <p>LevelLens is a VST3/AU plugin that automatically normalizes the loudness of individual audio events (hits, stabs, notes) using constant gain per event - without changing the waveform shape or using compression.</p>
+</div>
+
+<div class="section">
+  <h2>Problem It Solves</h2>
+  <p>When layering samples or working with inconsistent recordings, volume levels vary wildly between hits. Traditional solutions like compression change the sound character. LevelLens maintains the original waveform while evening out levels.</p>
+</div>
+
+<div class="section">
+  <h2>Key Features</h2>
+  <ul>
+    <li>Event Detection - Automatically detects sound events based on energy</li>
+    <li>Per-Event Gain - Applies constant gain multiplier per event</li>
+    <li>Waveform Preservation - No compression or dynamic shaping</li>
+    <li>Smooth Transitions - Cosine ramps prevent clicks</li>
+    <li>Lookahead - Protects transients by pre-calculating gain</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>Tech Stack</h2>
+  <div class="tech-stack">
+    <span class="tech-tag">C++</span>
+    <span class="tech-tag">JUCE Framework</span>
+    <span class="tech-tag">VST3 SDK</span>
+    <span class="tech-tag">DSP</span>
+  </div>
+</div>
+
+<div class="section">
+  <h2>System Architecture</h2>
+  <div class="architecture-box">
+Audio Input → Event Detector → Gain Calculator → Gain Applier → Output
+                  ↓                   ↓
+            Energy Analysis      Lookahead Buffer
+            Threshold Check      Smooth Transitions</div>
+</div>
+
+<div class="section">
+  <h2>Why I Built This</h2>
+  <p>While producing music, I needed a way to normalize drum hits without affecting their punch. Compressors squash the sound, and manual gain automation is tedious. LevelLens automates what I was doing by hand.</p>
+</div>
