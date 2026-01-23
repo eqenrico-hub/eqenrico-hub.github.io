@@ -1,111 +1,98 @@
 ---
 layout: app-detail
-title: Research & Dev Expert Factory
-tagline: AI-powered research system with expert personas, PDF analysis, and podcast generation
+title: AI News Research Widget
+tagline: Browser-based news research with Obsidian export and podcast generation
 category: Scrapers
 status: development
 ---
 
 <div class="section">
   <h2>What It Does</h2>
-  <p>A comprehensive AI research assistant that transforms your objectives into actionable guides. Upload PDFs, get AI-generated expert personas who analyze the literature, and receive both academic and practical step-by-step guides. Now with Obsidian export and AI podcast generation.</p>
+  <p>A client-side web app for AI-powered news research. Enter any topic, get summarized results with sources, then export to Obsidian or generate a podcast with text-to-speech.</p>
 </div>
 
 <div class="section">
   <h2>Problem It Solves</h2>
-  <p>Research is overwhelming. You have dozens of PDFs, scattered notes, and no clear path forward. This system creates virtual expert panels who synthesize literature, answer your questions, and produce actionable implementation guides.</p>
+  <p>Staying informed on fast-moving topics requires constant searching. This automates research, delivers AI-summarized updates with source links, and lets you build a searchable knowledge base in Obsidian or listen to your research as podcasts.</p>
 </div>
 
 <div class="section">
   <h2>Key Features</h2>
   <ul>
-    <li><strong>10-Stage Research Pipeline</strong> - From objective to implementation guide</li>
-    <li><strong>AI Expert Personas</strong> - Virtual experts for each topic with generated portraits</li>
-    <li><strong>PDF Intelligence</strong> - Extract key findings from academic papers</li>
-    <li><strong>Dynamic Extraction Schemas</strong> - Custom fields based on your objective</li>
-    <li><strong>Two Guide Types</strong> - Literature-grounded (academic) + Simple step-by-step (practical)</li>
-    <li><strong>Interactive Expert Chat</strong> - Ask follow-up questions to your panel</li>
-    <li><strong>Obsidian Export</strong> - Full vault with backlinks, frontmatter, and graph-ready structure</li>
-    <li><strong>AI Podcast Generation</strong> - Convert guides to audio with TTS (single narrator or two-host discussion)</li>
-    <li><strong>Cost Tracking</strong> - Real-time budget monitoring in EUR</li>
+    <li><strong>Multi-Widget Dashboard</strong> - Track multiple topics simultaneously</li>
+    <li><strong>OpenAI Web Search</strong> - Real-time web search for fresh information</li>
+    <li><strong>AI Summarization</strong> - Bullet points with 3-6 source links</li>
+    <li><strong>Obsidian Export</strong> - Download as markdown with frontmatter and wikilinks</li>
+    <li><strong>Podcast Generation</strong> - Convert results to audio with 6 voice options</li>
+    <li><strong>Domain Filtering</strong> - Restrict searches to specific websites</li>
+    <li><strong>Local Storage</strong> - API key and widgets persist in browser</li>
   </ul>
 </div>
 
 <div class="section">
-  <h2>System Architecture</h2>
-  <div class="architecture-box">
-┌─────────────────────────────────────────────────────────────────┐
-│                     10-STAGE RESEARCH PIPELINE                   │
-├─────────────────────────────────────────────────────────────────┤
-│  1. Objective Input    →  2. Topic Planning  →  3. PDF Upload   │
-│  4. Expert Generation  →  5. Q&A Session     →  6. Refined Goal │
-│  7. Extraction Schema  →  8. Article Analysis → 9. Guide Build  │
-│  10. Chat + Export                                               │
-└─────────────────────────────────────────────────────────────────┘
-           │                    │                    │
-           ▼                    ▼                    ▼
-    ┌──────────────┐   ┌───────────────┐   ┌────────────────┐
-    │  Word Docs   │   │   Obsidian    │   │   AI Podcast   │
-    │  (.docx)     │   │   Vault       │   │   (MP3 + TTS)  │
-    └──────────────┘   └───────────────┘   └────────────────┘</div>
+  <h2>Export Options</h2>
+  <table class="competitors-table">
+    <tr>
+      <th>Format</th>
+      <th>What You Get</th>
+    </tr>
+    <tr>
+      <td>Obsidian Markdown</td>
+      <td>YAML frontmatter, tags, wikilinks to other notes, source list</td>
+    </tr>
+    <tr>
+      <td>Audio Podcast</td>
+      <td>MP3 file with natural narration, auto-downloads after generation</td>
+    </tr>
+  </table>
 </div>
 
 <div class="section">
-  <h2>Output Formats</h2>
+  <h2>TTS Voices Available</h2>
   <ul>
-    <li><strong>Word Documents</strong> - Literature guide + Simple guide (.docx)</li>
-    <li><strong>Obsidian Vault</strong> - Topics, articles, experts, guides with wikilinks</li>
-    <li><strong>Audio Podcasts</strong> - Single narrator or two-host discussion format</li>
-    <li><strong>JSON Exports</strong> - All extracted data for programmatic use</li>
+    <li><strong>Onyx</strong> - Deep, authoritative (default)</li>
+    <li><strong>Nova</strong> - Warm, engaging</li>
+    <li><strong>Echo</strong> - Thoughtful, measured</li>
+    <li><strong>Fable</strong> - British, academic</li>
+    <li><strong>Alloy</strong> - Neutral, clear</li>
+    <li><strong>Shimmer</strong> - Friendly, approachable</li>
   </ul>
 </div>
 
 <div class="section">
   <h2>Tech Stack</h2>
   <div class="tech-stack">
-    <span class="tech-tag">Python</span>
-    <span class="tech-tag">Streamlit</span>
-    <span class="tech-tag">OpenAI GPT-4</span>
-    <span class="tech-tag">OpenAI TTS</span>
-    <span class="tech-tag">PyPDF2</span>
-    <span class="tech-tag">python-docx</span>
-    <span class="tech-tag">pydub</span>
+    <span class="tech-tag">HTML/CSS/JS</span>
+    <span class="tech-tag">OpenAI Responses API</span>
+    <span class="tech-tag">OpenAI TTS API</span>
+    <span class="tech-tag">LocalStorage</span>
   </div>
 </div>
 
 <div class="section">
   <h2>API Costs</h2>
   <ul>
-    <li><strong>OpenAI GPT-4</strong> - ~$0.03/1K tokens (main reasoning)</li>
-    <li><strong>OpenAI GPT-4 Mini</strong> - ~$0.0004/1K tokens (fast tasks)</li>
-    <li><strong>OpenAI TTS HD</strong> - ~$0.03/1K characters (podcast audio)</li>
-    <li><strong>OpenAI Image Gen</strong> - ~$0.02/image (expert portraits)</li>
-    <li><strong>ElevenLabs</strong> - Optional, higher quality TTS (~$0.30/1K chars)</li>
+    <li><strong>OpenAI GPT-4o-mini</strong> - ~$0.00015/1K input, $0.0006/1K output (research)</li>
+    <li><strong>OpenAI Web Search</strong> - Included with Responses API</li>
+    <li><strong>OpenAI TTS HD</strong> - ~$0.03/1K characters (podcast)</li>
   </ul>
-  <p><em>Built-in cost tracking with budget alerts. Typical research session: $2-5 EUR.</em></p>
+  <p><em>Typical research query: ~$0.01. Podcast generation: ~$0.05-0.10 per audio.</em></p>
 </div>
 
 <div class="section">
-  <h2>Podcast Modes</h2>
-  <table class="competitors-table">
-    <tr>
-      <th>Mode</th>
-      <th>Description</th>
-    </tr>
-    <tr>
-      <td>Single Narrator</td>
-      <td>Professional voiceover of your guide, like a documentary</td>
-    </tr>
-    <tr>
-      <td>Two Hosts + Expert</td>
-      <td>Alex and Jamie discuss findings with your AI expert guest</td>
-    </tr>
-  </table>
+  <h2>How to Use</h2>
+  <ol>
+    <li>Open the HTML file in your browser</li>
+    <li>Enter your OpenAI API key and save</li>
+    <li>Create widgets for topics you want to track</li>
+    <li>Click "Run" to research or "Refresh All" for all widgets</li>
+    <li>Export results to Obsidian or generate podcasts</li>
+  </ol>
 </div>
 
 <div class="section">
   <h2>Why I Built This</h2>
-  <p>PhD research means reading hundreds of papers across multiple topics. I needed a system that could synthesize literature into actionable steps, with experts I could consult. The podcast feature lets me "listen to my research" during commutes. Obsidian export creates a permanent knowledge base that grows with each project.</p>
+  <p>I wanted a quick way to get AI-curated news on specific topics without manually searching. The Obsidian export builds a permanent knowledge base over time, and the podcast feature lets me catch up on research during commutes.</p>
 </div>
 
 <div class="section">
@@ -116,16 +103,12 @@ status: development
       <th>How This Differs</th>
     </tr>
     <tr>
-      <td><a href="https://elicit.org" target="_blank">Elicit</a></td>
-      <td>Virtual expert personas, podcast generation, Obsidian export</td>
+      <td><a href="https://perplexity.ai" target="_blank">Perplexity</a></td>
+      <td>Obsidian export, podcast generation, multi-widget tracking</td>
     </tr>
     <tr>
-      <td><a href="https://www.semanticscholar.org" target="_blank">Semantic Scholar</a></td>
-      <td>Custom extraction schemas, actionable guides, cost tracking</td>
-    </tr>
-    <tr>
-      <td><a href="https://notebooklm.google.com" target="_blank">NotebookLM</a></td>
-      <td>Multi-topic expert panels, two-guide output system</td>
+      <td><a href="https://you.com" target="_blank">You.com</a></td>
+      <td>Fully client-side, no account needed, local storage</td>
     </tr>
   </table>
 </div>
