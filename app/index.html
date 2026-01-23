@@ -5,31 +5,60 @@ title: Apps & Projects
 
 <h1>Apps & Projects</h1>
 
-<p class="intro">A collection of applications and tools I've built across various domains. Click on any project to see details.</p>
+<p class="intro">A collection of applications and tools I've built across various domains. Click a category to expand.</p>
 
 <style>
   .apps-grid {
     display: grid;
-    gap: 2rem;
+    gap: 1rem;
     margin-top: 2rem;
   }
   .category {
     border: 1px solid #333;
     border-radius: 8px;
-    padding: 1.5rem;
     background: #1a1a1a;
+    overflow: hidden;
   }
-  .category h2 {
-    margin-top: 0;
+  .category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+  }
+  .category-header:hover {
+    background: #252525;
+  }
+  .category-header h2 {
+    margin: 0;
     color: #00d4ff;
-    font-size: 1.3rem;
-    border-bottom: 1px solid #333;
-    padding-bottom: 0.5rem;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .category-header .count {
+    font-size: 0.85rem;
+    color: #666;
+    font-weight: normal;
+  }
+  .category-header .arrow {
+    font-size: 1.2rem;
+    color: #666;
+    transition: transform 0.3s;
+  }
+  .category.open .arrow {
+    transform: rotate(90deg);
   }
   .app-list {
+    display: none;
+    padding: 0 1.5rem 1.5rem 1.5rem;
+    gap: 0.75rem;
+  }
+  .category.open .app-list {
     display: grid;
-    gap: 1rem;
-    margin-top: 1rem;
   }
   .app-card {
     background: #252525;
@@ -46,21 +75,21 @@ title: Apps & Projects
     border-left-color: #4ade80;
   }
   .app-card h3 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.1rem;
+    margin: 0 0 0.3rem 0;
+    font-size: 1rem;
     color: #fff;
   }
   .app-card p {
     margin: 0;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: #aaa;
   }
   .app-card .status {
     display: inline-block;
-    font-size: 0.75rem;
-    padding: 0.2rem 0.5rem;
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
     border-radius: 3px;
-    margin-top: 0.5rem;
+    margin-top: 0.4rem;
   }
   .status.deployed { background: #1a472a; color: #4ade80; }
   .status.development { background: #422006; color: #fbbf24; }
@@ -68,13 +97,40 @@ title: Apps & Projects
     color: #888;
     font-size: 1.1rem;
   }
+  .expand-controls {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  .expand-controls button {
+    background: #252525;
+    border: 1px solid #444;
+    color: #aaa;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background 0.2s, color 0.2s;
+  }
+  .expand-controls button:hover {
+    background: #333;
+    color: #fff;
+  }
 </style>
+
+<div class="expand-controls">
+  <button onclick="expandAll()">Expand All</button>
+  <button onclick="collapseAll()">Collapse All</button>
+</div>
 
 <div class="apps-grid">
 
   <!-- GAMES -->
   <div class="category">
-    <h2>Games & Entertainment</h2>
+    <div class="category-header" onclick="toggleCategory(this)">
+      <h2>Games & Entertainment <span class="count">(7)</span></h2>
+      <span class="arrow">&#9654;</span>
+    </div>
     <div class="app-list">
       <a href="/app/games/chess-openings-trainer.html" class="app-card">
         <h3>Chess Openings Trainer</h3>
@@ -83,17 +139,17 @@ title: Apps & Projects
       </a>
       <a href="/app/games/age-of-war-python.html" class="app-card">
         <h3>Age of War (Python)</h3>
-        <p>Recreation of the classic flash game in Python with graphical interface</p>
+        <p>Recreation of the classic flash game in Python</p>
         <span class="status development">In Development</span>
       </a>
       <a href="/app/games/age-of-war-web.html" class="app-card">
         <h3>Age of War (Web)</h3>
-        <p>Browser-based recreation of Age of War with original assets</p>
+        <p>Browser-based recreation with original assets</p>
         <span class="status development">In Development</span>
       </a>
       <a href="/app/games/truth-forge.html" class="app-card">
         <h3>Truth Forge</h3>
-        <p>Logic puzzle game with story mode, 5 worlds, and 25 levels built in Phaser.js</p>
+        <p>Logic puzzle game with 5 worlds and 25 levels</p>
         <span class="status development">In Development</span>
       </a>
       <a href="/app/games/godot-roguelike.html" class="app-card">
@@ -116,7 +172,10 @@ title: Apps & Projects
 
   <!-- AI TOOLS -->
   <div class="category">
-    <h2>AI & Automation</h2>
+    <div class="category-header" onclick="toggleCategory(this)">
+      <h2>AI & Automation <span class="count">(4)</span></h2>
+      <span class="arrow">&#9654;</span>
+    </div>
     <div class="app-list">
       <a href="/app/ai-tools/terminal-ai-assistant.html" class="app-card">
         <h3>Terminal AI Assistant</h3>
@@ -125,12 +184,12 @@ title: Apps & Projects
       </a>
       <a href="/app/ai-tools/story-engine-assistant.html" class="app-card">
         <h3>Story Engine Assistant</h3>
-        <p>AI-powered interactive story creation and management system</p>
+        <p>AI-powered interactive story creation system</p>
         <span class="status development">In Development</span>
       </a>
       <a href="/app/ai-tools/expert-knowledge-chat.html" class="app-card">
         <h3>Expert Knowledge Chat</h3>
-        <p>Streamlit app for creating AI experts from knowledge bases</p>
+        <p>Create AI experts from custom knowledge bases</p>
         <span class="status development">In Development</span>
       </a>
       <a href="/app/ai-tools/screen-chat-assistant.html" class="app-card">
@@ -143,26 +202,29 @@ title: Apps & Projects
 
   <!-- RESEARCH -->
   <div class="category">
-    <h2>Research & Academic</h2>
+    <div class="category-header" onclick="toggleCategory(this)">
+      <h2>Research & Academic <span class="count">(4)</span></h2>
+      <span class="arrow">&#9654;</span>
+    </div>
     <div class="app-list">
       <a href="/app/research/foi-dashboard.html" class="app-card">
         <h3>FOI Responsiveness Dashboard</h3>
-        <p>Dashboard analyzing Freedom of Information request responsiveness across Belgian public administrations</p>
+        <p>Analyzing FOI request responsiveness across Belgian administrations</p>
         <span class="status development">In Development</span>
       </a>
       <a href="/app/research/urban-dashboards-analysis.html" class="app-card">
         <h3>Urban Dashboards Analysis</h3>
-        <p>Interactive dashboard for analyzing 86+ urban dashboard research articles with AI insights</p>
+        <p>Analysis of 114 Italian urban dashboards</p>
         <span class="status development">In Development</span>
       </a>
       <a href="/app/research/ai-paper-assistants.html" class="app-card">
         <h3>AI Paper Assistants</h3>
-        <p>Tools for academic paper writing and research assistance</p>
+        <p>Tools for academic paper writing and research</p>
         <span class="status development">In Development</span>
       </a>
       <a href="/app/research/foqus-intelligence.html" class="app-card">
         <h3>FOQUS Intelligence</h3>
-        <p>Research intelligence platform with multiple analysis dashboards</p>
+        <p>FOI quality and responsiveness intelligence platform</p>
         <span class="status development">In Development</span>
       </a>
     </div>
@@ -170,26 +232,29 @@ title: Apps & Projects
 
   <!-- NEWS & SCRAPERS -->
   <div class="category">
-    <h2>Data & Intelligence</h2>
+    <div class="category-header" onclick="toggleCategory(this)">
+      <h2>Data & Intelligence <span class="count">(4)</span></h2>
+      <span class="arrow">&#9654;</span>
+    </div>
     <div class="app-list">
       <a href="/app/scrapers/ai-news-aggregator.html" class="app-card">
         <h3>AI News Aggregator</h3>
-        <p>Automated news aggregation with AI-powered summaries</p>
+        <p>Automated news aggregation with AI summaries</p>
         <span class="status development">In Development</span>
       </a>
       <a href="/app/scrapers/opportunity-miner.html" class="app-card">
         <h3>Opportunity Miner</h3>
-        <p>Autonomous product opportunity scanner across YouTube, forums, and social media</p>
+        <p>Job and grant opportunity scraper and matcher</p>
         <span class="status development">In Development</span>
       </a>
       <a href="/app/scrapers/product-intelligence-platform.html" class="app-card">
         <h3>Product Intelligence Platform</h3>
-        <p>SaaS for market analysis, competitive intelligence, and AI-powered idea generation</p>
+        <p>E-commerce product data scraping and analysis</p>
         <span class="status development">In Development</span>
       </a>
       <a href="/app/scrapers/scena.html" class="app-card">
         <h3>Scena</h3>
-        <p>Content recommendation platform with AI-powered suggestions</p>
+        <p>Cultural events scraper for Italy</p>
         <span class="status development">In Development</span>
       </a>
     </div>
@@ -197,26 +262,29 @@ title: Apps & Projects
 
   <!-- MUSIC & AUDIO -->
   <div class="category">
-    <h2>Music & Audio Production</h2>
+    <div class="category-header" onclick="toggleCategory(this)">
+      <h2>Music & Audio Production <span class="count">(4)</span></h2>
+      <span class="arrow">&#9654;</span>
+    </div>
     <div class="app-list">
       <a href="/app/audio/band-ritual-vst.html" class="app-card">
         <h3>Band Ritual VST</h3>
-        <p>VST3/AU plugin for audio processing - Available for Mac and Windows</p>
+        <p>VST3/AU plugin for audio processing</p>
         <span class="status deployed">Deployed</span>
       </a>
       <a href="/app/audio/levellens-vst.html" class="app-card">
         <h3>LevelLens VST</h3>
-        <p>Real-time event-based loudness normalizer - VST3/AU plugin</p>
+        <p>Real-time event-based loudness normalizer</p>
         <span class="status development">In Development</span>
       </a>
       <a href="/app/audio/lyrics-sentiment-analyzer.html" class="app-card">
         <h3>Lyrics Sentiment Analyzer</h3>
-        <p>Analyze song lyrics for sentiment, emotions, and themes with synced karaoke display</p>
+        <p>Analyze song lyrics for sentiment and emotions</p>
         <span class="status development">In Development</span>
       </a>
       <a href="/app/audio/vst-idea-analyzer.html" class="app-card">
         <h3>VST Idea Analyzer</h3>
-        <p>Tool for analyzing and organizing VST plugin ideas</p>
+        <p>Tool for analyzing VST plugin concepts</p>
         <span class="status development">In Development</span>
       </a>
     </div>
@@ -224,26 +292,29 @@ title: Apps & Projects
 
   <!-- PRODUCTIVITY -->
   <div class="category">
-    <h2>Productivity & Utilities</h2>
+    <div class="category-header" onclick="toggleCategory(this)">
+      <h2>Productivity & Utilities <span class="count">(4)</span></h2>
+      <span class="arrow">&#9654;</span>
+    </div>
     <div class="app-list">
       <a href="/app/productivity/atlas-research-assistant.html" class="app-card">
         <h3>ATLAS Research Assistant</h3>
-        <p>Academic research system with PDF management, Elicit integration, and AI analysis</p>
+        <p>Personal knowledge base and research organization</p>
         <span class="status development">In Development</span>
       </a>
       <a href="/app/productivity/claude-browser-controller.html" class="app-card">
         <h3>Claude Browser Controller</h3>
-        <p>GUI for Claude Code Chrome integration and browser automation</p>
+        <p>AI-controlled browser automation with Claude</p>
         <span class="status development">In Development</span>
       </a>
       <a href="/app/productivity/claudefs-email-copilot.html" class="app-card">
         <h3>ClaudeFS Email Copilot</h3>
-        <p>AI-powered email management and priority system</p>
+        <p>AI email assistant with file system integration</p>
         <span class="status development">In Development</span>
       </a>
       <a href="/app/productivity/email-ai-copilot.html" class="app-card">
         <h3>Email AI Copilot</h3>
-        <p>Smart email assistant with AI-powered responses</p>
+        <p>Standalone AI email writing assistant</p>
         <span class="status development">In Development</span>
       </a>
     </div>
@@ -251,16 +322,19 @@ title: Apps & Projects
 
   <!-- BUSINESS -->
   <div class="category">
-    <h2>Business & Commercial</h2>
+    <div class="category-header" onclick="toggleCategory(this)">
+      <h2>Business & Commercial <span class="count">(2)</span></h2>
+      <span class="arrow">&#9654;</span>
+    </div>
     <div class="app-list">
       <a href="/app/business/trasporti-eccezionali.html" class="app-card">
         <h3>Trasporti Eccezionali</h3>
-        <p>Route planning system for oversized transport in Italy with infrastructure constraints</p>
+        <p>Route planning for oversized transport in Italy</p>
         <span class="status development">In Development</span>
       </a>
       <a href="/app/business/local-business-website-generator.html" class="app-card">
         <h3>Local Business Website Generator</h3>
-        <p>AI-powered website generator for local businesses with Google integration</p>
+        <p>AI-powered website builder for small businesses</p>
         <span class="status development">In Development</span>
       </a>
     </div>
@@ -268,11 +342,14 @@ title: Apps & Projects
 
   <!-- WEBSITES -->
   <div class="category">
-    <h2>Websites & Web Apps</h2>
+    <div class="category-header" onclick="toggleCategory(this)">
+      <h2>Websites & Web Apps <span class="count">(1)</span></h2>
+      <span class="arrow">&#9654;</span>
+    </div>
     <div class="app-list">
       <a href="/app/websites/giusykitchen.html" class="app-card">
         <h3>GiusyKitchen Recipes</h3>
-        <p>Recipe website with AI chef assistants, cooking mode, and photo analysis</p>
+        <p>Recipe website with AI chef assistants</p>
         <span class="status deployed">Deployed</span>
       </a>
     </div>
@@ -280,6 +357,21 @@ title: Apps & Projects
 
 </div>
 
-<p style="margin-top: 3rem; color: #666; font-size: 0.85rem;">
+<p style="margin-top: 2rem; color: #666; font-size: 0.85rem;">
   Last updated: January 2026 | Total projects: 35
 </p>
+
+<script>
+function toggleCategory(header) {
+  const category = header.parentElement;
+  category.classList.toggle('open');
+}
+
+function expandAll() {
+  document.querySelectorAll('.category').forEach(cat => cat.classList.add('open'));
+}
+
+function collapseAll() {
+  document.querySelectorAll('.category').forEach(cat => cat.classList.remove('open'));
+}
+</script>
