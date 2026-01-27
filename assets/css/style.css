@@ -231,6 +231,34 @@ a {
   color: var(--text-light);
 }
 
+/* TO DO section */
+.todo-preview {
+  text-align: center;
+  padding: 2rem 3rem;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 8px;
+  color: #ccc;
+}
+
+.todo-preview p {
+  margin-bottom: 1rem;
+}
+
+.todo-link {
+  display: inline-block;
+  padding: 0.6rem 1.5rem;
+  background: #e94560;
+  color: #fff !important;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.todo-link:hover {
+  background: #ff6b6b;
+}
+
 /* Footer */
 footer {
   padding: 2rem;

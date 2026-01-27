@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progress Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: #16213e;
+            padding: 20px;
+            border-right: 1px solid #0f3460;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar h1 {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            color: #e94560;
+        }
+
+        .add-topic {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .add-topic input {
+            flex: 1;
+            padding: 10px 12px;
+            border: none;
+            border-radius: 6px;
+            background: #0f3460;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        .add-topic input::placeholder {
+            color: #666;
+        }
+
+        .add-topic button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            background: #e94560;
+            color: #fff;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .add-topic button:hover {
+            background: #ff6b6b;
+        }
+
+        .topics-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .topic-item {
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            background: #0f3460;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .topic-item:hover {
+            background: #1a4a7a;
+        }
+
+        .topic-item.active {
+            background: #e94560;
+        }
+
+        .topic-item span {
+            flex: 1;
+        }
+
+        .topic-item .delete-btn {
+            opacity: 0;
+            background: none;
+            border: none;
+            color: #ff6b6b;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0 4px;
+            transition: opacity 0.2s;
+        }
+
+        .topic-item:hover .delete-btn {
+            opacity: 1;
+        }
+
+        .topic-item .edit-btn {
+            opacity: 0;
+            background: none;
+            border: none;
+            color: #4ecdc4;
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 0 4px;
+            transition: opacity 0.2s;
+        }
+
+        .topic-item:hover .edit-btn {
+            opacity: 1;
+        }
+
+        .topic-item input.edit-name {
+            background: #0a1628;
+            border: 1px solid #4ecdc4;
+            border-radius: 4px;
+            color: #fff;
+            padding: 4px 8px;
+            font-size: 0.9rem;
+            width: 100%;
+        }
+
+        /* Settings button */
+        .settings-section {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid #0f3460;
+        }
+
+        .settings-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: #0f3460;
+            color: #888;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .settings-btn:hover {
+            background: #1a4a7a;
+            color: #fff;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 30px 40px;
+            overflow-y: auto;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #666;
+            text-align: center;
+        }
+
+        .empty-state h2 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .topic-header {
+            margin-bottom: 30px;
+        }
+
+        .topic-header h2 {
+            font-size: 2rem;
+            color: #e94560;
+        }
+
+        .sections {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .section {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid #0f3460;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .section h3 {
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section h3 .icon {
+            font-size: 1.3rem;
+        }
+
+        .section.today h3 { color: #ffe66d; }
+        .section.next h3 { color: #a855f7; }
+
+        .section textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            background: #0f3460;
+            color: #fff;
+            font-size: 1rem;
+            line-height: 1.6;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .section textarea::placeholder {
+            color: #555;
+        }
+
+        .section textarea:focus {
+            outline: 2px solid #e94560;
+            outline-offset: 2px;
+        }
+
+        /* GPT Button */
+        .gpt-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            background: #10a37f;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .gpt-btn:hover {
+            background: #1a7f64;
+        }
+
+        .gpt-btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+
+        .gpt-btn.loading {
+            opacity: 0.7;
+        }
+
+        /* Tasks container */
+        .tasks-container {
+            margin-top: 16px;
+        }
+
+        .tasks-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .task-tag {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #0f3460;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            border-left: 3px solid #ffe66d;
+        }
+
+        .task-tag.completed {
+            opacity: 0.5;
+            text-decoration: line-through;
+            border-left-color: #4ecdc4;
+        }
+
+        .task-text {
+            flex: 1;
+        }
+
+        .task-complete {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0 4px;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+
+        .task-complete:hover {
+            color: #4ecdc4;
+        }
+
+        .task-tag.completed .task-complete {
+            color: #4ecdc4;
+        }
+
+        /* Completed history */
+        .history-section {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #0f3460;
+        }
+
+        .history-section h4 {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            background: #0a1628;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: #888;
+            text-decoration: line-through;
+        }
+
+        .history-item .check {
+            color: #4ecdc4;
+        }
+
+        .history-item .date {
+            margin-left: auto;
+            font-size: 0.7rem;
+            color: #555;
+        }
+
+        .history-item .delete-history {
+            background: none;
+            border: none;
+            color: #444;
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 0 4px;
+            margin-left: 8px;
+            transition: color 0.2s;
+        }
+
+        .history-item .delete-history:hover {
+            color: #ff6b6b;
+        }
+
+        /* Add task manually */
+        .add-task-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .add-task-row input {
+            flex: 1;
+            padding: 10px 12px;
+            border: none;
+            border-radius: 6px;
+            background: #0f3460;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        .add-task-row input::placeholder {
+            color: #555;
+        }
+
+        .add-task-row button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            background: #ffe66d;
+            color: #000;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+
+        .add-task-row button:hover {
+            background: #ffd93d;
+        }
+
+        /* Lock button */
+        .lock-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            background: #0f3460;
+            color: #888;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .lock-btn:hover {
+            background: #1a4a7a;
+            color: #fff;
+        }
+
+        .lock-btn.locked {
+            background: #e94560;
+            color: #fff;
+        }
+
+        .section textarea.locked {
+            background: #0a1628;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            border: 1px solid #0f3460;
+        }
+
+        .modal h3 {
+            margin-bottom: 20px;
+            color: #e94560;
+        }
+
+        .modal label {
+            display: block;
+            margin-bottom: 8px;
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .modal input {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            background: #0f3460;
+            color: #fff;
+            font-size: 1rem;
+            margin-bottom: 20px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .modal-buttons button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .modal-buttons .cancel {
+            background: #0f3460;
+            color: #888;
+        }
+
+        .modal-buttons .save {
+            background: #e94560;
+            color: #fff;
+        }
+
+        /* Save indicator */
+        .save-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: #4ecdc4;
+            color: #000;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .save-indicator.show {
+            opacity: 1;
+        }
+
+        .save-indicator.error {
+            background: #ff6b6b;
+            color: #fff;
+        }
+
+        /* File status */
+        .file-status {
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        .file-status.connected {
+            color: #4ecdc4;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid #0f3460;
+            }
+
+            .main-content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <h1>Progress Tracker</h1>
+            <div class="add-topic">
+                <input type="text" id="newTopicInput" placeholder="Nuovo tema..." />
+                <button onclick="addTopic()">+</button>
+            </div>
+            <div class="topics-list" id="topicsList"></div>
+            <div class="settings-section">
+                <button class="settings-btn" onclick="openSettings()">Impostazioni</button>
+                <div class="file-status" id="fileStatus">localStorage</div>
+            </div>
+        </aside>
+
+        <main class="main-content" id="mainContent">
+            <div class="empty-state">
+                <h2>Seleziona un tema</h2>
+                <p>Oppure creane uno nuovo dalla sidebar</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal">
+            <h3>Impostazioni</h3>
+            <label>OpenAI API Key</label>
+            <input type="password" id="apiKeyInput" placeholder="sk-..." />
+            <label>File di salvataggio</label>
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button class="settings-btn" style="flex:1" onclick="selectSaveFile()">Seleziona file...</button>
+            </div>
+            <p style="font-size: 0.8rem; color: #666; margin-bottom: 20px;">
+                Il file JSON verrà salvato automaticamente ad ogni modifica.
+            </p>
+            <div class="modal-buttons">
+                <button class="cancel" onclick="closeSettings()">Annulla</button>
+                <button class="save" onclick="saveSettings()">Salva</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="save-indicator" id="saveIndicator">Salvato!</div>
+
+    <script>
+        // Data structure
+        let data = {
+            topics: {},
+            activeTopic: null
+        };
+
+        let settings = {
+            apiKey: '',
+            fileHandle: null
+        };
+
+        // Load from localStorage (fallback)
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('progressTrackerData');
+            if (saved) {
+                data = JSON.parse(saved);
+            }
+            const savedSettings = localStorage.getItem('progressTrackerSettings');
+            if (savedSettings) {
+                const parsed = JSON.parse(savedSettings);
+                settings.apiKey = parsed.apiKey || '';
+            }
+        }
+
+        // Save to file (and localStorage as backup)
+        async function saveData() {
+            // Always save to localStorage as backup
+            localStorage.setItem('progressTrackerData', JSON.stringify(data));
+
+            // Try to save to file if we have a handle
+            if (settings.fileHandle) {
+                try {
+                    const writable = await settings.fileHandle.createWritable();
+                    await writable.write(JSON.stringify(data, null, 2));
+                    await writable.close();
+                    showSaveIndicator('Salvato su file!');
+                    return;
+                } catch (err) {
+                    console.error('File save error:', err);
+                    showSaveIndicator('Salvato in locale', true);
+                }
+            } else {
+                showSaveIndicator('Salvato!');
+            }
+        }
+
+        // Select save file
+        async function selectSaveFile() {
+            try {
+                // Check if File System Access API is supported
+                if (!('showSaveFilePicker' in window)) {
+                    alert('Il tuo browser non supporta il salvataggio su file. Usa Chrome o Edge.');
+                    return;
+                }
+
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: 'progress-tracker-data.json',
+                    types: [{
+                        description: 'JSON Files',
+                        accept: { 'application/json': ['.json'] }
+                    }]
+                });
+
+                settings.fileHandle = handle;
+
+                // Try to read existing data from file
+                try {
+                    const file = await handle.getFile();
+                    const content = await file.text();
+                    if (content) {
+                        const fileData = JSON.parse(content);
+                        if (fileData.topics) {
+                            data = fileData;
+                            renderTopicsList();
+                            renderMainContent();
+                        }
+                    }
+                } catch (e) {
+                    // File is empty or doesn't exist yet, that's fine
+                }
+
+                // Save current data to file
+                await saveData();
+                updateFileStatus();
+
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    console.error('Error selecting file:', err);
+                }
+            }
+        }
+
+        // Update file status display
+        function updateFileStatus() {
+            const status = document.getElementById('fileStatus');
+            if (settings.fileHandle) {
+                status.textContent = settings.fileHandle.name;
+                status.classList.add('connected');
+            } else {
+                status.textContent = 'localStorage';
+                status.classList.remove('connected');
+            }
+        }
+
+        // Show save indicator
+        function showSaveIndicator(message = 'Salvato!', isError = false) {
+            const indicator = document.getElementById('saveIndicator');
+            indicator.textContent = message;
+            indicator.classList.toggle('error', isError);
+            indicator.classList.add('show');
+            setTimeout(() => indicator.classList.remove('show'), 1500);
+        }
+
+        // Settings modal
+        function openSettings() {
+            document.getElementById('apiKeyInput').value = settings.apiKey;
+            document.getElementById('settingsModal').classList.add('show');
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('show');
+        }
+
+        function saveSettings() {
+            settings.apiKey = document.getElementById('apiKeyInput').value.trim();
+            localStorage.setItem('progressTrackerSettings', JSON.stringify({
+                apiKey: settings.apiKey
+            }));
+            closeSettings();
+            showSaveIndicator('Impostazioni salvate!');
+        }
+
+        // Render topics list
+        function renderTopicsList() {
+            const container = document.getElementById('topicsList');
+            const topicNames = Object.keys(data.topics);
+
+            if (topicNames.length === 0) {
+                container.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">Nessun tema ancora</p>';
+                return;
+            }
+
+            container.innerHTML = topicNames.map(name => `
+                <div class="topic-item ${data.activeTopic === name ? 'active' : ''}" onclick="selectTopic('${escapeHtml(name)}')">
+                    <span>${escapeHtml(name)}</span>
+                    <button class="edit-btn" onclick="editTopicName('${escapeHtml(name)}', event)">✎</button>
+                    <button class="delete-btn" onclick="deleteTopic('${escapeHtml(name)}', event)">&times;</button>
+                </div>
+            `).join('');
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Add new topic
+        function addTopic() {
+            const input = document.getElementById('newTopicInput');
+            const name = input.value.trim();
+
+            if (!name) return;
+            if (data.topics[name]) {
+                alert('Questo tema esiste già!');
+                return;
+            }
+
+            data.topics[name] = {
+                today: '',
+                todayLocked: false,
+                todayTasks: [],
+                completedHistory: [],
+                next: '',
+                nextLocked: false
+            };
+
+            input.value = '';
+            saveData();
+            renderTopicsList();
+            selectTopic(name);
+        }
+
+        // Edit topic name
+        function editTopicName(name, event) {
+            event.stopPropagation();
+            const newName = prompt('Nuovo nome:', name);
+            if (!newName || newName.trim() === '' || newName === name) return;
+
+            const trimmedName = newName.trim();
+            if (data.topics[trimmedName]) {
+                alert('Un tema con questo nome esiste già!');
+                return;
+            }
+
+            // Copy data to new name
+            data.topics[trimmedName] = data.topics[name];
+            delete data.topics[name];
+
+            // Update active topic if needed
+            if (data.activeTopic === name) {
+                data.activeTopic = trimmedName;
+            }
+
+            saveData();
+            renderTopicsList();
+            renderMainContent();
+        }
+
+        // Delete topic
+        function deleteTopic(name, event) {
+            event.stopPropagation();
+            if (!confirm(`Eliminare "${name}"?`)) return;
+
+            delete data.topics[name];
+            if (data.activeTopic === name) {
+                data.activeTopic = null;
+            }
+
+            saveData();
+            renderTopicsList();
+            renderMainContent();
+        }
+
+        // Select topic
+        function selectTopic(name) {
+            data.activeTopic = name;
+            saveData();
+            renderTopicsList();
+            renderMainContent();
+        }
+
+        // Render main content
+        function renderMainContent() {
+            const container = document.getElementById('mainContent');
+
+            if (!data.activeTopic || !data.topics[data.activeTopic]) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h2>Seleziona un tema</h2>
+                        <p>Oppure creane uno nuovo dalla sidebar</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const topic = data.topics[data.activeTopic];
+
+            // Ensure arrays exist
+            if (!topic.todayTasks) topic.todayTasks = [];
+            if (!topic.completedHistory) topic.completedHistory = [];
+
+            const tasksHtml = topic.todayTasks.length > 0 ? `
+                <div class="tasks-list">
+                    ${topic.todayTasks.map((task, index) => `
+                        <div class="task-tag">
+                            <span class="task-text">${escapeHtml(task.text)}</span>
+                            <button class="task-complete" onclick="completeTask(${index})">&#10003;</button>
+                        </div>
+                    `).join('')}
+                </div>
+            ` : '';
+
+            const historyHtml = topic.completedHistory.length > 0 ? `
+                <div class="history-section">
+                    <h4>Ultime completate</h4>
+                    <div class="history-list">
+                        ${topic.completedHistory.map((item, index) => `
+                            <div class="history-item">
+                                <span class="check">&#10003;</span>
+                                <span>${escapeHtml(item.text)}</span>
+                                <span class="date">${item.date}</span>
+                                <button class="delete-history" onclick="deleteFromHistory(${index})">&times;</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : '';
+
+            container.innerHTML = `
+                <div class="topic-header">
+                    <h2>${escapeHtml(data.activeTopic)}</h2>
+                </div>
+                <div class="sections">
+                    <div class="section today">
+                        <div class="section-header">
+                            <h3><span class="icon">📋</span> Cosa c'è da fare oggi</h3>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="gpt-btn" onclick="generateTasks('today')" id="gptBtnToday">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.8956zm16.0993 3.8558L12.6 8.3829l2.02-1.1638a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/>
+                                    </svg>
+                                    Genera Task
+                                </button>
+                                <button class="lock-btn ${topic.todayLocked ? 'locked' : ''}" onclick="toggleLock('today')">
+                                    ${topic.todayLocked ? '🔒' : '🔓'}
+                                </button>
+                            </div>
+                        </div>
+                        <textarea
+                            id="todayTextarea"
+                            placeholder="Scrivi cosa devi fare oggi..."
+                            oninput="updateSection('today', this.value)"
+                            class="${topic.todayLocked ? 'locked' : ''}"
+                            ${topic.todayLocked ? 'readonly' : ''}
+                        >${topic.today || ''}</textarea>
+                        <div class="tasks-container">
+                            <div class="add-task-row">
+                                <input type="text" id="manualTaskInput" placeholder="Aggiungi task manualmente..." onkeypress="if(event.key==='Enter')addManualTask()">
+                                <button onclick="addManualTask()">+</button>
+                            </div>
+                            ${tasksHtml}
+                            ${historyHtml}
+                        </div>
+                    </div>
+                    <div class="section next">
+                        <div class="section-header">
+                            <h3><span class="icon">🎯</span> Prossimi step</h3>
+                            <button class="lock-btn ${topic.nextLocked ? 'locked' : ''}" onclick="toggleLock('next')">
+                                ${topic.nextLocked ? '🔒' : '🔓'}
+                            </button>
+                        </div>
+                        <textarea
+                            id="nextTextarea"
+                            placeholder="I prossimi passi da fare..."
+                            oninput="updateSection('next', this.value)"
+                            class="${topic.nextLocked ? 'locked' : ''}"
+                            ${topic.nextLocked ? 'readonly' : ''}
+                        >${topic.next || ''}</textarea>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Update section content
+        let saveTimeout;
+        function updateSection(section, value) {
+            if (!data.activeTopic) return;
+            data.topics[data.activeTopic][section] = value;
+
+            // Debounce save
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(saveData, 500);
+        }
+
+        // Add task manually
+        function addManualTask() {
+            if (!data.activeTopic) return;
+            const input = document.getElementById('manualTaskInput');
+            const text = input.value.trim();
+
+            if (!text) return;
+
+            const topic = data.topics[data.activeTopic];
+            if (!topic.todayTasks) topic.todayTasks = [];
+
+            topic.todayTasks.push({
+                text: text,
+                completed: false
+            });
+
+            input.value = '';
+            saveData();
+            renderMainContent();
+
+            // Focus back on input for quick adding
+            setTimeout(() => {
+                document.getElementById('manualTaskInput')?.focus();
+            }, 100);
+        }
+
+        // Complete task and add to history
+        function completeTask(index) {
+            if (!data.activeTopic) return;
+            const topic = data.topics[data.activeTopic];
+            const task = topic.todayTasks[index];
+
+            if (task) {
+                // Add to history with date
+                const now = new Date();
+                const dateStr = now.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+                topic.completedHistory.unshift({
+                    text: task.text,
+                    date: dateStr
+                });
+
+                // Keep only last 10
+                if (topic.completedHistory.length > 10) {
+                    topic.completedHistory = topic.completedHistory.slice(0, 10);
+                }
+
+                // Remove from active tasks
+                topic.todayTasks.splice(index, 1);
+
+                saveData();
+                renderMainContent();
+            }
+        }
+
+        // Toggle lock on sections
+        function toggleLock(section) {
+            if (!data.activeTopic) return;
+            const topic = data.topics[data.activeTopic];
+            if (section === 'today') {
+                topic.todayLocked = !topic.todayLocked;
+            } else if (section === 'next') {
+                topic.nextLocked = !topic.nextLocked;
+            }
+            saveData();
+            renderMainContent();
+        }
+
+        // Delete from history
+        function deleteFromHistory(index) {
+            if (!data.activeTopic) return;
+            const topic = data.topics[data.activeTopic];
+            topic.completedHistory.splice(index, 1);
+            saveData();
+            renderMainContent();
+        }
+
+        // Generate tasks with GPT
+        async function generateTasks(section) {
+            if (!settings.apiKey) {
+                alert('Inserisci la tua OpenAI API Key nelle impostazioni!');
+                openSettings();
+                return;
+            }
+
+            const textarea = document.getElementById('todayTextarea');
+            const text = textarea.value.trim();
+
+            if (!text) {
+                alert('Scrivi prima qualcosa nel campo di testo!');
+                return;
+            }
+
+            const btn = document.getElementById('gptBtnToday');
+            btn.disabled = true;
+            btn.classList.add('loading');
+            btn.innerHTML = `<span>Analizzando...</span>`;
+
+            try {
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${settings.apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: 'gpt-4o-mini',
+                        messages: [
+                            {
+                                role: 'system',
+                                content: `Sei un assistente che analizza testi e estrae task/attività da fare.
+Analizza il testo dell'utente e restituisci SOLO un array JSON di task.
+Ogni task deve essere una stringa breve e chiara (max 50 caratteri).
+Se il testo descrive una sola attività, restituisci un array con una sola task.
+Se ci sono più attività, separale in task distinte.
+Rispondi SOLO con l'array JSON, nient'altro. Esempio: ["Task 1", "Task 2", "Task 3"]`
+                            },
+                            {
+                                role: 'user',
+                                content: text
+                            }
+                        ],
+                        temperature: 0.3,
+                        max_tokens: 500
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error?.message || 'Errore API');
+                }
+
+                const result = await response.json();
+                const content = result.choices[0].message.content.trim();
+
+                // Parse JSON response
+                let tasks;
+                try {
+                    tasks = JSON.parse(content);
+                } catch (e) {
+                    // Try to extract array from response
+                    const match = content.match(/\[[\s\S]*\]/);
+                    if (match) {
+                        tasks = JSON.parse(match[0]);
+                    } else {
+                        throw new Error('Risposta non valida da GPT');
+                    }
+                }
+
+                if (Array.isArray(tasks) && tasks.length > 0) {
+                    // Add tasks to current topic
+                    const topic = data.topics[data.activeTopic];
+                    if (!topic.todayTasks) {
+                        topic.todayTasks = [];
+                    }
+
+                    tasks.forEach(taskText => {
+                        topic.todayTasks.push({
+                            text: taskText,
+                            completed: false
+                        });
+                    });
+
+                    saveData();
+                    renderMainContent();
+                    showSaveIndicator(`${tasks.length} task create!`);
+                }
+
+            } catch (error) {
+                console.error('GPT Error:', error);
+                alert(`Errore: ${error.message}`);
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('loading');
+                btn.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.8956zm16.0993 3.8558L12.6 8.3829l2.02-1.1638a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/>
+                    </svg>
+                    Genera Task
+                `;
+            }
+        }
+
+        // Enter key to add topic
+        document.getElementById('newTopicInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addTopic();
+        });
+
+        // Close modal on overlay click
+        document.getElementById('settingsModal').addEventListener('click', (e) => {
+            if (e.target.id === 'settingsModal') closeSettings();
+        });
+
+        // Initialize
+        loadFromLocalStorage();
+        renderTopicsList();
+        renderMainContent();
+        updateFileStatus();
+    </script>
+</body>
+</html>
