@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Progress Tracker</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://apis.google.com/js/api.js" async defer></script>
     <style>
         * {
             margin: 0;
@@ -569,6 +571,37 @@
             color: #4ecdc4;
         }
 
+        /* Google Drive button */
+        .gdrive-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: #4285f4;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .gdrive-btn:hover {
+            background: #3367d6;
+        }
+
+        .gdrive-btn.synced {
+            background: #34a853;
+        }
+
+        .gdrive-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .container {
@@ -597,6 +630,17 @@
             </div>
             <div class="topics-list" id="topicsList"></div>
             <div class="settings-section">
+                <button class="gdrive-btn" id="gdriveBtn" onclick="handleGoogleDrive()">
+                    <svg viewBox="0 0 87.3 78" fill="currentColor">
+                        <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                        <path d="M43.65 25L29.9 1.2c-1.35.8-2.5 1.9-3.3 3.3L1.2 52.35c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" fill="#00ac47"/>
+                        <path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75L86.1 57c.8-1.4 1.2-2.95 1.2-4.5H59.85l6.05 10.5z" fill="#ea4335"/>
+                        <path d="M43.65 25L57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                        <path d="M59.85 52.55h27.5c0-1.55-.4-3.1-1.2-4.5L73.6 26.6c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8z" fill="#2684fc"/>
+                        <path d="M29.9 1.2L16.15 25l27.5 47.65L57.4 49.05l-13.75-24z" fill="#ffba00"/>
+                    </svg>
+                    <span id="gdriveBtnText">Sync Google Drive</span>
+                </button>
                 <button class="settings-btn" onclick="openSettings()">Impostazioni</button>
                 <div class="file-status" id="fileStatus">localStorage</div>
             </div>
@@ -644,6 +688,13 @@
             fileHandle: null
         };
 
+        // Google Drive config
+        const GOOGLE_CLIENT_ID = '831869133898-27f50ei5t0dchu3bmdts1aqlvgg8f9hg.apps.googleusercontent.com';
+        const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/drive.file';
+        const DRIVE_FILE_NAME = 'progress-tracker-data.json';
+        let googleAccessToken = null;
+        let driveFileId = null;
+
         // Load from localStorage (fallback)
         function loadFromLocalStorage() {
             const saved = localStorage.getItem('progressTrackerData');
@@ -661,6 +712,12 @@
         async function saveData() {
             // Always save to localStorage as backup
             localStorage.setItem('progressTrackerData', JSON.stringify(data));
+
+            // Try to save to Google Drive if connected
+            if (googleAccessToken) {
+                saveToGoogleDrive();
+                return;
+            }
 
             // Try to save to file if we have a handle
             if (settings.fileHandle) {
@@ -1172,11 +1229,194 @@ Rispondi SOLO con l'array JSON, nient'altro. Esempio: ["Task 1", "Task 2", "Task
             if (e.target.id === 'settingsModal') closeSettings();
         });
 
+        // ========== Google Drive Functions ==========
+
+        // Handle Google Drive button click
+        function handleGoogleDrive() {
+            if (googleAccessToken) {
+                // Already logged in, sync now
+                syncToGoogleDrive();
+            } else {
+                // Login with Google
+                loginWithGoogle();
+            }
+        }
+
+        // Login with Google
+        function loginWithGoogle() {
+            const client = google.accounts.oauth2.initTokenClient({
+                client_id: GOOGLE_CLIENT_ID,
+                scope: GOOGLE_SCOPES,
+                callback: (response) => {
+                    if (response.access_token) {
+                        googleAccessToken = response.access_token;
+                        localStorage.setItem('gdriveToken', googleAccessToken);
+                        updateGdriveButton(true);
+                        // Try to load from Drive first
+                        loadFromGoogleDrive();
+                    }
+                },
+            });
+            client.requestAccessToken();
+        }
+
+        // Update Google Drive button state
+        function updateGdriveButton(connected) {
+            const btn = document.getElementById('gdriveBtn');
+            const text = document.getElementById('gdriveBtnText');
+            if (connected) {
+                btn.classList.add('synced');
+                text.textContent = 'Synced ✓';
+            } else {
+                btn.classList.remove('synced');
+                text.textContent = 'Sync Google Drive';
+            }
+        }
+
+        // Find or create the data file on Drive
+        async function findOrCreateDriveFile() {
+            // Search for existing file
+            const searchResponse = await fetch(
+                `https://www.googleapis.com/drive/v3/files?q=name='${DRIVE_FILE_NAME}' and trashed=false&spaces=drive`,
+                {
+                    headers: { 'Authorization': `Bearer ${googleAccessToken}` }
+                }
+            );
+            const searchResult = await searchResponse.json();
+
+            if (searchResult.files && searchResult.files.length > 0) {
+                driveFileId = searchResult.files[0].id;
+                return driveFileId;
+            }
+
+            // Create new file
+            const metadata = {
+                name: DRIVE_FILE_NAME,
+                mimeType: 'application/json'
+            };
+
+            const createResponse = await fetch(
+                'https://www.googleapis.com/drive/v3/files',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${googleAccessToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(metadata)
+                }
+            );
+            const createResult = await createResponse.json();
+            driveFileId = createResult.id;
+            return driveFileId;
+        }
+
+        // Load data from Google Drive
+        async function loadFromGoogleDrive() {
+            try {
+                const fileId = await findOrCreateDriveFile();
+
+                const response = await fetch(
+                    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+                    {
+                        headers: { 'Authorization': `Bearer ${googleAccessToken}` }
+                    }
+                );
+
+                if (response.ok) {
+                    const text = await response.text();
+                    if (text && text.trim()) {
+                        const driveData = JSON.parse(text);
+                        if (driveData.topics) {
+                            data = driveData;
+                            localStorage.setItem('progressTrackerData', JSON.stringify(data));
+                            renderTopicsList();
+                            renderMainContent();
+                            showSaveIndicator('Caricato da Google Drive!');
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('Error loading from Drive:', err);
+                // Token might be expired
+                if (err.message?.includes('401') || err.message?.includes('403')) {
+                    googleAccessToken = null;
+                    localStorage.removeItem('gdriveToken');
+                    updateGdriveButton(false);
+                }
+            }
+        }
+
+        // Save data to Google Drive
+        async function saveToGoogleDrive() {
+            if (!googleAccessToken) return;
+
+            try {
+                const fileId = await findOrCreateDriveFile();
+
+                await fetch(
+                    `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
+                    {
+                        method: 'PATCH',
+                        headers: {
+                            'Authorization': `Bearer ${googleAccessToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    }
+                );
+
+                showSaveIndicator('Salvato su Google Drive!');
+            } catch (err) {
+                console.error('Error saving to Drive:', err);
+                showSaveIndicator('Errore sync Drive', true);
+            }
+        }
+
+        // Sync to Google Drive (manual)
+        async function syncToGoogleDrive() {
+            const btn = document.getElementById('gdriveBtn');
+            const text = document.getElementById('gdriveBtnText');
+            text.textContent = 'Syncing...';
+            btn.disabled = true;
+
+            try {
+                await saveToGoogleDrive();
+            } finally {
+                btn.disabled = false;
+                text.textContent = 'Synced ✓';
+            }
+        }
+
+        // Check for saved Google token on load
+        function checkGoogleToken() {
+            const savedToken = localStorage.getItem('gdriveToken');
+            if (savedToken) {
+                googleAccessToken = savedToken;
+                updateGdriveButton(true);
+                // Verify token is still valid
+                fetch('https://www.googleapis.com/drive/v3/about?fields=user', {
+                    headers: { 'Authorization': `Bearer ${googleAccessToken}` }
+                }).then(r => {
+                    if (!r.ok) {
+                        googleAccessToken = null;
+                        localStorage.removeItem('gdriveToken');
+                        updateGdriveButton(false);
+                    }
+                }).catch(() => {
+                    googleAccessToken = null;
+                    localStorage.removeItem('gdriveToken');
+                    updateGdriveButton(false);
+                });
+            }
+        }
+
         // Initialize
         loadFromLocalStorage();
         renderTopicsList();
         renderMainContent();
         updateFileStatus();
+        checkGoogleToken();
     </script>
 </body>
 </html>
