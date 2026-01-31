@@ -1,0 +1,113 @@
+---
+layout: app-detail
+title: Producer Discovery
+tagline: Find underground electronic producers by mining SoundCloud social graphs
+category: Music & Audio
+status: deployed
+---
+
+<div class="section">
+  <h2>What It Does</h2>
+  <p>Discovers underground electronic music producers (2K-5K SoundCloud followers) by mining the social graph of artists you already know. Uses seed artists to find who they follow and who follows them, filtering to producers with tracks in your target follower range.</p>
+</div>
+
+<div class="section">
+  <h2>Problem It Solves</h2>
+  <p>Finding emerging color bass, future riddim, and experimental bass producers is tedious. Forums are outdated, playlists favor big names, and manual searching takes forever. This tool automates discovery by mining who your favorite producers follow, revealing underground artists you'd never find manually.</p>
+</div>
+
+<div class="section">
+  <h2>Key Features</h2>
+  <ul>
+    <li>Mines "Following" lists of seed artists</li>
+    <li>Finds followers who also produce (have tracks)</li>
+    <li>Filters by follower count (default 2K-5K)</li>
+    <li>Recursive/deep discovery mode (uses found producers as new seeds)</li>
+    <li>Discovery scoring (more connections = higher relevance)</li>
+    <li>SQLite cache for persistent results across runs</li>
+    <li>CSV export for sorting and filtering</li>
+    <li>No API keys required</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>Tech Stack</h2>
+  <div class="tech-stack">
+    <span class="tech-tag">Python 3.11+</span>
+    <span class="tech-tag">httpx</span>
+    <span class="tech-tag">Rich CLI</span>
+    <span class="tech-tag">SQLite</span>
+    <span class="tech-tag">SoundCloud Internal API</span>
+  </div>
+</div>
+
+<div class="section">
+  <h2>System Architecture</h2>
+  <div class="architecture-box">
+SEED ARTISTS (known producers)
+        ↓
+DISCOVERY LAYER
+├── Mine "Following" lists
+└── Mine followers who produce
+        ↓
+FILTER & RANK
+├── Filter: 2K-5K followers
+├── Exclude seeds (too famous)
+└── Score by connections
+        ↓
+CACHE (SQLite)
+├── Persistent storage
+└── Suggests seeds for next run
+        ↓
+CSV EXPORT</div>
+</div>
+
+<div class="section">
+  <h2>API Costs</h2>
+  <table class="competitors-table">
+    <tr>
+      <th>Service</th>
+      <th>Cost</th>
+    </tr>
+    <tr>
+      <td>SoundCloud Internal API</td>
+      <td>Free (no registration needed)</td>
+    </tr>
+  </table>
+</div>
+
+<div class="section">
+  <h2>Data Sources</h2>
+  <ul>
+    <li>SoundCloud user profiles</li>
+    <li>SoundCloud "following" lists</li>
+    <li>SoundCloud follower lists (filtered by track_count > 0)</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>Why I Built This</h2>
+  <p>I wanted to discover underground color bass and future riddim producers but got tired of manually digging through forums and playlists. The best way to find new artists is through who your favorite producers follow - they're all connected. This tool automates that discovery process and has already found me 100+ producers I'd never heard of.</p>
+</div>
+
+<div class="section">
+  <h2>Similar Tools</h2>
+  <table class="competitors-table">
+    <tr>
+      <th>Name</th>
+      <th>How Producer Discovery Differs</th>
+    </tr>
+    <tr>
+      <td>Manual forum scraping</td>
+      <td>Automated, finds connections you'd miss</td>
+    </tr>
+    <tr>
+      <td>Spotify recommendations</td>
+      <td>Focuses on underground (low follower count), SoundCloud-native</td>
+    </tr>
+    <tr>
+      <td>SoundCloud Discover</td>
+      <td>Uses social graph not algorithms, targets specific follower range</td>
+    </tr>
+  </table>
+</div>
