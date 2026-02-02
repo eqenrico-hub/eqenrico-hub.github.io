@@ -1,0 +1,183 @@
+---
+layout: app-detail
+title: Producer Network Bridge
+tagline: AI-powered platform matching music producers by SoundCloud network, genres, and style
+category: Music & Audio
+status: complete
+---
+
+<div class="section">
+  <h2>What It Does</h2>
+  <p>A platform where music producers sign up through a beautiful 7-step onboarding flow and get matched with similar producers based on genre, favorite artists, production style, and career stage. Think "Tinder for producer collaborations" with a sophisticated multi-factor matching algorithm.</p>
+</div>
+
+<div class="section">
+  <h2>Problem It Solves</h2>
+  <p>Finding collaborators in music production is hard. Producers often work in isolation without knowing other artists who share their sound, genre, or creative vision. This platform uses intelligent matching based on real SoundCloud network connections to connect producers who would actually vibe together.</p>
+</div>
+
+<div class="section">
+  <h2>Key Features</h2>
+  <ul>
+    <li>Beautiful 7-step animated onboarding with Framer Motion</li>
+    <li>SoundCloud profile validation and network import</li>
+    <li>Spotify artist search for favorite artists</li>
+    <li>Genre multi-select with custom genre support</li>
+    <li>DAW selection (Ableton, FL, Logic, Bitwig, etc.)</li>
+    <li>Production style sliders (Heavy/Melodic, Minimal/Layered)</li>
+    <li>Career stage matching (from beginner to pro)</li>
+    <li>Connection goals (Collabs, Feedback, Samples, Labels, Networking)</li>
+    <li>Match tiers: Perfect (90+), Great (75-89), Good (60-74)</li>
+    <li>Accept/decline match system with SoundCloud links</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>Matching Algorithm</h2>
+  <div class="architecture-box">
+MATCH SCORE = 100 points max
+
+35% GRAPH SIMILARITY (max 35 pts)
+├── Jaccard similarity on SoundCloud followings
+└── More shared connections = higher score
+
+30% CONTENT SIMILARITY (max 30 pts)
+├── Genre overlap: 5 pts each, max 15
+├── Artist overlap: 2 pts each, max 10
+└── DAW match: 5 pts
+
+20% COLLABORATIVE POTENTIAL (max 20 pts)
+├── Style compatibility: 10 pts
+└── Shared goals: 2 pts each, max 10
+
+15% CAREER ALIGNMENT (max 15 pts)
+├── Same tier: 15 pts
+├── Adjacent tier: 10 pts
+└── 2 tiers apart: 5 pts</div>
+</div>
+
+<div class="section">
+  <h2>Tech Stack</h2>
+  <div class="tech-stack">
+    <span class="tech-tag">Next.js 14</span>
+    <span class="tech-tag">TypeScript</span>
+    <span class="tech-tag">TailwindCSS</span>
+    <span class="tech-tag">shadcn/ui</span>
+    <span class="tech-tag">Framer Motion</span>
+    <span class="tech-tag">Zustand</span>
+    <span class="tech-tag">React Hook Form</span>
+    <span class="tech-tag">Zod</span>
+    <span class="tech-tag">Supabase</span>
+  </div>
+</div>
+
+<div class="section">
+  <h2>System Architecture</h2>
+  <div class="architecture-box">
+FRONTEND (Next.js 14)
+├── Landing Page
+├── Onboarding (7 steps)
+├── Dashboard
+└── Match Discovery
+
+        ↓
+
+BACKEND (API Routes)
+├── SoundCloud Validation
+├── Spotify Artist Search
+├── Profile CRUD
+└── Match Generation
+
+        ↓
+
+DATA LAYER
+├── Supabase (PostgreSQL)
+│   ├── Users
+│   ├── Profiles
+│   ├── Followings Cache
+│   └── Matches
+├── SoundCloud API
+└── Spotify Web API</div>
+</div>
+
+<div class="section">
+  <h2>API Costs</h2>
+  <table class="competitors-table">
+    <tr>
+      <th>Service</th>
+      <th>Cost</th>
+    </tr>
+    <tr>
+      <td>Supabase</td>
+      <td>Free (500MB DB, 50K users/month)</td>
+    </tr>
+    <tr>
+      <td>Vercel</td>
+      <td>Free tier</td>
+    </tr>
+    <tr>
+      <td>SoundCloud API</td>
+      <td>Free (unofficial)</td>
+    </tr>
+    <tr>
+      <td>Spotify Web API</td>
+      <td>Free (client credentials)</td>
+    </tr>
+    <tr>
+      <td><strong>Total</strong></td>
+      <td><strong>$0/month</strong></td>
+    </tr>
+  </table>
+</div>
+
+<div class="section">
+  <h2>Data Sources</h2>
+  <ul>
+    <li>SoundCloud user profiles and network (followers/following)</li>
+    <li>Spotify Web API for artist search and metadata</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>Onboarding Flow</h2>
+  <ol>
+    <li><strong>Welcome & Email</strong> - Email capture with feature overview</li>
+    <li><strong>SoundCloud Link</strong> - Validate and import profile</li>
+    <li><strong>Genre Selection</strong> - Multi-select pills with custom option</li>
+    <li><strong>Favorite Artists</strong> - Spotify autocomplete (3-10 artists)</li>
+    <li><strong>Production Style</strong> - DAW + style sliders</li>
+    <li><strong>Career Stage</strong> - Auto-suggest based on followers</li>
+    <li><strong>Connection Goals</strong> - What you're looking for + frequency</li>
+  </ol>
+</div>
+
+<div class="section">
+  <h2>Why I Built This</h2>
+  <p>The music production world is surprisingly isolated despite the internet connecting everyone. Producers often work alone, not knowing other artists who share their exact vibe. I wanted to create a platform that uses the real connections on SoundCloud (who follows who) combined with musical preferences to make genuinely useful matches - not just random suggestions, but producers you'd actually want to collaborate with.</p>
+</div>
+
+<div class="section">
+  <h2>Similar Tools</h2>
+  <table class="competitors-table">
+    <tr>
+      <th>Name</th>
+      <th>How Producer Network Bridge Differs</th>
+    </tr>
+    <tr>
+      <td>Discord servers</td>
+      <td>Intelligent matching vs. random connections</td>
+    </tr>
+    <tr>
+      <td>SoundCloud comments</td>
+      <td>Curated matches based on actual compatibility</td>
+    </tr>
+    <tr>
+      <td>Splice/BeatStars</td>
+      <td>Focuses on finding collaborators, not selling beats</td>
+    </tr>
+    <tr>
+      <td>Reddit collab posts</td>
+      <td>Multi-factor matching algorithm vs. posting and hoping</td>
+    </tr>
+  </table>
+</div>
