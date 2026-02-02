@@ -1,0 +1,21 @@
+---
+layout: default
+title: Notes
+---
+
+<h1>Notes</h1>
+
+<p class="notes-intro">Research notes, project summaries, and documentation.</p>
+
+<ul class="notes-list">
+  {% assign sorted_notes = site.notes | sort: "order" %}
+  {% for note in sorted_notes %}
+  <li>
+    <a href="{{ note.url | relative_url }}">
+      <h3>{{ note.title }}</h3>
+      {% if note.subtitle %}<p class="subtitle" style="color: #888; font-style: italic; margin-bottom: 0.5rem; font-size: 0.9rem;">{{ note.subtitle }}</p>{% endif %}
+      <p class="excerpt">{{ note.excerpt }}</p>
+    </a>
+  </li>
+  {% endfor %}
+</ul>

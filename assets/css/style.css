@@ -222,6 +222,109 @@ a {
   color: var(--text);
 }
 
+/* Notes list - same as testi */
+.notes-list {
+  list-style: none;
+}
+
+.notes-list li {
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.notes-list li:last-child {
+  border-bottom: none;
+}
+
+.notes-list a {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.notes-list h3 {
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+  transition: color 0.2s;
+}
+
+.notes-list a:hover h3 {
+  color: var(--text-light);
+}
+
+.notes-list .excerpt {
+  color: var(--text-light);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.notes-intro {
+  color: var(--text-light);
+  font-style: italic;
+  margin-bottom: 2rem;
+}
+
+/* Note article */
+.note header {
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.note .subtitle {
+  color: var(--text-light);
+  font-style: italic;
+  margin-top: 0.5rem;
+}
+
+.note .note-date {
+  color: var(--text-light);
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.note .content {
+  text-align: left;
+}
+
+.note .content h2 {
+  font-size: 1.3rem;
+  margin: 2rem 0 1rem;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.3rem;
+}
+
+.note .content h3 {
+  font-size: 1.1rem;
+  margin: 1.5rem 0 0.75rem;
+}
+
+.note .content ul {
+  margin-left: 1.5rem;
+  margin-bottom: 1.2rem;
+}
+
+.note .content li {
+  margin-bottom: 0.5rem;
+}
+
+.note-footer {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #eee;
+}
+
+.note-footer a {
+  color: var(--text-light);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.note-footer a:hover {
+  color: var(--text);
+}
+
 /* App section */
 .app-placeholder {
   text-align: center;

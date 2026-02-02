@@ -21,6 +21,9 @@ collections:
   testi-en:
     output: true
     permalink: /en/texts/:name/
+  notes:
+    output: true
+    permalink: /notes/:name/
 
 # Defaults
 defaults:
@@ -39,4 +42,10 @@ defaults:
   - scope:
       path: "en"
     values:
+      lang: "en"
+  - scope:
+      path: ""
+      type: "notes"
+    values:
+      layout: "note"
       lang: "en"

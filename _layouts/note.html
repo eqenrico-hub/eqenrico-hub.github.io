@@ -1,0 +1,18 @@
+---
+layout: default
+---
+<article class="note">
+  <header>
+    <h1>{{ page.title }}</h1>
+    {% if page.subtitle %}<p class="subtitle">{{ page.subtitle }}</p>{% endif %}
+    {% if page.date %}<p class="note-date">{{ page.date | date: "%B %d, %Y" }}</p>{% endif %}
+  </header>
+
+  <div class="content">
+    {{ content }}
+  </div>
+
+  <footer class="note-footer">
+    <a href="{{ '/notes/' | relative_url }}">&larr; All Notes</a>
+  </footer>
+</article>

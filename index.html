@@ -16,6 +16,22 @@ title: Home
 </div>
 
 <div class="section">
+  <h2>Notes</h2>
+  <ul class="notes-list">
+    {% assign sorted_notes = site.notes | sort: "order" %}
+    {% for note in sorted_notes limit:3 %}
+    <li>
+      <a href="{{ note.url | relative_url }}">
+        <h3>{{ note.title }}</h3>
+        <p class="excerpt">{{ note.excerpt }}</p>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  <p><a href="{{ '/notes/' | relative_url }}">All Notes &rarr;</a></p>
+</div>
+
+<div class="section">
   <h2>TO DO</h2>
   <div class="todo-preview">
     <p>Dashboard per tracciare il progresso su progetti e attività</p>
