@@ -22,11 +22,14 @@ status: deployed
     <li>Mines "Following" lists of seed artists</li>
     <li>Finds followers who also produce (have tracks)</li>
     <li>Filters by follower count (default 2K-5K)</li>
+    <li><strong>STRICT Genre Filtering</strong> - Only includes artists with explicit riddim/dubstep/color bass tags</li>
+    <li><strong>Entity Detection</strong> - Automatically excludes labels, magazines, radio shows, bands</li>
+    <li><strong>Weighted Track Analysis</strong> - Analyzes up to 20 tracks per artist for genre accuracy</li>
+    <li>Confidence scoring (verified/high/medium/low based on network connections)</li>
     <li>Recursive/deep discovery mode (uses found producers as new seeds)</li>
-    <li>Discovery scoring (more connections = higher relevance)</li>
     <li>SQLite cache for persistent results across runs</li>
+    <li>Gmail integration for automated outreach</li>
     <li>CSV export for sorting and filtering</li>
-    <li>No API keys required</li>
   </ul>
 </div>
 
@@ -38,6 +41,7 @@ status: deployed
     <span class="tech-tag">Rich CLI</span>
     <span class="tech-tag">SQLite</span>
     <span class="tech-tag">SoundCloud Internal API</span>
+    <span class="tech-tag">Gmail API</span>
   </div>
 </div>
 
@@ -47,19 +51,25 @@ status: deployed
 SEED ARTISTS (known producers)
         ↓
 DISCOVERY LAYER
-├── Mine "Following" lists
-└── Mine followers who produce
+├── Mine "Following" lists (200 max)
+└── Fetch user profiles + tracks
         ↓
-FILTER & RANK
-├── Filter: 2K-5K followers
-├── Exclude seeds (too famous)
-└── Score by connections
+MULTI-STAGE FILTERING
+├── Entity filter: Reject labels, magazines, radio, bands
+├── Follower filter: 2K-5K range only
+├── Track filter: Must have 2+ original tracks
+├── Genre filter: Analyze 20 tracks for explicit tags
+│   ├── TARGET: riddim, dubstep, color bass, future bass
+│   └── EXCLUDE: techno, house, DnB, trance, etc.
+└── Weighted scoring: genre field > tags
         ↓
-CACHE (SQLite)
-├── Persistent storage
-└── Suggests seeds for next run
+CONFIDENCE SCORING
+├── verified: Explicit genre tag found
+├── high: 3+ verified connections
+├── medium: 2 verified connections
+└── low: 0-1 (excluded from emails)
         ↓
-CSV EXPORT</div>
+CACHE (SQLite) + CSV EXPORT + GMAIL OUTREACH</div>
 </div>
 
 <div class="section">
@@ -72,6 +82,14 @@ CSV EXPORT</div>
     <tr>
       <td>SoundCloud Internal API</td>
       <td>Free (no registration needed)</td>
+    </tr>
+    <tr>
+      <td>Gmail API</td>
+      <td>Free (OAuth, personal account)</td>
+    </tr>
+    <tr>
+      <td><strong>Total</strong></td>
+      <td><strong>$0/month</strong></td>
     </tr>
   </table>
 </div>
