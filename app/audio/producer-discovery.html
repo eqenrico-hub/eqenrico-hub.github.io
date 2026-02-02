@@ -19,6 +19,7 @@ status: deployed
 <div class="section">
   <h2>Key Features</h2>
   <ul>
+    <li><strong>SMART Seed Selection</strong> - AI picks best seeds based on verified genre, productivity, and diversity</li>
     <li>Mines "Following" lists of seed artists</li>
     <li>Finds followers who also produce (have tracks)</li>
     <li>Filters by follower count (default 2K-5K)</li>
@@ -26,7 +27,7 @@ status: deployed
     <li><strong>Entity Detection</strong> - Automatically excludes labels, magazines, radio shows, bands</li>
     <li><strong>Weighted Track Analysis</strong> - Analyzes up to 20 tracks per artist for genre accuracy</li>
     <li>Confidence scoring (verified/high/medium/low based on network connections)</li>
-    <li>Recursive/deep discovery mode (uses found producers as new seeds)</li>
+    <li>Tracks seed productivity (how many new producers each seed discovers)</li>
     <li>SQLite cache for persistent results across runs</li>
     <li>Gmail integration for automated outreach</li>
     <li>CSV export for sorting and filtering</li>
@@ -48,7 +49,11 @@ status: deployed
 <div class="section">
   <h2>System Architecture</h2>
   <div class="architecture-box">
-SEED ARTISTS (known producers)
+🧠 SMART SEED SELECTION (AI-powered)
+├── Score by: verified genre, productivity, freshness
+├── Prioritize: riddim/dubstep/color bass verified artists
+├── Track: discoveries_made per seed
+└── Diversify: avoid same-genre clustering
         ↓
 DISCOVERY LAYER
 ├── Mine "Following" lists (200 max)
@@ -63,11 +68,10 @@ MULTI-STAGE FILTERING
 │   └── EXCLUDE: techno, house, DnB, trance, etc.
 └── Weighted scoring: genre field > tags
         ↓
-CONFIDENCE SCORING
-├── verified: Explicit genre tag found
-├── high: 3+ verified connections
-├── medium: 2 verified connections
-└── low: 0-1 (excluded from emails)
+CONFIDENCE SCORING + LEARNING
+├── verified/high/medium/low confidence
+├── Track which seeds produced results
+└── Improve seed selection over time
         ↓
 CACHE (SQLite) + CSV EXPORT + GMAIL OUTREACH</div>
 </div>
