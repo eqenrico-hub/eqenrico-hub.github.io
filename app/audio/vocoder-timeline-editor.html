@@ -1,0 +1,116 @@
+---
+layout: app-detail
+title: Vocoder Timeline Editor
+tagline: Visual timeline tool for designing audio/visual experiences with precise timing
+category: Music & Audio
+status: deployed
+---
+
+<div class="section">
+  <h2>What It Does</h2>
+  <p>A visual timeline editor for arranging audio clips and visual events with precise timing. Drag clips to position them, adjust fades with handles, preview playback in real-time, and export timing code for implementation. Built specifically for designing the Band Ritual vocoder demo experience.</p>
+</div>
+
+<div class="section">
+  <h2>Problem It Solves</h2>
+  <p>When building complex audio/visual experiences with narration, music, and animated elements, it's nearly impossible to describe exact timings in words. This tool lets you visually arrange everything on a timeline, hear how it sounds, see when visual elements appear, and then export the precise timing data for implementation.</p>
+</div>
+
+<div class="section">
+  <h2>Key Features</h2>
+  <ul>
+    <li><strong>Multi-track Timeline</strong> - Separate tracks for vocals, synth, vocoder, visual events, and transitions</li>
+    <li><strong>Waveform Display</strong> - See audio waveforms extracted from actual files</li>
+    <li><strong>Draggable Clips</strong> - Move and resize audio events by dragging</li>
+    <li><strong>Fade Handles</strong> - Drag cyan dots to adjust fade in/out times visually</li>
+    <li><strong>Real-time Preview</strong> - Play timeline with actual audio and see playhead position</li>
+    <li><strong>Visual Preview Panel</strong> - See VOICE/SYNTH boxes animate as they would in the final experience</li>
+    <li><strong>Morph Indicator</strong> - Shows DRY to WET morph progress percentage</li>
+    <li><strong>Undo/Redo</strong> - Cmd+Z / Cmd+Shift+Z with 20-step history</li>
+    <li><strong>Marquee Selection</strong> - Select multiple clips with rectangle drag</li>
+    <li><strong>Drag & Drop Audio</strong> - Add new audio files by dropping onto tracks</li>
+    <li><strong>Export Timing Code</strong> - Copy structured timing data for Claude to implement</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>Tech Stack</h2>
+  <div class="tech-stack">
+    <span class="tech-tag">HTML5</span>
+    <span class="tech-tag">CSS3</span>
+    <span class="tech-tag">Vanilla JavaScript</span>
+    <span class="tech-tag">Web Audio API</span>
+    <span class="tech-tag">Canvas API</span>
+  </div>
+</div>
+
+<div class="section">
+  <h2>How It Works</h2>
+  <div class="architecture-box">
+AUDIO LOADING
+├── Fetches WAV files via HTTP
+├── Decodes to AudioBuffer
+└── Extracts waveform data for visualization
+        ↓
+VISUAL TIMELINE
+├── Canvas-drawn waveforms
+├── CSS-positioned event blocks
+├── Draggable fade handles
+└── Red playhead with seek
+        ↓
+PLAYBACK ENGINE
+├── Web Audio API scheduling
+├── BufferSource per audio event
+├── GainNode for volume/fades
+└── requestAnimationFrame for UI sync
+        ↓
+EXPORT
+├── Structured timing object
+├── Absolute start/end times
+└── Fade durations for each clip</div>
+</div>
+
+<div class="section">
+  <h2>API Costs</h2>
+  <table class="competitors-table">
+    <tr>
+      <th>Service</th>
+      <th>Cost</th>
+    </tr>
+    <tr>
+      <td>All functionality</td>
+      <td>Free (runs entirely in browser)</td>
+    </tr>
+    <tr>
+      <td><strong>Total</strong></td>
+      <td><strong>$0/month</strong></td>
+    </tr>
+  </table>
+</div>
+
+<div class="section">
+  <h2>Why I Built This</h2>
+  <p>I was building a vocoder demo experience for the Band Ritual website with 4 vocal narration clips, synth audio, animated boxes, and a dry-to-wet morph transition. Trying to describe exact timings ("the synth should fade in 0.96 seconds starting at 8.80s") was tedious and error-prone. This tool lets me visually arrange everything, hear it play back, and export the exact timings for implementation.</p>
+</div>
+
+<div class="section">
+  <h2>Similar Tools</h2>
+  <table class="competitors-table">
+    <tr>
+      <th>Name</th>
+      <th>How This Differs</th>
+    </tr>
+    <tr>
+      <td>DAWs (Ableton, Logic)</td>
+      <td>Lightweight, browser-based, exports timing code not audio</td>
+    </tr>
+    <tr>
+      <td>Video editors</td>
+      <td>Focused on audio timing, visual preview for web animations</td>
+    </tr>
+    <tr>
+      <td>Animation tools (After Effects)</td>
+      <td>Simple, no learning curve, exports structured code</td>
+    </tr>
+  </table>
+</div>
