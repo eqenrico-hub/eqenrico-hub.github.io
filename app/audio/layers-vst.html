@@ -1,0 +1,102 @@
+---
+layout: app-detail
+title: LAYERS VST
+tagline: Multi-sample layering instrument with priority mixing and spectral zones
+category: Music & Audio
+status: in-development
+---
+
+<div class="section">
+  <h2>What It Does</h2>
+  <p>LAYERS is a VST3/AU multi-sample instrument plugin by Ritual Audio Labs. Users stack audio samples as colored visual layers, draw a target output curve, and the engine automatically mixes them to match that curve using a dual-priority system: layer priority (volume/headroom order) and frequency priority (spectral ownership).</p>
+</div>
+
+<div class="section">
+  <h2>Problem It Solves</h2>
+  <p>Multi-sample mixing has always been chaos — layers competing for headroom, frequencies clashing, and no structure to the combined output. Traditional sample layering requires manual volume automation, EQ carving, and constant A/B testing. LAYERS solves this by letting producers draw the desired output shape and having the engine intelligently distribute each sample's contribution.</p>
+</div>
+
+<div class="section">
+  <h2>Key Features</h2>
+  <ul>
+    <li><strong>Layer Stack:</strong> Drag and drop up to 5 audio samples as colored visual layers with 3D perspective view</li>
+    <li><strong>Output Curve:</strong> Draw a golden target amplitude envelope — the combined output matches this shape exactly</li>
+    <li><strong>Priority Mix:</strong> Highest priority layer plays naturally, lower layers complement to fill the curve</li>
+    <li><strong>Frequency Zones:</strong> Each layer owns a frequency band (bass, lows, mids, highs, air) for spectral clarity</li>
+    <li><strong>Layer Editor:</strong> Ableton-style clip editor with waveform, warp markers, pitch, loop points, and per-layer EQ</li>
+    <li><strong>Per-Layer EQ:</strong> Parametric EQ with spectrogram visualization and draggable nodes</li>
+    <li><strong>Match Gauge:</strong> Real-time percentage showing how closely output follows the target curve</li>
+    <li><strong>Contribution Meters:</strong> Per-layer horizontal bars showing each layer's contribution to the mix</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>Tech Stack</h2>
+  <div class="tech-stack">
+    <span class="tech-tag">C++</span>
+    <span class="tech-tag">JUCE Framework</span>
+    <span class="tech-tag">VST3 SDK</span>
+    <span class="tech-tag">CMake</span>
+    <span class="tech-tag">HTML5 Canvas</span>
+    <span class="tech-tag">GSAP</span>
+    <span class="tech-tag">Three.js</span>
+    <span class="tech-tag">WebGL GLSL</span>
+  </div>
+</div>
+
+<div class="section">
+  <h2>System Architecture</h2>
+  <div class="architecture-box">
+Audio Samples (drag & drop)
+    ↓
+Layer Stack (up to 5 layers, colored, reorderable)
+    ↓
+Priority Engine
+    ├── Layer Priority (volume/headroom order)
+    └── Frequency Priority (spectral ownership zones)
+    ↓
+Output Curve Matching (target envelope → auto-mix)
+    ↓
+Per-Layer Processing
+    ├── Waveform Editor (warp, pitch, loop)
+    └── Parametric EQ (per-layer sculpting)
+    ↓
+Master Output (match gauge, contribution meters)</div>
+</div>
+
+<div class="section">
+  <h2>Promotional Materials</h2>
+  <ul>
+    <li><strong>GUI Mockup:</strong> 1440x968 full interface design with all panels</li>
+    <li><strong>Demo Reel:</strong> 1080x1920 animated 65-second feature walkthrough (8 features)</li>
+    <li><strong>Landing Page:</strong> 1920x1080 cinematic scroll with GLSL shader, particles, 3D GUI</li>
+    <li><strong>Vertical Reels:</strong> 1080x1920 social media version of landing page</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>Why I Built This</h2>
+  <p>As a producer, layering samples is fundamental but the mixing process is tedious — constantly adjusting volumes, carving EQ, and hoping the layers complement each other. LAYERS flips the workflow: instead of tweaking individual layers to hope for a good output, you define the output you want and let the engine figure out how each layer contributes. The priority system ensures your most important layer (e.g., a kick's low-end) never gets compromised.</p>
+</div>
+
+<div class="section">
+  <h2>Similar Tools</h2>
+  <table class="competitors-table">
+    <tr>
+      <th>Name</th>
+      <th>How LAYERS Differs</th>
+    </tr>
+    <tr>
+      <td>Kontakt (Native Instruments)</td>
+      <td>LAYERS focuses on automatic mixing to a target curve, not scripted playback</td>
+    </tr>
+    <tr>
+      <td>Serum (Xfer)</td>
+      <td>LAYERS is sample-based with priority mixing, not wavetable synthesis</td>
+    </tr>
+    <tr>
+      <td>Omnisphere (Spectrasonics)</td>
+      <td>LAYERS uses visual curve-matching rather than traditional layering</td>
+    </tr>
+  </table>
+</div>
