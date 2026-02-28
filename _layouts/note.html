@@ -12,6 +12,22 @@ layout: default
     {{ content }}
   </div>
 
+  {% if page.attachments %}
+  <div class="attachments" style="margin-top: 2rem; padding: 1.5rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #e0e0e0;">
+    <h3 style="margin-top: 0;">Attachments</h3>
+    <ul style="list-style: none; padding: 0;">
+      {% for att in page.attachments %}
+      <li style="margin-bottom: 0.8rem;">
+        <a href="{{ att.file | relative_url }}" target="_blank" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #fff; border: 1px solid #ddd; border-radius: 4px; color: #333; transition: border-color 0.2s;">
+          <span style="font-size: 1.2rem;">&#128196;</span>
+          <span>{{ att.label }}</span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
   <footer class="note-footer">
     <a href="{{ '/notes/' | relative_url }}">&larr; All Notes</a>
   </footer>
