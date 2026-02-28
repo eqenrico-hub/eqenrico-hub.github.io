@@ -4,14 +4,35 @@ title: Context
 ---
 
 <h1>Context</h1>
-<p>File e documenti di contesto sui miei progetti e attivita correnti. Utili per chi vuole capire a fondo cosa sto facendo, o per dare contesto a un AI.</p>
+<p>Documenti e file di contesto sui miei progetti e attivita correnti. Utili per capire a fondo cosa sto facendo — o per dare contesto a un AI.</p>
 
-<div class="context-list">
-  {% for file in site.static_files %}
-    {% if file.path contains '/assets/context/' %}
-      <div class="context-item">
-        <a href="{{ file.path | relative_url }}" target="_blank">{{ file.name }}</a>
-      </div>
-    {% endif %}
-  {% endfor %}
-</div>
+<h2>PhD Progress Reports</h2>
+<p>Dottorato XXXIX Ciclo — Security, Risk and Vulnerability (Management and Security), Universita di Genova. Ora al terzo anno.</p>
+<ul>
+  <li><a href="/assets/context/PhD_Progress_Report_Year1_Oct2024.pdf" target="_blank">Progress Report — Anno 1</a> (Ottobre 2024)</li>
+  <li><a href="/assets/context/PhD_Progress_Report_Year2_Jun2025.pdf" target="_blank">Report Attivita PhD — Anno 1+2</a> (Giugno 2025) — Corsi, ricerca urban dashboards, attivita ETT/RAISE, tutoring Smart City</li>
+  <li><em>Anno 3 — in corso</em></li>
+</ul>
+
+<h2>INNOVIRIS Proposal</h2>
+<p>Proposta di co-ricerca per INNOVIRIS (Bruxelles) sul tema FOI Responsiveness.</p>
+<ul>
+  <li><a href="/assets/context/FOI-RESPOND_Project_Outline_v2.docx">FOI-RESPOND Project Outline v2</a> — Proposta progetto di ricerca sulla reattivita delle PA alle richieste FOI in Belgio</li>
+</ul>
+
+<h2>Report Attivita — Mobilita CEPAP/ULB (Ott 2025 - Feb 2026)</h2>
+<p>Report del periodo di ricerca all'estero presso il CEPAP, Universite libre de Bruxelles.</p>
+<ul>
+  <li><a href="/assets/context/Report_Attivita_Quaglia_Feb2026.pdf" target="_blank">Report Attivita — Febbraio 2026</a> — Analisi FOI belga, dashboard interattive, conferenze internazionali, pubblicazione Springer</li>
+</ul>
+
+<h3>Allegati al Report</h3>
+<ul>
+  <li><a href="/assets/context/Allegato_1_Report_Risultati_FOI.pdf" target="_blank">Allegato 1</a> — Report risultati analisi FOI (topic modeling, sentiment analysis, modelli statistici su 4.265 richieste)</li>
+  <li><a href="/assets/context/Allegato_2_Dashboards_example_screenshots.pdf" target="_blank">Allegato 2</a> — Screenshot prototipi dashboard interattive</li>
+  <li><a href="/assets/context/Allegato_3_Abstract_IPPA.pdf" target="_blank">Allegato 3</a> — Abstract IPPA Ottawa: "Selective Transparency at Scale"</li>
+  <li><a href="/assets/context/Allegato_4_Abstract_ENPA.pdf" target="_blank">Allegato 4</a> — Abstract ENPA Bucarest: "Is Transparency Neutral?"</li>
+  <li><a href="/assets/context/Allegato_5_Abstract_GCTR1.pdf" target="_blank">Allegato 5</a> — Abstract GCTR Ottawa: "What Drives FOI Responsiveness under Pressure?"</li>
+  <li><a href="/assets/context/Allegato_6_Abstract_GCTR2.pdf" target="_blank">Allegato 6</a> — Abstract GCTR Ottawa: "Towards Gender-Sensitive Transparency Policymaking"</li>
+  <li><a href="/assets/context/Allegato_7_Pubblicazione_Springer_ItAIS.pdf" target="_blank">Allegato 7</a> — Pubblicazione Springer (ItAIS 2025): "Effective urban dashboards for local public administration"</li>
+</ul>
