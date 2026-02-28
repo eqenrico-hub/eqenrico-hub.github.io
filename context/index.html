@@ -1,0 +1,17 @@
+---
+layout: default
+title: Context
+---
+
+<h1>Context</h1>
+<p>File e documenti di contesto sui miei progetti e attivita correnti. Utili per chi vuole capire a fondo cosa sto facendo, o per dare contesto a un AI.</p>
+
+<div class="context-list">
+  {% for file in site.static_files %}
+    {% if file.path contains '/assets/context/' %}
+      <div class="context-item">
+        <a href="{{ file.path | relative_url }}" target="_blank">{{ file.name }}</a>
+      </div>
+    {% endif %}
+  {% endfor %}
+</div>
