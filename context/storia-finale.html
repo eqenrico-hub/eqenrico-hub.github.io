@@ -1304,8 +1304,8 @@
       <rect x="150" y="300" width="300" height="12" rx="2" fill="#d4c9b8" stroke="#1a1a1a" stroke-width="1.5" opacity="0.5"/>
 
       <!-- Dameri at desk, confused/panicking -->
-      <!-- Body (seated, leaning forward) -->
-      <path d="M250,300 L238,230 Q245,205 265,200 Q282,205 288,230 L276,300" fill="#e8e4dc" stroke="#1a1a1a" stroke-width="2"/>
+      <!-- Body (seated) -->
+      <rect x="243" y="205" width="40" height="95" rx="8" fill="#e8e4dc" stroke="#1a1a1a" stroke-width="2"/>
       <!-- Neck & Head -->
       <rect x="258" y="188" width="10" height="10" fill="white" stroke="#1a1a1a" stroke-width="1.5"/>
       <ellipse cx="263" cy="168" rx="23" ry="27" fill="white" stroke="#1a1a1a" stroke-width="2"/>
@@ -1333,7 +1333,7 @@
 
       <!-- Enrico walking toward door, carrying bag, CALM -->
       <!-- Body (walking right) -->
-      <path d="M520,380 L508,300 Q515,275 535,270 Q552,275 558,300 L548,360" fill="white" stroke="#1a1a1a" stroke-width="2"/>
+      <rect x="513" y="275" width="40" height="95" rx="8" fill="white" stroke="#1a1a1a" stroke-width="2"/>
       <!-- Legs walking -->
       <path d="M518,360 L508,400" stroke="#1a1a1a" stroke-width="2"/>
       <path d="M545,360 L560,398" stroke="#1a1a1a" stroke-width="2"/>
@@ -1388,16 +1388,12 @@
   <div class="scena">
     <svg viewBox="0 0 800 520" xmlns="http://www.w3.org/2000/svg">
       <!-- Split scene: phone call - Bruzzone on left, Enrico on right -->
-      <!-- Zigzag line representing phone connection -->
-      <path d="M380,100 L390,120 L370,140 L390,160 L370,180 L390,200 L370,220 L390,240 L380,260" stroke="#999" stroke-width="1.5" fill="none" stroke-dasharray="none"/>
-      <!-- Phone icon at top -->
-      <rect x="372" y="80" width="16" height="25" rx="4" fill="#333" stroke="#1a1a1a" stroke-width="1"/>
-      <rect x="375" y="84" width="10" height="14" rx="1" fill="#4a90d9"/>
-      <text x="380" y="118" text-anchor="middle" font-size="8" fill="#999" font-family="monospace">CHIAMATA</text>
+      <!-- Vertical divider (subtle dashed line) -->
+      <line x1="400" y1="30" x2="400" y2="410" stroke="#ddd" stroke-width="1" stroke-dasharray="6,4"/>
 
       <!-- LEFT SIDE: Prof. Bruzzone -->
       <!-- Body (seated, authoritative) -->
-      <path d="M200,400 L185,310 Q192,280 215,275 Q235,280 242,310 L228,400" fill="#1a1a1a" stroke="#1a1a1a" stroke-width="2"/>
+      <rect x="193" y="280" width="44" height="120" rx="8" fill="#1a1a1a" stroke="#1a1a1a" stroke-width="2"/>
       <!-- White collar/necklace visible -->
       <line x1="205" y1="288" x2="225" y2="288" stroke="#ccc" stroke-width="1"/>
       <!-- Thin chain necklace -->
@@ -1405,11 +1401,11 @@
       <!-- Neck & Head -->
       <rect x="208" y="263" width="10" height="12" fill="white" stroke="#1a1a1a" stroke-width="1.5"/>
       <ellipse cx="213" cy="240" rx="25" ry="30" fill="white" stroke="#1a1a1a" stroke-width="2"/>
-      <!-- Long dark brown hair (shoulder length, straight) -->
-      <path d="M188,245 Q186,215 198,200 Q208,192 218,195 Q228,192 238,205 Q244,218 242,248" fill="#4a2a1a" stroke="#1a1a1a" stroke-width="1.5"/>
-      <!-- Hair falling on shoulders -->
-      <path d="M188,245 Q185,270 188,290" fill="#4a2a1a" stroke="#4a2a1a" stroke-width="6"/>
-      <path d="M242,248 Q245,270 242,290" fill="#4a2a1a" stroke="#4a2a1a" stroke-width="6"/>
+      <!-- Long dark brown hair (shoulder length, straight) - above glasses -->
+      <path d="M188,225 Q186,210 198,200 Q208,192 218,195 Q228,192 238,205 Q244,213 242,225" fill="#4a2a1a" stroke="#1a1a1a" stroke-width="1.5"/>
+      <!-- Hair falling on sides of face (behind head, not over eyes) -->
+      <path d="M188,225 L185,290" fill="none" stroke="#4a2a1a" stroke-width="6"/>
+      <path d="M242,225 L245,290" fill="none" stroke="#4a2a1a" stroke-width="6"/>
       <!-- DARK rectangular glasses (not red - dark frames) -->
       <rect x="199" y="233" width="14" height="10" rx="2" fill="none" stroke="#333" stroke-width="2.5"/>
       <rect x="217" y="233" width="14" height="10" rx="2" fill="none" stroke="#333" stroke-width="2.5"/>
@@ -1440,7 +1436,7 @@
 
       <!-- RIGHT SIDE: Enrico -->
       <!-- Body -->
-      <path d="M580,400 L565,310 Q572,280 595,275 Q612,280 620,310 L605,400" fill="white" stroke="#1a1a1a" stroke-width="2"/>
+      <rect x="573" y="280" width="44" height="120" rx="8" fill="white" stroke="#1a1a1a" stroke-width="2"/>
       <!-- Neck & Head -->
       <rect x="585" y="263" width="10" height="12" fill="white" stroke="#1a1a1a" stroke-width="1.5"/>
       <ellipse cx="590" cy="240" rx="24" ry="28" fill="white" stroke="#1a1a1a" stroke-width="2"/>
