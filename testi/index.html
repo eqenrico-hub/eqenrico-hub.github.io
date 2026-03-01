@@ -3,7 +3,7 @@ layout: default
 title: Testi
 ---
 
-<h1>Testi</h1>
+<h1>Testi <span style="font-weight: 300; opacity: 0.5; font-size: 0.6em;">{{ site.testi.size }}</span></h1>
 
 <ul class="testi-list">
   {% assign sorted_testi = site.testi | sort: "order" %}
