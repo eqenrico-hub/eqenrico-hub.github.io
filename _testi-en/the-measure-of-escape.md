@@ -113,7 +113,7 @@ The global entertainment and media industry is worth **$2.9 trillion** (2024), w
 
 For context: before the 20th century, the entertainment industry did not exist as an economic sector. Entertainment was local, artisanal, non-commercial. The trajectory from zero to $2.9 trillion in roughly one hundred years is one of the most rapid expansions of any human activity in history.
 
-These numbers are not merely an indicator of technological capacity. They are an indicator of *need*. No one spends $2.9 trillion a year on something they do not need. The distraction industry has grown because demand has grown. And demand has grown because — if the hypothesis holds — collective consciousness has deepened.
+These numbers are impressive. But the question is: what exactly do they measure? The need to flee from consciousness — or the capacity of an industry to capture our attention?
 
 ## The serious objection
 
@@ -139,34 +139,40 @@ A third objection is subtler. The line between distraction, culture, and sublima
 
 It reconciles like this: distraction is not the only response to consciousness, but it is the *statistical* response. Meditation is the exception, not the rule. For every Zen monk there are ten million people scrolling Instagram. The fact that some individuals choose to face consciousness head-on does not invalidate the fact that the vast majority of the species prefers not to. And the statistics show that this preference is growing.
 
-## The pattern
+## The thermometer and the factory
 
-Despite the objections — and they are serious objections — the pattern holds.
+But there is an objection more radical than the three above, and it must be faced.
 
-Let us summarize.
+Until the digital age, distraction was scarce. You had to seek it: go to the Colosseum, find a book, reach a theater. Supply was limited by physical reality. Under those conditions, distraction consumption roughly reflected demand — and demand, plausibly, reflected need.
 
-Animals have limited distraction capacity, proportional to their limited consciousness (Burghardt, Wemelsfelder). The DMN exists in mammals but is enormously more developed in humans, especially the mPFC-PCC axis responsible for existential reflection (Xu et al., 2022). Distraction suppresses the DMN (Raichle, 2001) — it is, literally, the neurobiological mechanism for shutting off self-awareness.
+Digital technology broke this proportionality. Infinite scroll, autoplay, notifications, recommendation algorithms — these do not respond to an existential need. They are attention engineering, designed to maximize screen time. Deirdre Barrett, evolutionary psychologist, in *Supernormal Stimuli* (2010), explains the mechanism: just as junk food exploits the evolved taste for sugar far beyond natural levels, digital distraction exploits evolved attention mechanisms far beyond any real need. A teenager spending 9 hours on TikTok is not necessarily more conscious than a medieval peasant. They have access to a stimulus more powerful than anything evolution prepared them for.
 
-Each stage of cognitive evolution (Donald, 1991) brought new forms of consciousness *and* new forms of distraction: ritual, narrative, books, screens. Philosophers have recognized this for centuries: Pascal, Schopenhauer, Kierkegaard, Heidegger — all connected the depth of consciousness to the intensity of the need for escape.
+So the numbers — the $2.9 trillion, the 6 hours and 40 minutes, the 47-second attention span — are not a reliable thermometer. They measure a mixture of genuine need and the power of the trap. The signal is there, but it is buried in noise.
 
-And modern civilization — the most informed, the most aware of its own cosmic insignificance in the history of the species — is also the one that spends $2.9 trillion a year on entertainment, that watches screens for 6 hours and 40 minutes a day, and that has seen attention span collapse from 2 and a half minutes to 47 seconds in twenty years.
+## What holds
 
-No one has explicitly proposed this correlation as a unified theory before. The pieces exist — Pascal, Donald, Raichle, Debord, Postman — but they have never been connected in a single argument. If I do so here, it is not because I have the answer. It is because the question seems right.
+After dismantling my own thesis with the strongest objections I can find, what remains?
 
-## The final paradox
+A distinction remains.
 
-So where does all this lead?
+The *quantity* of distraction is not a reliable indicator. But the *sophistication* — the *kinds* of distraction a mind manages to create — does correlate with cognitive complexity. And this correlation holds.
 
-If distraction is truly an indicator of consciousness, then the attention crisis — the inability to concentrate, compulsive doomscrolling, the trillion-dollar industry that exists solely to keep us occupied — is not a disease. It is a symptom. The symptom of a species whose consciousness has grown faster than its capacity to bear it.
+An animal cannot tell itself a story. A pre-linguistic hominid cannot invent a myth. A pre-literate civilization cannot produce a novel. A society without digital technology cannot build a world in which you never die.
 
-We do not distract ourselves because we are stupid. We distract ourselves because we know too much. And we know more all the time.
+Each leap in distraction sophistication corresponds to a leap in what the mind is capable of representing — and in what it needs to escape from. From play to ritual, from ritual to narrative, from narrative to book, from book to screen, from screen to virtual world. Donald's stages hold. The neurobiology holds: the DMN is more developed where consciousness is deeper, and distraction suppresses it. The philosophers were right: Pascal, Schopenhauer, Kierkegaard, Heidegger — the depth of consciousness is linked to the *complexity* of the need for escape.
 
-But there is a final paradox.
+Not to the hours. To the complexity.
 
-This text — the fact that you are reading it, the fact that I wrote it — is the opposite of distraction. It is an attempt to look directly at exactly what distraction protects us from. And the fact that both of us — you and I — are here doing this, instead of scrolling, instead of watching a series, instead of anything else, proves something.
+## The right question
 
-Consciousness is not only the problem. It is also the only instrument with which we can pose the problem. And the question "how much do we distract ourselves?" is itself the opposite of distraction.
+I started with a simple hypothesis: distraction measures consciousness. I arrive at something more honest.
 
-The next time you lose yourself for an hour in an endless feed, think about this: the fact that afterward you feel empty — the fact that you *know* you were fleeing — is proof that consciousness is still there. Beneath the distraction. Despite the distraction.
+*Qualitative* distraction — the forms of escape we invent — reflects the complexity of the mind that flees. No species invents forms of escape more elaborate than its consciousness requires. A cat does not need Netflix. A crow does not need mythology. We do. And the fact that our escapes have become entire worlds — stories, religions, philosophies, virtual universes — says something about the depth of what we are fleeing from.
 
-It is uncomfortable. It is heavy. But it is the only thing that knows it is uncomfortable and heavy. And in a universe that knows nothing of itself, this — perhaps — is worth something.
+But *quantitative* distraction — how much time we spend fleeing — also reflects the power of the trap. And today we live in the historical moment when the two have become inseparable. We no longer know how much of our distraction is a response to consciousness and how much is a response to the algorithm.
+
+This is not a defeat for the thesis. It is a complication. The thesis worked elegantly through the analog world — from primate play to the Roman Colosseum, from oral myths to the printing press. Then the digital introduced a variable that breaks the proportionality: a supply of distraction that no longer needs demand in order to grow.
+
+And so the right question is not "how much do we distract ourselves?" — because that number is now unreadable. The right question is: *what did we have to invent in order to stop thinking?*
+
+If you want to know how deep a species' consciousness runs, do not count the hours it spends fleeing. Look at what it had to build in order to do so.
