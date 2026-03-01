@@ -5,7 +5,7 @@ order: 8
 excerpt: "If we distract ourselves because we know too much, and the more we know the more we distract ourselves, then the amount of distraction available in a society should tell us something about that society's level of consciousness."
 ---
 
-In previous texts<sup><a href="/en/testi-en/selfish-distracted/" style="text-decoration: none; color: inherit; opacity: 0.5;">1</a></sup><sup><a href="/en/testi-en/the-price-of-consciousness/" style="text-decoration: none; color: inherit; opacity: 0.5;">2</a></sup> we established two things. First: distraction is our survival mechanism against the weight of consciousness — Zapffe was right, we know too much, and to avoid going mad we distract ourselves. Second: despite its price, consciousness might be worth what it costs — but the calculation is not obvious, it depends on how you weigh things, and no one can verify the assumptions.
+In previous texts[<sup>1</sup>](/en/texts/selfish-distracted/)[<sup>2</sup>](/en/texts/the-price-of-consciousness/) we established two things. First: distraction is our survival mechanism against the weight of consciousness — Zapffe was right, we know too much, and to avoid going mad we distract ourselves. Second: despite its price, consciousness might be worth what it costs — but the calculation is not obvious, it depends on how you weigh things, and no one can verify the assumptions.
 
 But there is a question I have not yet asked. If distraction is proportional to consciousness — if we distract ourselves *because* we know, and the more we know the more we distract ourselves — then the amount of distraction available in a society should tell us something about that society's level of consciousness.
 

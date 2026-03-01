@@ -5,7 +5,7 @@ order: 2
 excerpt: "Before concluding that consciousness is an evolutionary error, let's give ourselves the space to ask: why did we develop this way?"
 ---
 
-In the previous text<sup><a href="/en/testi-en/selfish-distracted/" style="text-decoration: none; color: inherit; opacity: 0.5;">1</a></sup>, we arrived at a conclusion: distraction is our survival mechanism. Zapffe was right — we are animals that know too much, and to keep from going mad, we distract ourselves.
+In the previous text[<sup>1</sup>](/en/texts/selfish-distracted/), we arrived at a conclusion: distraction is our survival mechanism. Zapffe was right — we are animals that know too much, and to keep from going mad, we distract ourselves.
 
 But there is a question that comes before resignation.
 
