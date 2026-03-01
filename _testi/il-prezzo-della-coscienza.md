@@ -255,6 +255,8 @@ Perche c'e qualcosa che il pessimismo cosmico non riesce a spiegare. Se la cosci
 
 Zapffe non aveva una risposta per questo. La sua filosofia spiega perfettamente perche soffriamo. Non spiega perche, a volte, nonostante tutto, non vorremmo essere nient'altro.
 
+I Mokadelic — band romana composta da due psicologi, un antropologo, un designer e un tecnico del suono, autori della colonna sonora di *Gomorra* — hanno condensato questa condizione in tre parole: *Doomed to Live*. Il brano nasce dalla scena in cui Ciro Di Marzio, detto "L'Immortale", guarda impotente la polizia portare via la bara del padre adottivo. L'immortalita non e un dono. E una condanna. Non siamo condannati a morire — quello tocca a tutti. Siamo condannati a *vivere sapendo che moriremo*. E il fatto che questa intuizione emerga non solo da Heidegger e Camus, ma anche dalla colonna sonora di una serie televisiva — scritta da persone che di mestiere studiano la mente umana — dice qualcosa sulla sua universalita.
+
 ## La contabilita finale
 
 Non significa che la sofferenza non esista. Non significa che Zapffe avesse torto — il peso della coscienza e reale, e chi lo nega non ha capito la domanda.
