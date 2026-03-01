@@ -6,7 +6,7 @@ order: 2
 excerpt: "Prima di concludere che la coscienza e un errore evolutivo, diamoci lo spazio per chiederci: perche ci siamo sviluppati in questo modo?"
 ---
 
-Nel testo precedente siamo arrivati a una conclusione: la distrazione e il nostro meccanismo di sopravvivenza. Zapffe aveva ragione — siamo animali che sanno troppo, e per non impazzire ci distraiamo.
+Nel testo precedente<sup><a href="/testi/egoisti-distratti/" style="text-decoration: none; color: inherit; opacity: 0.5;">1</a></sup> siamo arrivati a una conclusione: la distrazione e il nostro meccanismo di sopravvivenza. Zapffe aveva ragione — siamo animali che sanno troppo, e per non impazzire ci distraiamo.
 
 Ma c'e una domanda che viene prima della rassegnazione.
 

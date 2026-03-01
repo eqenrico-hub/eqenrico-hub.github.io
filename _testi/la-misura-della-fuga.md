@@ -5,7 +5,7 @@ order: 8
 excerpt: "Se ci distraiamo perche sappiamo troppo, e piu sappiamo piu ci distraiamo, allora la quantita di distrazione disponibile in una societa dovrebbe dirci qualcosa sul livello di coscienza di quella societa."
 ---
 
-Nei testi precedenti abbiamo stabilito due cose. Primo: la distrazione e il nostro meccanismo di sopravvivenza contro il peso della coscienza — Zapffe aveva ragione, sappiamo troppo, e per non impazzire ci distraiamo. Secondo: nonostante il suo prezzo, la coscienza potrebbe valere quello che costa — ma il calcolo non e ovvio, dipende da come pesi le cose, e nessuno puo verificare le assunzioni.
+Nei testi precedenti<sup><a href="/testi/egoisti-distratti/" style="text-decoration: none; color: inherit; opacity: 0.5;">1</a></sup><sup><a href="/testi/il-prezzo-della-coscienza/" style="text-decoration: none; color: inherit; opacity: 0.5;">2</a></sup> abbiamo stabilito due cose. Primo: la distrazione e il nostro meccanismo di sopravvivenza contro il peso della coscienza — Zapffe aveva ragione, sappiamo troppo, e per non impazzire ci distraiamo. Secondo: nonostante il suo prezzo, la coscienza potrebbe valere quello che costa — ma il calcolo non e ovvio, dipende da come pesi le cose, e nessuno puo verificare le assunzioni.
 
 C'e pero una domanda che non ho ancora posto. Se la distrazione e proporzionale alla coscienza — se ci distraiamo *perche* sappiamo, e piu sappiamo piu ci distraiamo — allora la quantita di distrazione disponibile in una societa dovrebbe dirci qualcosa sul livello di coscienza di quella societa.
 
