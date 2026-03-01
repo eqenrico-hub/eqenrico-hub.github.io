@@ -104,26 +104,16 @@ E qui il ragionamento smette di essere filosofia e diventa calcolo.
 
 ## Il calcolo (e i suoi limiti)
 
-Quello che segue e un esperimento mentale, non scienza. I numeri sono stime, le categorie sono grossolane, e qualsiasi valore assegnato alla "qualita dell'esistenza" e, inevitabilmente, un giudizio soggettivo. Ma l'esercizio ha un valore: ci costringe a essere espliciti sulle nostre assunzioni, invece di lasciarle implicite nei ragionamenti che facciamo comunque ogni volta che diciamo "preferirei essere un animale" o "la coscienza e un dono".
+Quello che segue e un esperimento mentale, non scienza. I numeri sono stime, le categorie sono grossolane. Ma l'esercizio ci costringe a essere espliciti sulle nostre assunzioni, invece di lasciarle implicite ogni volta che diciamo "preferirei essere un animale" o "la coscienza e un dono".
 
 Immagina di trovarti prima di nascere, davanti a una scelta. Non sai dove nascerai, ne come, ne quando. Hai solo due opzioni:
 
 **Opzione A**: nasci come un animale qualsiasi sulla Terra.
 **Opzione B**: nasci come un essere umano qualsiasi sulla Terra.
 
-Per decidere razionalmente, dobbiamo calcolare il valore atteso di ciascuna opzione — la somma di tutti gli scenari possibili, ciascuno pesato per la sua probabilita e la qualita dell'esperienza che comporta.
-
-Un chiarimento importante: il valore atteso e una media ponderata. Non descrive l'esperienza di nessun individuo in particolare. Cosi come dire che "il voto medio di una classe e 6.5" non significa che ogni studente abbia preso 6.5, dire che "il valore atteso e negativo" non significa che ogni animale viva un'esperienza negativa. Alcuni vivono vite relativamente tranquille, altri vivono vite brevissime e brutali. La media serve a confrontare le due opzioni nel loro insieme, non a descrivere un destino individuale.
-
-Definiamo un Indice di Qualita dell'Esistenza (IQE), su una scala da -1 (la peggiore esistenza concepibile) a +1 (la migliore), dove 0 e neutro — ne positivo ne negativo.
+Definiamo un Indice di Qualita dell'Esistenza (IQE), su una scala da -1 (peggiore esistenza concepibile) a +1 (migliore), dove 0 e neutro. Per ciascuna opzione, calcoliamo il valore atteso — la media ponderata di tutti gli scenari possibili.
 
 ### Opzione A: nascere come un animale qualsiasi
-
-Il valore atteso dell'IQE animale e:
-
-**E[IQE_animale] = somma di P(categoria) x IQE(categoria)**
-
-Dove P(categoria) e la probabilita di nascere in quella categoria, proporzionale al numero di individui viventi.
 
 | Categoria | % degli individui | Vita media | IQE stimato |
 |-----------|-------------------|------------|-------------|
@@ -133,21 +123,15 @@ Dove P(categoria) e la probabilita di nascere in quella categoria, proporzionale
 | Mammiferi comuni | ~1% | 1-15 anni | +0.10 |
 | Grandi primati, delfini, elefanti | ~0.001% | 30-70 anni | +0.20 |
 
-**E[IQE_animale] = (0.80 x -0.20) + (0.15 x -0.10) + (0.04 x 0.00) + (0.01 x 0.10) + (0.00001 x 0.20)**
-
 **E[IQE_animale] ≈ -0.17**
 
-Di nuovo: questo non significa che l'80% degli animali soffre attivamente. Un insetto probabilmente non "soffre" nel senso in cui lo intendiamo noi. Significa che, se potessi nascere come un animale qualsiasi estratto a caso, la tua esperienza media — considerando la durata della vita, la probabilita di morte prematura, l'accesso a cure, protezione, relazioni — sarebbe complessivamente sotto lo zero. La distribuzione e dominata dal numero schiacciante di organismi con vite brevi e precarie, anche se singoli individui (un elefante in un parco protetto, un cane in una famiglia amorevole) vivono esistenze che potremmo giudicare positive.
-
-Ma qui c'e un problema serio, e va affrontato.
+Il valore e negativo perche la distribuzione e dominata dallo schiacciante numero di organismi con vite brevi e precarie — anche se singoli individui vivono esistenze positive.
 
 ### Il problema della senzienza
 
-Assegnare un IQE di -0.20 agli insetti presuppone che gli insetti abbiano un'esperienza soggettiva — che "provino qualcosa" a essere un insetto. Ma non lo sappiamo. Potrebbe darsi che un insetto non abbia nessuna esperienza interiore. Che sia, per cosi dire, "le luci sono spente". In quel caso, il suo IQE non sarebbe -0.20. Sarebbe 0: ne positivo ne negativo. Nessuna esperienza, nessun valore.
+Ma c'e un problema serio. Assegnare un IQE di -0.20 agli insetti presuppone che "provino qualcosa" a essere un insetto. Potrebbe darsi che non abbiano nessuna esperienza interiore.
 
-Simona Ginsburg e Eva Jablonka, in *The Evolution of the Sensitive Soul* (2019), propongono l'"Apprendimento Associativo Illimitato" come soglia della coscienza — la capacita di attribuire valore motivazionale a stimoli nuovi e usarlo come base per l'apprendimento futuro. Se questa soglia e corretta, molti invertebrati e forse anche i pesci cadrebbero al di sotto.
-
-E questo cambia il calcolo. Se escludiamo gli organismi che probabilmente non hanno esperienza soggettiva, il confronto diventa molto piu stretto:
+Simona Ginsburg e Eva Jablonka, in *The Evolution of the Sensitive Soul* (2019), propongono l'"Apprendimento Associativo Illimitato" come soglia della coscienza. Se questa soglia e corretta, molti invertebrati e forse anche i pesci cadrebbero al di sotto. Escludendoli, il calcolo cambia radicalmente:
 
 | Categoria | % dei senzienti | IQE stimato |
 |-----------|-----------------|-------------|
@@ -155,57 +139,43 @@ E questo cambia il calcolo. Se escludiamo gli organismi che probabilmente non ha
 | Mammiferi comuni | ~19% | +0.10 |
 | Grandi primati, delfini, elefanti | ~1% | +0.20 |
 
-**E[IQE_animale_senziente] ≈ (0.80 x 0.00) + (0.19 x 0.10) + (0.01 x 0.20) = +0.02**
+**E[IQE_animale_senziente] ≈ +0.02**
 
-Un valore quasi neutro. Non negativo. Questo e importante perche significa che non stiamo scegliendo tra "inferno animale" e "paradiso umano con qualche problema". Stiamo scegliendo tra "esistenza animale neutra o leggermente positiva" e "esistenza umana con piu alti e piu bassi".
-
-Il confronto era schiacciante solo quando includevamo gli insetti. Senza di loro, diventa una domanda genuina.
-
-Continuiamo con entrambi gli scenari.
+Quasi neutro. Il confronto era schiacciante solo con gli insetti inclusi. Senza di loro, diventa una domanda genuina.
 
 ### Opzione B: nascere come un essere umano qualsiasi
 
-| Condizione | % della popolazione | Fattori | IQE stimato |
-|-----------|---------------------|---------|-------------|
-| Vita buona | ~50% | Salute, relazioni, istruzione, possibilita di dare significato | +0.60 |
-| Difficolta moderate | ~30% | Poverta moderata, problemi trattabili, comunita | +0.20 |
-| Sofferenza significativa | ~15% | Poverta estrema, disabilita grave, ma legami, speranza | -0.10 |
-| Sofferenza estrema | ~5% | Fame, guerra, malattia terminale, abuso, isolamento | -0.50 |
+**Scenario standard:**
 
-**E[IQE_umano_base] = (0.50 x 0.60) + (0.30 x 0.20) + (0.15 x -0.10) + (0.05 x -0.50)**
+| Condizione | % | IQE stimato |
+|-----------|---|-------------|
+| Vita buona | ~50% | +0.60 |
+| Difficolta moderate | ~30% | +0.20 |
+| Sofferenza significativa | ~15% | -0.10 |
+| Sofferenza estrema | ~5% | -0.50 |
 
-**E[IQE_umano_base] = 0.300 + 0.060 - 0.015 - 0.025 = +0.32**
+**E[IQE_umano_base] = +0.32**
 
-Anche questi numeri meritano critica. Quel 50% con "vita buona" e generoso. Dipende da cosa intendi per buona. Se includi il fatto che anche chi ha salute, relazioni e istruzione soffre di ansia, depressione, solitudine, crisi di senso — e le statistiche sulla salute mentale nei paesi sviluppati sono allarmanti — allora forse quel +0.60 e troppo alto. Forse la categoria "difficolta moderate" e piu ampia del 30%.
-
-Facciamo una versione piu pessimista:
+Ma quel 50% di "vita buona" e generoso — anche chi ha salute e relazioni soffre di ansia, depressione, crisi di senso. Versione piu pessimista:
 
 | Condizione | % | IQE |
 |-----------|---|-----|
 | Vita genuinamente buona | ~35% | +0.50 |
-| Vita accettabile con sofferenza gestibile | ~35% | +0.15 |
+| Vita accettabile | ~35% | +0.15 |
 | Sofferenza significativa | ~20% | -0.15 |
 | Sofferenza estrema | ~10% | -0.50 |
 
-**E[IQE_umano_pessimista] = (0.35 x 0.50) + (0.35 x 0.15) + (0.20 x -0.15) + (0.10 x -0.50)**
-
-**E[IQE_umano_pessimista] = 0.175 + 0.0525 - 0.030 - 0.050 = +0.15**
+**E[IQE_umano_pessimista] = +0.15**
 
 ### Il costo Zapffe
 
 Quanto pesa la consapevolezza della morte, l'ansia esistenziale, la sofferenza morale che deriva dal sapere?
 
-Nella prima versione di questo testo, avevo stimato questo costo a 0.10. Troppo basso.
+La depressione colpisce 280 milioni di persone. Il suicidio e tra le prime cause di morte tra i 15 e i 29 anni. La coscienza umana e sovrabbondante rispetto alle necessita biologiche: sappiamo che l'universo e indifferente, che il significato e fragile, che possiamo vivere un'intera vita senza che conti nulla.
 
-La depressione colpisce circa 280 milioni di persone nel mondo. Il suicidio e tra le principali cause di morte per i giovani tra i 15 e i 29 anni. L'ansia esistenziale non e un fastidio marginale: e una forza che plasma intere vite, che alimenta dipendenze, che spinge persone perfettamente "sane" a cercare vie d'uscita dal peso di essere coscienti.
+Sheldon Solomon, Jeff Greenberg e Tom Pyszczynski — fondatori della Terror Management Theory (TMT), formalizzando le idee di Becker — hanno condotto oltre 500 studi empirici che dimostrano come la consapevolezza della morte plasmi concretamente giudizi, relazioni e scelte politiche. Ogni giorno. Non e un concetto astratto: e una forza misurabile.
 
-E Zapffe stesso non parlava solo della paura della morte. Parlava di qualcosa di piu profondo: la coscienza umana e sovrabbondante rispetto alle necessita biologiche. Non sappiamo troppo solo sulla morte — sappiamo troppo su tutto. Sappiamo che l'universo e indifferente. Sappiamo che il significato non e dato ma costruito, e che quindi e fragile. Sappiamo che possiamo fallire, che possiamo essere dimenticati, che possiamo vivere un'intera vita senza che conti nulla.
-
-Sheldon Solomon, Jeff Greenberg e Tom Pyszczynski — i tre psicologi sociali che hanno fondato la Terror Management Theory (TMT) formalizzando le idee di Becker — hanno condotto oltre 500 studi empirici che dimostrano come la consapevolezza della morte influenzi concretamente il comportamento umano. Quando ai soggetti viene ricordata la propria mortalita (anche in modo subliminale), diventano piu aggressivi nella difesa della propria visione del mondo, piu intolleranti verso chi e diverso, piu bisognosi di autostima. La paura della morte non e un concetto astratto: e una forza misurabile che plasma i nostri giudizi, le nostre relazioni, le nostre scelte politiche. Ogni giorno.
-
-Questo peso non si limita alla paura di morire. E il peso di essere consapevoli in un universo che non lo richiede.
-
-Alziamo il costo Zapffe a 0.15 nello scenario standard, e a 0.20 nello scenario pessimista.
+Stimiamo il costo Zapffe a 0.15 nello scenario standard e 0.20 in quello pessimista.
 
 ### I risultati
 
@@ -233,21 +203,11 @@ Alziamo il costo Zapffe a 0.15 nello scenario standard, e a 0.20 nello scenario 
 | Umano pessimista (0.15 - 0.20) | **-0.05** |
 | **Differenza** | **-0.07** |
 
-Ecco. Nello scenario pessimista, il calcolo si inverte. Essere un animale senziente casuale diventa marginalmente meglio che essere un umano casuale.
+Nello scenario pessimista, il calcolo si inverte. Essere un animale senziente casuale diventa marginalmente meglio che essere un umano casuale.
 
-Non di molto. Ma il fatto che si inverta e importante, perche significa che la conclusione non e ovvia. Dipende dalle assunzioni. E le assunzioni dipendono da come ti senti il giorno in cui le fai.
+La conclusione non e ovvia. Dipende dalle assunzioni. E le assunzioni dipendono da come ti senti il giorno in cui le fai.
 
-### Quanto dovrebbe pesare la coscienza per invertire il risultato?
-
-Nello scenario standard con senzienza corretta:
-
-**k_critico = 0.32 - 0.02 = 0.30**
-
-La coscienza dovrebbe pesare 0.30 su una scala di 2 per rendere la vita umana equivalente a quella di un animale senziente casuale. Significherebbe che l'angoscia esistenziale e piu devastante della combinazione di predazione, malattia, fame e assenza di medicina che definisce la vita animale.
-
-E troppo? Non ne sono sicuro. Per chi ha vissuto depressione grave, per chi ha perso il senso di tutto, 0.30 non sembra esagerato. Per chi sta bene, sembra assurdo.
-
-E questo e il punto: il peso della coscienza non e uniforme. Non pesa uguale per tutti. E un calcolo con la media nasconde le code della distribuzione — nasconde chi soffre di piu.
+Per invertire il risultato nello scenario standard con senzienza corretta, la coscienza dovrebbe pesare **0.30** su una scala di 2 (k_critico = 0.32 - 0.02). Per chi ha vissuto depressione grave, non sembra esagerato. Per chi sta bene, sembra assurdo. Il peso della coscienza non e uniforme — e un calcolo con la media nasconde chi soffre di piu.
 
 ## L'obiezione piu forte
 
