@@ -1,0 +1,100 @@
+---
+layout: app-detail
+title: Intelligence Command Center
+tagline: Full-stack AI platform combining news intelligence, AI influencer scanning, podcast generation, and product discovery
+category: Data & Intelligence
+status: deployed
+---
+
+<div class="section">
+  <h2>What It Does</h2>
+  <p>A unified intelligence platform that aggregates AI news, scans for AI influencers, generates AI podcasts with realistic voices and music, and monitors product launches across multiple sources. Deployed on Railway with a Next.js frontend and multiple microservices.</p>
+</div>
+
+<div class="section">
+  <h2>Problem It Solves</h2>
+  <p>Keeping up with the AI ecosystem requires monitoring dozens of sources daily. This platform automates the entire pipeline: research, summarization, podcast creation, influencer discovery, and product intelligence — all from one dashboard.</p>
+</div>
+
+<div class="section">
+  <h2>Platform Modules</h2>
+  <table class="competitors-table">
+    <tr>
+      <th>Module</th>
+      <th>What It Does</th>
+    </tr>
+    <tr>
+      <td><strong>PodcastAI</strong></td>
+      <td>Generates AI podcasts with Bark TTS voices, MusicGen intro/outro/jingles, 12 podcast vibes, topic memory across episodes</td>
+    </tr>
+    <tr>
+      <td><strong>AI News Aggregator</strong></td>
+      <td>Smart research with Tavily + OpenAI, deduplication, quality scoring, multi-topic tracking</td>
+    </tr>
+    <tr>
+      <td><strong>Influencer Scanner</strong></td>
+      <td>Discovers AI influencers and thought leaders across platforms</td>
+    </tr>
+    <tr>
+      <td><strong>Product Intelligence</strong></td>
+      <td>Monitors Product Hunt, GitHub, Hacker News, Reddit for new launches and trends</td>
+    </tr>
+    <tr>
+      <td><strong>Opportunity Miner</strong></td>
+      <td>YouTube scanner for product and business opportunities</td>
+    </tr>
+  </table>
+</div>
+
+<div class="section">
+  <h2>PodcastAI Features</h2>
+  <ul>
+    <li><strong>Bark TTS</strong> - Expressive AI voices with laughter, emotion tags, male/female selection</li>
+    <li><strong>MusicGen</strong> - AI-generated intro, outro, section jingles, and background music per vibe</li>
+    <li><strong>12 Podcast Vibes</strong> - Morning Coffee, Hype Bros, News Anchor, Late Night, TED Talk, British Doc, and more</li>
+    <li><strong>Dual Hosts</strong> - Two AI hosts with distinct voices and conversational banter</li>
+    <li><strong>Episode Memory</strong> - Tracks what was covered to avoid repetition across episodes</li>
+    <li><strong>Duration Control</strong> - Quick (2min), Standard (5min), Deep Dive (10min), Marathon (30min)</li>
+    <li><strong>Background Generation</strong> - Close the page, podcast keeps generating and saves automatically</li>
+    <li><strong>Background Music</strong> - Auto-ducking background music that lowers during speech</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>Tech Stack</h2>
+  <div class="tech-stack">
+    <span class="tech-tag">Next.js 14</span>
+    <span class="tech-tag">TypeScript</span>
+    <span class="tech-tag">Firebase (Auth + Firestore + Storage)</span>
+    <span class="tech-tag">Replicate API (Bark TTS + MusicGen)</span>
+    <span class="tech-tag">OpenAI GPT-4o</span>
+    <span class="tech-tag">Tavily Search API</span>
+    <span class="tech-tag">FFmpeg</span>
+    <span class="tech-tag">Railway</span>
+    <span class="tech-tag">Server-Sent Events (SSE)</span>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Architecture</h2>
+  <ul>
+    <li><strong>Frontend</strong> - Next.js React SPA with SSE streaming for real-time progress</li>
+    <li><strong>Backend</strong> - Next.js API routes with long-running generation (no timeout limits on Railway)</li>
+    <li><strong>Audio Pipeline</strong> - Research > Script > Critique > Revision > TTS > Music > FFmpeg Assembly > Upload</li>
+    <li><strong>Caching</strong> - Music clips cached in Firebase Storage with signed URLs to avoid re-generation</li>
+    <li><strong>Auth</strong> - Google Sign-In with Firebase Auth, tiered subscriptions (Free/Pro/Premium)</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>Links</h2>
+  <ul>
+    <li><a href="https://frontend-production-777bd.up.railway.app" target="_blank">Intelligence Command Center (Railway)</a></li>
+    <li><a href="https://podcastai-saas-production.up.railway.app" target="_blank">PodcastAI SaaS (Railway)</a></li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>Why I Built This</h2>
+  <p>I wanted a single platform to stay on top of the AI ecosystem without manually checking dozens of sources. The podcast feature lets me listen to curated AI news during commutes with expressive voices and professional production quality — all generated automatically from my tracked topics.</p>
+</div>
