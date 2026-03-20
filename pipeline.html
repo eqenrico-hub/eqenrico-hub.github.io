@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gender Classification Pipeline — Transparencia.be</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: #f5f6f8;
+    color: #1a1a2e;
+    line-height: 1.6;
+    padding: 40px 20px 80px;
+  }
+
+  .page {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    text-align: center;
+    margin-bottom: 48px;
+    padding: 40px 32px 32px;
+    background: #fff;
+    border: 1px solid #d0d5dd;
+    border-radius: 10px;
+  }
+  .header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #0f1b3d;
+    margin-bottom: 8px;
+  }
+  .header .subtitle {
+    font-size: 15px;
+    color: #475467;
+    margin-bottom: 6px;
+  }
+  .header .author {
+    font-size: 14px;
+    color: #667085;
+    font-style: italic;
+  }
+
+  /* ── SECTION LABELS ── */
+  .section-label {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: #667085;
+    margin: 40px 0 16px;
+    padding-left: 4px;
+  }
+
+  /* ── BOX STYLES ── */
+  .box {
+    background: #fff;
+    border: 1px solid #d0d5dd;
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin-bottom: 4px;
+    position: relative;
+  }
+  .box h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f1b3d;
+    margin-bottom: 8px;
+  }
+  .box p, .box li {
+    font-size: 14px;
+    color: #344054;
+  }
+  .box .num {
+    font-weight: 800;
+    color: #0f1b3d;
+    font-size: 15px;
+  }
+  .box .note {
+    font-size: 13px;
+    color: #667085;
+    margin-top: 6px;
+  }
+
+  .box-accent {
+    border-left: 4px solid #2563eb;
+  }
+
+  /* ── ARROW CONNECTOR (vertical) ── */
+  .arrow-down {
+    display: flex;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+  }
+  .arrow-down .shaft {
+    width: 2px;
+    height: 28px;
+    background: #94a3b8;
+    position: relative;
+  }
+  .arrow-down .shaft::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 7px solid #94a3b8;
+  }
+
+  /* smaller arrow */
+  .arrow-sm .shaft { height: 18px; }
+
+  /* ── FOLDER TREE ── */
+  .folder-tree {
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 13px;
+    background: #f8f9fb;
+    border: 1px solid #e4e7ec;
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin: 10px 0;
+    color: #344054;
+    white-space: pre;
+    line-height: 1.55;
+  }
+  .folder-tree .comment { color: #667085; }
+
+  /* ── THREE-COLUMN ROW ── */
+  .tier-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin: 10px 0;
+  }
+  .tier-card {
+    background: #f0f4ff;
+    border: 1px solid #bfcfff;
+    border-radius: 6px;
+    padding: 14px 16px;
+    text-align: center;
+  }
+  .tier-card .tier-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: #2563eb;
+    margin-bottom: 4px;
+  }
+  .tier-card p {
+    font-size: 13px;
+    color: #344054;
+  }
+  .combined-bar {
+    background: #e8ecf4;
+    border: 1px solid #c8cfe0;
+    border-radius: 6px;
+    padding: 10px 16px;
+    text-align: center;
+    font-size: 13px;
+    color: #344054;
+    margin-top: 8px;
+  }
+
+  /* ── SPLIT ── */
+  .split-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin: 10px 0 0;
+    position: relative;
+    height: 80px;
+  }
+  .split-line {
+    position: absolute;
+    top: 0;
+    width: 2px;
+    height: 30px;
+    background: #94a3b8;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .split-horiz {
+    position: absolute;
+    top: 30px;
+    left: calc(25% + 10px);
+    right: calc(25% + 10px);
+    height: 2px;
+    background: #94a3b8;
+  }
+  .split-left-down, .split-right-down {
+    position: absolute;
+    top: 30px;
+    width: 2px;
+    height: 30px;
+    background: #94a3b8;
+  }
+  .split-left-down { left: calc(25% + 10px); }
+  .split-right-down { right: calc(25% + 10px); }
+  .split-left-down::after, .split-right-down::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 7px solid #94a3b8;
+  }
+  .split-label {
+    position: absolute;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475467;
+    top: 62px;
+  }
+  .split-label-left { left: calc(25% + 10px); transform: translateX(-50%); }
+  .split-label-right { right: calc(25% + 10px); transform: translateX(50%); }
+
+  /* ── TWO-LANE LAYOUT ── */
+  .lanes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 8px;
+  }
+  .lane {
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .lane-req {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+  }
+  .lane-resp {
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+  }
+  .lane-title {
+    font-size: 16px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+  }
+  .lane-req .lane-title { color: #1e40af; border-bottom: 2px solid #93c5fd; }
+  .lane-resp .lane-title { color: #9a3412; border-bottom: 2px solid #fdba74; }
+
+  .lane .box {
+    background: rgba(255,255,255,0.85);
+  }
+
+  /* ── STEP LABEL ── */
+  .step-tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-bottom: 6px;
+  }
+  .lane-req .step-tag { background: #dbeafe; color: #1e40af; }
+  .lane-resp .step-tag { background: #ffedd5; color: #9a3412; }
+
+  /* ── SUB-ITEMS ── */
+  .sub-list {
+    list-style: none;
+    margin: 8px 0;
+    padding: 0;
+  }
+  .sub-list li {
+    padding: 3px 0 3px 16px;
+    position: relative;
+    font-size: 13.5px;
+  }
+  .sub-list li::before {
+    content: '›';
+    position: absolute;
+    left: 2px;
+    color: #94a3b8;
+    font-weight: 700;
+  }
+
+  /* ── TIER CASCADE ── */
+  .tier-box {
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 4px;
+    font-size: 13.5px;
+  }
+  .tier-1 { background: #ede9fe; border: 1px solid #c4b5fd; }
+  .tier-2 { background: #e0f2fe; border: 1px solid #7dd3fc; }
+  .tier-3 { background: #ecfdf5; border: 1px solid #6ee7b7; }
+  .tier-4 { background: #fef3c7; border: 1px solid #fcd34d; }
+
+  .tier-label-inline {
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+  }
+
+  .tier-fallthrough {
+    text-align: center;
+    font-size: 12px;
+    color: #94a3b8;
+    padding: 2px 0;
+    font-style: italic;
+  }
+
+  .summary-bar {
+    background: #f0fdf4;
+    border: 1.5px solid #86efac;
+    border-radius: 6px;
+    padding: 10px 16px;
+    text-align: center;
+    font-size: 13.5px;
+    margin: 8px 0;
+  }
+
+  /* ── RESULT BOXES ── */
+  .result-row {
+    display: flex;
+    gap: 8px;
+    margin: 8px 0;
+  }
+  .result-box {
+    flex: 1;
+    border-radius: 6px;
+    padding: 10px 14px;
+    text-align: center;
+    font-size: 13.5px;
+  }
+  .result-green { background: #dcfce7; border: 1.5px solid #86efac; }
+  .result-amber { background: #fef9c3; border: 1.5px solid #fde047; }
+  .result-red { background: #fee2e2; border: 1.5px solid #fca5a5; }
+
+  .result-box .big-num {
+    font-size: 20px;
+    font-weight: 800;
+    display: block;
+    margin-bottom: 2px;
+  }
+  .result-green .big-num { color: #166534; }
+  .result-amber .big-num { color: #854d0e; }
+  .result-red .big-num { color: #991b1b; }
+
+  /* ── DROP-OFF ── */
+  .dropoff {
+    border: 2px dashed #fca5a5;
+    background: #fff5f5;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #991b1b;
+    margin: 8px 0;
+    text-align: center;
+  }
+  .dropoff .num { color: #991b1b; }
+
+  /* ── FULL-WIDTH BOTTOM ── */
+  .bottom-section {
+    margin-top: 40px;
+  }
+  .bottom-section .box { margin-bottom: 16px; }
+
+  .agreement-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 12px 0;
+  }
+  .agreement-card {
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    border-radius: 6px;
+    padding: 16px;
+    text-align: center;
+  }
+  .agreement-card .big-num {
+    font-size: 28px;
+    font-weight: 800;
+    color: #166534;
+  }
+  .agreement-card .label {
+    font-size: 13px;
+    color: #344054;
+    margin-top: 4px;
+  }
+
+  .review-box {
+    background: #fffbeb;
+    border: 1.5px solid #fbbf24;
+    border-radius: 8px;
+    padding: 20px 24px;
+    text-align: center;
+  }
+  .review-box .big-num {
+    font-size: 32px;
+    font-weight: 800;
+    color: #92400e;
+  }
+
+  /* ── ANNOTATION CARDS ── */
+  .annotations {
+    margin-top: 48px;
+  }
+  .annotations h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f1b3d;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e4e7ec;
+  }
+  .anno-card {
+    border: 1px solid #d0d5dd;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    overflow: hidden;
+    background: #fff;
+  }
+  .anno-header {
+    padding: 12px 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #344054;
+    background: #f8f9fb;
+    border-bottom: 1px solid transparent;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .anno-header:hover { background: #eef1f6; }
+  .anno-header .chevron {
+    display: inline-block;
+    transition: transform 0.2s;
+    font-size: 12px;
+    color: #94a3b8;
+  }
+  .anno-card.open .anno-header { border-bottom-color: #e4e7ec; }
+  .anno-card.open .anno-header .chevron { transform: rotate(90deg); }
+  .anno-body {
+    display: none;
+    padding: 14px 18px;
+    font-size: 13.5px;
+    color: #475467;
+    line-height: 1.65;
+  }
+  .anno-card.open .anno-body { display: block; }
+
+  sup {
+    color: #2563eb;
+    font-weight: 700;
+    cursor: help;
+    font-size: 11px;
+  }
+
+  /* ── HALLUCINATION FILTER BOX ── */
+  .filter-box {
+    background: #fef3c7;
+    border: 1px dashed #f59e0b;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #92400e;
+    margin: 6px 0;
+    text-align: center;
+  }
+
+  .flag-note {
+    font-size: 12.5px;
+    color: #b45309;
+    text-align: center;
+    margin-top: 6px;
+    font-style: italic;
+  }
+
+  /* ── FLOW ACCOUNTING BOX ── */
+  .flow-accounting {
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 12.5px;
+    background: #f8f9fb;
+    border: 1.5px solid #c8cfe0;
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin: 10px 0;
+    color: #344054;
+    white-space: pre;
+    line-height: 1.65;
+  }
+  .flow-accounting .fa-title {
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #475467;
+    margin-bottom: 4px;
+    display: block;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  }
+  .flow-accounting .fa-check { color: #16a34a; }
+  .flow-accounting .fa-arrow { color: #d97706; }
+
+  /* ── WATERFALL BOX ── */
+  .waterfall {
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 12.5px;
+    background: #f8f9fb;
+    border: 1.5px solid #c8cfe0;
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin: 10px 0;
+    color: #344054;
+    white-space: pre;
+    line-height: 1.65;
+  }
+  .waterfall .wf-title {
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #475467;
+    margin-bottom: 4px;
+    display: block;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  }
+  .waterfall .wf-green { color: #166534; }
+  .waterfall .wf-amber { color: #854d0e; }
+  .waterfall .wf-red { color: #991b1b; }
+  .waterfall .wf-gray { color: #667085; }
+  .waterfall .wf-line { color: #94a3b8; }
+  .waterfall .wf-check { color: #16a34a; font-weight: 700; }
+
+  /* ── ARROW LABEL ── */
+  .arrow-label {
+    text-align: center;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #667085;
+    margin: -2px 0 -2px;
+    letter-spacing: 0.3px;
+  }
+
+  .secondary-stat {
+    font-size: 12.5px;
+    color: #475467;
+    text-align: center;
+    margin-top: 4px;
+  }
+
+  /* ── ARROW between lanes boxes ── */
+  .lane .arrow-down .shaft { background: #b0b8c8; }
+  .lane .arrow-down .shaft::after { border-top-color: #b0b8c8; }
+  .lane-req .arrow-down .shaft { background: #93c5fd; }
+  .lane-req .arrow-down .shaft::after { border-top-color: #93c5fd; }
+  .lane-resp .arrow-down .shaft { background: #fdba74; }
+  .lane-resp .arrow-down .shaft::after { border-top-color: #fdba74; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ════════════ HEADER ════════════ -->
+  <div class="header">
+    <h1>Gender Classification Pipeline — Transparencia.be FOI Dataset</h1>
+    <div class="subtitle">4-Tier Deterministic Cascade: Larousse &rarr; Statbel &rarr; WGND 2.0 &rarr; Ollama LLM</div>
+    <div class="author">Enrico Quaglia &mdash; March 2026</div>
+  </div>
+
+  <!-- ════════════ SECTION A: SHARED INPUT ════════════ -->
+  <div class="section-label">A &mdash; Shared Input</div>
+
+  <!-- Box 1 -->
+  <div class="box box-accent">
+    <h3>Dataset Input</h3>
+    <p><span class="num">4,265 FOI requests</span></p>
+    <p class="note">Requests filed 2016&ndash;2025</p>
+  </div>
+
+  <div class="arrow-down"><div class="shaft"></div></div>
+
+  <!-- Box 2 -->
+  <div class="box box-accent">
+    <h3>Export Folder Structure</h3>
+    <div class="folder-tree">transparencia-export-full/
+  &boxvr;&boxh;&boxh; request_id_slug/
+        &boxvr;&boxh;&boxh; 2022-03-15-143000/
+        &boxv;     &boxur;&boxh;&boxh; outgoing_0001.txt  <span class="comment">&larr; citizen's FOI request</span>
+        &boxur;&boxh;&boxh; 2022-04-02-091500/
+              &boxur;&boxh;&boxh; incoming_0001.txt  <span class="comment">&larr; official's response</span></div>
+    <p><span class="num">4,265</span> folders found <span class="num">(100%)</span></p>
+  </div>
+
+  <div class="arrow-down"><div class="shaft"></div></div>
+
+  <!-- Box 3 -->
+  <div class="box box-accent">
+    <h3>Reference Databases</h3>
+    <div class="tier-row">
+      <div class="tier-card">
+        <div class="tier-label">Tier 1</div>
+        <p><a href="https://www.amazon.fr/dp/2035966426" target="_blank" style="color:inherit;text-decoration:underline dotted;">Larousse des pr&eacute;noms (Ferey, 2019)</a><br><span class="num">9,641</span> names</p>
+      </div>
+      <div class="tier-card">
+        <div class="tier-label">Tier 2</div>
+        <p><a href="https://statbel.fgov.be/en/open-data/first-names-total-population-municipality" target="_blank" style="color:inherit;text-decoration:underline dotted;">Statbel Belgian Registry (2017)</a><br><span class="num">8,146</span> additional names</p>
+      </div>
+      <div class="tier-card">
+        <div class="tier-label">Tier 3</div>
+        <p><a href="https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/MSEGSJ" target="_blank" style="color:inherit;text-decoration:underline dotted;">WGND 2.0 (Lax-Martinez et al., 2021)</a><br><span class="num">3,482,709</span> names</p>
+      </div>
+    </div>
+    <div class="combined-bar">Combined lookup: <span class="num">3,486,454</span> unique first names</div>
+  </div>
+
+  <!-- ════════════ SECTION B: SPLIT ════════════ -->
+  <div class="section-label">B &mdash; Parallel Processing</div>
+
+  <div class="split-container">
+    <div class="split-line"></div>
+    <div class="split-horiz"></div>
+    <div class="split-left-down"></div>
+    <div class="split-right-down"></div>
+    <span class="split-label split-label-left">First outgoing_*.txt</span>
+    <span class="split-label split-label-right">First incoming_*.txt</span>
+  </div>
+
+  <!-- ════════════ TWO LANES ════════════ -->
+  <div class="lanes">
+
+    <!-- ──────── REQUESTER LANE ──────── -->
+    <div class="lane lane-req">
+      <div class="lane-title">Requester Lane</div>
+
+      <!-- R1 -->
+      <div class="step-tag">R1 &mdash; File Selection</div>
+      <div class="box">
+        <h3>Select First Outgoing Text</h3>
+        <p>Earliest-timestamped outgoing file per request</p>
+        <p><span class="num">4,265</span> requests</p>
+      </div>
+
+      <div class="arrow-down arrow-sm"><div class="shaft"></div></div>
+
+      <!-- R2 -->
+      <div class="step-tag">R2 &mdash; Boilerplate Removal</div>
+      <div class="box">
+        <h3>Strip Platform Footer<sup>7</sup></h3>
+        <p>Remove Transparencia.be platform boilerplate text</p>
+      </div>
+
+      <div class="arrow-down arrow-sm"><div class="shaft"></div></div>
+
+      <!-- R3 -->
+      <div class="step-tag">R3 &mdash; Signature Zone Extraction</div>
+      <div class="box">
+        <h3>Closing Formula Detection<sup>1</sup></h3>
+        <p>Scan last <span class="num">500</span> characters for closing formula</p>
+        <p><span class="num">96.9%</span> have closing formula &rarr; extract from formula to end</p>
+        <p><span class="num">3.1%</span> fallback &rarr; last 200 characters</p>
+      </div>
+
+      <div class="arrow-down arrow-sm"><div class="shaft"></div></div>
+
+      <!-- R4 -->
+      <div class="step-tag">R4 &mdash; Name Extraction</div>
+      <div class="box">
+        <h3>Multi-Method Name Extraction</h3>
+        <ul class="sub-list">
+          <li>Heuristic: capitalized words on dedicated lines &rarr; <span class="num">3,955</span></li>
+          <li>spaCy NER: PER entities after closing formula &rarr; <span class="num">100</span></li>
+          <li>Single-name fallback: lone known first name &rarr; <span class="num">60</span></li>
+        </ul>
+        <div class="dropoff">No name found &rarr; <span class="num">150</span> (flow to Tier 4)</div>
+        <p style="margin-top:8px;">Total: <span class="num">4,115</span> name tokens extracted <span class="num">(96.5%)</span></p>
+      </div>
+
+      <div class="arrow-down arrow-sm"><div class="shaft"></div></div>
+      <div class="arrow-label">4,115 tokens</div>
+
+      <!-- R5 -->
+      <div class="step-tag">R5 &mdash; First Name Validation</div>
+      <div class="box">
+        <h3>Dictionary Lookup</h3>
+        <p>Check each token against <span class="num">3,486,454</span> known names (&ge;3 chars)</p>
+        <p class="note">Checked sequentially: Larousse first, then Statbel if not found, then WGND if still not found</p>
+      </div>
+
+      <div class="arrow-down arrow-sm"><div class="shaft"></div></div>
+      <div class="arrow-label">&rarr; dictionary cascade</div>
+
+      <!-- R6 -->
+      <div class="step-tag">R6 &mdash; Tier Cascade</div>
+
+      <div class="tier-box tier-1">
+        <span class="tier-label-inline">TIER 1 &mdash; LAROUSSE</span><br>
+        <span class="num">3,529</span> M/F + <span class="num">208</span> BOTH
+      </div>
+      <div class="tier-fallthrough">&darr; not found</div>
+
+      <div class="tier-box tier-2">
+        <span class="tier-label-inline">TIER 2 &mdash; STATBEL</span><br>
+        <span class="num">51</span> M/F + <span class="num">1</span> BOTH
+      </div>
+      <div class="tier-fallthrough">&darr; not found</div>
+
+      <div class="tier-box tier-3">
+        <span class="tier-label-inline">TIER 3 &mdash; WGND 2.0</span><br>
+        <span class="num">97</span> M/F
+      </div>
+      <div class="tier-fallthrough">&darr; 229 names not in any dictionary</div>
+
+      <div class="summary-bar">Tiers 1&ndash;3: <span class="num">3,677</span> M/F + <span class="num">209</span> BOTH = <span class="num">3,886</span> classified <span class="num">(91.1%)</span></div>
+
+      <div class="flow-accounting"><span class="fa-title">How the 4,115 extracted names were resolved:</span>  3,886 matched a known first name <span class="fa-check">&rarr; classified by Tiers 1&ndash;3 &#10003;</span>
+    229 not found in any dictionary &#9488;
+                                    &#9500;&rarr; <span class="fa-arrow">379 sent to Tier 4</span>
+    150 no name extracted (from R4)  &#9496;</div>
+
+      <div class="arrow-down arrow-sm"><div class="shaft"></div></div>
+      <div class="arrow-label">379 remaining</div>
+
+      <div class="tier-box tier-4">
+        <span class="tier-label-inline">TIER 4 &mdash; OLLAMA LLM</span><sup>2</sup><br>
+        <span class="num">379</span> cases (229 unmatched names + 150 no name)<br>
+        <span style="font-size:12.5px;color:#92400e;">Temperature=0, seed=42, anti-hallucination prompt</span><br>
+        Results: <span class="num">136</span> M/F &nbsp;|&nbsp; <span class="num">220</span> UNKNOWN &nbsp;|&nbsp; <span class="num">23</span> no result<br>
+        <span style="font-size:12px;color:#475467;line-height:1.5;display:block;margin-top:6px;text-align:left;">
+          <strong>M/F</strong> = LLM found a clear personal first name + surname in the signature zone<br>
+          <strong>UNKNOWN</strong> = LLM instructed to return this when no personal name is visible (initials, organisations, pseudonyms)<br>
+          <strong>No result</strong> = LLM response could not be parsed into the expected format<br>
+          <em>Full prompts shown in annotation</em> <sup>2</sup>
+        </span>
+      </div>
+
+      <div class="filter-box">Hallucination filter<sup>5</sup> (applied to 136 M/F results only): verify name exists in input text &rarr; discard if absent. UNKNOWN/no-result cases unaffected.</div>
+
+      <div class="arrow-down arrow-sm"><div class="shaft"></div></div>
+
+      <div class="waterfall"><span class="wf-title">Requester Waterfall &mdash; All 4,265 Cases</span><span class="wf-green">&#9500;&#9472;&#9472; 3,529 Tier 1 (Larousse)     &#9488;</span>
+<span class="wf-green">&#9500;&#9472;&#9472;    51 Tier 2 (Statbel)      &#9474; 3,677 M/F</span>
+<span class="wf-green">&#9500;&#9472;&#9472;    97 Tier 3 (WGND)         &#9496;</span>
+<span class="wf-amber">&#9500;&#9472;&#9472;   208 Tier 1 BOTH (Larousse) &#9488;</span>
+<span class="wf-amber">&#9500;&#9472;&#9472;     1 Tier 2 BOTH (Statbel)  &#9496; = 209 BOTH</span>
+<span class="wf-amber">&#9500;&#9472;&#9472;   136 Tier 4 Ollama (M/F)       TO REVIEW</span>
+<span class="wf-red">&#9500;&#9472;&#9472;   220 Tier 4 Ollama (UNKNOWN) &#9488;</span>
+<span class="wf-red">&#9492;&#9472;&#9472;    23 Tier 4 Ollama (no result)&#9496; = 243 unresolved</span>
+<span class="wf-line">    &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;</span>
+    4,265 <span class="wf-check">&#10003;</span></div>
+
+      <!-- R7 -->
+      <div class="step-tag">R7 &mdash; Final Classification (sex_final)</div>
+      <div class="result-row">
+        <div class="result-box result-green">
+          <span class="big-num">3,813</span>
+          M/F &mdash; 89.4%
+        </div>
+        <div class="result-box result-amber">
+          <span class="big-num">209</span>
+          BOTH<sup>4</sup> &mdash; 4.9%
+        </div>
+        <div class="result-box result-red">
+          <span class="big-num">243</span>
+          UNKNOWN &mdash; 5.7%
+        </div>
+      </div>
+      <div class="flag-note">136 Tier 4 cases flagged TO REVIEW</div>
+    </div>
+
+    <!-- ──────── RESPONDENT LANE ──────── -->
+    <div class="lane lane-resp">
+      <div class="lane-title">Respondent Lane</div>
+
+      <!-- S1 -->
+      <div class="step-tag">S1 &mdash; File Selection</div>
+      <div class="box">
+        <h3>Select First Incoming Text</h3>
+        <p>Earliest-timestamped incoming file per request</p>
+        <p><span class="num">4,265</span> requests checked</p>
+      </div>
+      <div class="dropoff">
+        <span class="num">1,754 (41.1%)</span> &mdash; NO REPLY received<br>
+        <span style="font-size:12px;">&empty; dead end</span>
+      </div>
+      <div class="box" style="margin-top:6px;">
+        <p><span class="num">2,511</span> have incoming text</p>
+      </div>
+
+      <div class="arrow-down arrow-sm"><div class="shaft"></div></div>
+      <div class="arrow-label">2,511 with text</div>
+
+      <!-- S2 -->
+      <div class="step-tag">S2 &mdash; Boilerplate Removal</div>
+      <div class="box">
+        <h3>Strip Footer &amp; Quoted Request<sup>7</sup></h3>
+        <p>Remove platform footer + quoted original request text</p>
+      </div>
+
+      <div class="arrow-down arrow-sm"><div class="shaft"></div></div>
+
+      <!-- S3 -->
+      <div class="step-tag">S3 &mdash; Signature Zone Extraction</div>
+      <div class="box">
+        <h3>Closing Formula Detection<sup>1</sup></h3>
+        <p><span class="num">59.8%</span> have closing formula</p>
+        <p><span class="num">40.2%</span> fallback &rarr; last 200 characters</p>
+      </div>
+
+      <div class="arrow-down arrow-sm"><div class="shaft"></div></div>
+
+      <!-- S4 -->
+      <div class="step-tag">S4 &mdash; Name Extraction</div>
+      <div class="box">
+        <h3>Multi-Method Name Extraction</h3>
+        <ul class="sub-list">
+          <li>Heuristic: capitalized words &rarr; <span class="num">1,065</span></li>
+          <li>spaCy NER: PER entities &rarr; <span class="num">188</span></li>
+          <li>Single-name fallback &rarr; <span class="num">21</span></li>
+        </ul>
+        <div class="dropoff">No name in incoming &rarr; <span class="num">1,237</span> (flow to Tier 4)</div>
+        <p style="margin-top:8px;">Total: <span class="num">1,274</span> name tokens extracted</p>
+      </div>
+
+      <div class="arrow-down arrow-sm"><div class="shaft"></div></div>
+
+      <!-- S5 -->
+      <div class="step-tag">S5 &mdash; First Name Validation</div>
+      <div class="box">
+        <h3>Dictionary Lookup</h3>
+        <p>Check each token against <span class="num">3,486,454</span> known names (&ge;3 chars)</p>
+        <p class="note">Checked sequentially: Larousse first, then Statbel if not found, then WGND if still not found</p>
+      </div>
+
+      <div class="arrow-down arrow-sm"><div class="shaft"></div></div>
+      <div class="arrow-label">&rarr; dictionary cascade</div>
+
+      <!-- S6 -->
+      <div class="step-tag">S6 &mdash; Tier Cascade</div>
+
+      <div class="tier-box tier-1">
+        <span class="tier-label-inline">TIER 1 &mdash; LAROUSSE</span><br>
+        <span class="num">995</span> M/F + <span class="num">24</span> BOTH
+      </div>
+      <div class="tier-fallthrough">&darr; not found</div>
+
+      <div class="tier-box tier-2">
+        <span class="tier-label-inline">TIER 2 &mdash; STATBEL</span><br>
+        <span class="num">40</span> M/F
+      </div>
+      <div class="tier-fallthrough">&darr; not found</div>
+
+      <div class="tier-box tier-3">
+        <span class="tier-label-inline">TIER 3 &mdash; WGND 2.0</span><br>
+        <span class="num">215</span> M/F
+      </div>
+      <div class="tier-fallthrough">&darr; 0 unmatched names (every extracted name was found in a dictionary)</div>
+
+      <div class="summary-bar">Tiers 1&ndash;3: <span class="num">1,250</span> M/F + <span class="num">24</span> BOTH = <span class="num">1,274</span> classified</div>
+
+      <div class="flow-accounting"><span class="fa-title">How the 2,511 replies were resolved:</span>  1,274 had a name in the text &rarr; name looked up in dictionaries &rarr; <strong>all 1,274 matched</strong> <span class="fa-check">&#10003;</span>
+  1,237 had reply text but <strong>no personal name</strong> visible (e.g. department signatures, automated replies) <span class="fa-arrow">&rarr; sent to Tier 4 Ollama</span></div>
+
+      <div class="arrow-down arrow-sm"><div class="shaft"></div></div>
+      <div class="arrow-label">1,237 remaining</div>
+
+      <div class="tier-box tier-4">
+        <span class="tier-label-inline">TIER 4 &mdash; OLLAMA LLM</span><sup>3</sup><br>
+        <span class="num">1,237</span> cases with reply text but no name extracted<br>
+        <span style="font-size:12.5px;color:#92400e;">1,754 had no reply at all (skipped &mdash; nothing to analyze)</span><br>
+        Results: <span class="num">28</span> M/F &nbsp;|&nbsp; <span class="num">39</span> UNKNOWN &nbsp;|&nbsp; <span class="num">1,170</span> no result<br>
+        <span style="font-size:12px;color:#475467;line-height:1.5;display:block;margin-top:6px;text-align:left;">
+          <strong>M/F</strong> = LLM found a clear personal first name + surname in the signature zone<br>
+          <strong>UNKNOWN</strong> = LLM instructed to return this when no personal name is visible (department names, automated replies)<br>
+          <strong>No result</strong> = LLM response could not be parsed into the expected format<br>
+          <em>Full prompts shown in annotation</em> <sup>3</sup>
+        </span>
+      </div>
+
+      <div class="filter-box">Hallucination filter<sup>5</sup> (applied to 28 M/F results only): verify name exists in input text &rarr; discard if absent. UNKNOWN/no-result cases unaffected.</div>
+
+      <div class="arrow-down arrow-sm"><div class="shaft"></div></div>
+
+      <div class="waterfall"><span class="wf-title">Respondent Waterfall &mdash; All 4,265 Cases</span><span class="wf-gray">&#9500;&#9472;&#9472; 1,754 no reply received        (no text exists)</span>
+<span class="wf-green">&#9500;&#9472;&#9472;   995 Tier 1 (Larousse)     &#9488;</span>
+<span class="wf-green">&#9500;&#9472;&#9472;    40 Tier 2 (Statbel)      &#9474; 1,250 M/F</span>
+<span class="wf-green">&#9500;&#9472;&#9472;   215 Tier 3 (WGND)         &#9496;</span>
+<span class="wf-amber">&#9500;&#9472;&#9472;    24 Tier 1 BOTH (Larousse)      = 24 BOTH</span>
+<span class="wf-amber">&#9500;&#9472;&#9472;    28 Tier 4 Ollama (M/F)         TO REVIEW</span>
+<span class="wf-red">&#9500;&#9472;&#9472;    39 Tier 4 Ollama (UNKNOWN)  &#9488;</span>
+<span class="wf-red">&#9492;&#9472;&#9472; 1,170 Tier 4 Ollama (no result)&#9496; = 1,209 no name in text</span>
+<span class="wf-line">    &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;</span>
+    4,265 requests for which we checked the response <span class="wf-check">&#10003;</span></div>
+
+      <!-- S7 -->
+      <div class="step-tag">S7 &mdash; Final Classification (sex_final)</div>
+      <div class="result-row">
+        <div class="result-box result-green">
+          <span class="big-num">1,278</span>
+          M/F &mdash; 30.0%
+        </div>
+        <div class="result-box result-amber">
+          <span class="big-num">24</span>
+          BOTH<sup>4</sup> &mdash; 0.6%
+        </div>
+        <div class="result-box result-red">
+          <span class="big-num">2,963</span>
+          UNKNOWN &mdash; 69.5%
+        </div>
+      </div>
+      <div class="secondary-stat">Among 2,511 with reply: <span class="num">51.9%</span> classified</div>
+      <div class="flag-note">28 Tier 4 cases flagged TO REVIEW</div>
+    </div>
+  </div>
+
+  <!-- ════════════ SECTION C: BOTTOM ════════════ -->
+  <div class="bottom-section">
+    <div class="section-label">C &mdash; Validation &amp; Review</div>
+
+    <div class="box box-accent">
+      <h3>Agreement with <u>Previous</u> Gender Identification Methodology&rsquo;s Results</h3>
+      <div class="agreement-row">
+        <div class="agreement-card">
+          <div class="big-num">99.5%</div>
+          <div class="label">Requester &mdash; 3,502 / 3,518 agree</div>
+        </div>
+        <div class="agreement-card">
+          <div class="big-num">90.2%</div>
+          <div class="label">Respondent &mdash; 828 / 918 agree</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="review-box">
+      <h3 style="margin-bottom:8px;color:#92400e;">Manual Review<sup>6</sup></h3>
+      <div class="big-num">164 cases</div>
+      <p style="font-size:14px;color:#475467;margin-top:6px;">136 requester + 28 respondent &mdash; all undergo exhaustive manual verification</p>
+    </div>
+  </div>
+
+  <!-- ════════════ ANNOTATIONS ════════════ -->
+  <div class="annotations">
+    <h2>Annotation Notes</h2>
+
+    <div class="anno-card">
+      <div class="anno-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="chevron">&#9654;</span>
+        <sup>1</sup> Closing formula
+      </div>
+      <div class="anno-body">
+        French administrative letters conventionally end with a politeness formula (e.g., <em>"Cordialement"</em>, <em>"Veuillez agr&eacute;er mes salutations distingu&eacute;es"</em>) followed by the signer's name. The pipeline searches the last 500 characters for such formulas and extracts everything from the formula to the end of the text &mdash; this is the "signature zone" where the author's name appears.
+        <details style="margin-top: 10px; cursor: pointer;">
+          <summary style="font-weight: 600; color: #3182CE; font-size: 0.9em;">View all 16 closing formulas used by the pipeline &darr;</summary>
+          <div style="margin-top: 8px; padding: 10px 14px; background: #F7FAFC; border-radius: 6px; border: 1px solid #E2E8F0; font-size: 0.88em; line-height: 1.8;">
+            <strong>French (14):</strong><br>
+            &bull; Cordialement<br>
+            &bull; Bien cordialement<br>
+            &bull; Salutations distingu&eacute;es<br>
+            &bull; Veuillez agr&eacute;er...<br>
+            &bull; Veuillez accepter...<br>
+            &bull; Je vous prie...<br>
+            &bull; Respectueusement<br>
+            &bull; Sinc&egrave;rement<br>
+            &bull; Bien &agrave; vous<br>
+            &bull; Merci d&rsquo;avance<br>
+            &bull; En vous remerciant<br>
+            &bull; Dans l&rsquo;attente<br>
+            &bull; Recevez ... salutations<br>
+            &bull; Avec mes ... salutations<br>
+            <strong style="margin-top: 6px; display: inline-block;">Dutch (2):</strong><br>
+            &bull; Met vriendelijke groeten<br>
+            &bull; Hoogachtend
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="anno-card">
+      <div class="anno-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="chevron">&#9654;</span>
+        <sup>2</sup> Why 379 requester cases for Ollama
+      </div>
+      <div class="anno-body">
+        229 cases where a name token was extracted but not found in any of the three dictionaries (possibly a surname, rare name, or false positive), plus 150 cases where no name was extracted at all. Ollama receives only the signature zone text (not the entire document) to minimize the risk of picking up names from the body of the letter that belong to other people. Since the FOI data could not be sent to cloud-based LLMs for privacy reasons (Transparencia.be requested that data not be processed by external services), a locally hosted model (Llama 3.2 via Ollama) was used &mdash; a smaller, less powerful model, but one that runs entirely on the researcher&rsquo;s machine with no data leaving the local environment.
+        <details style="margin-top: 10px; cursor: pointer;">
+          <summary style="font-weight: 600; color: #3182CE; font-size: 0.9em;">View exact requester prompt sent to Ollama &darr;</summary>
+          <div style="margin-top: 8px; padding: 12px 16px; background: #F7FAFC; border-radius: 6px; border: 1px solid #E2E8F0; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.82em; line-height: 1.7; white-space: pre-wrap;">You are classifying the sex of the person who signed a FOI request.
+Look for a PERSONAL SIGNATURE after the closing formula (Cordialement, Veuillez agr&eacute;er, etc.).
+
+IMPORTANT: Many FOI requests have NO personal signature &mdash; they may be signed by organisations, pseudonyms, or contain only initials. If you do not see a clear first name + surname, return UNKNOWN. Do NOT guess or invent a name.
+
+Examples of valid signatures: &ldquo;Jean Dupont&rdquo; &rarr; M, &ldquo;Marie Lambert&rdquo; &rarr; F, &ldquo;Sophie Martin, Directrice&rdquo; &rarr; F
+Examples of UNKNOWN: &ldquo;N. Dupont&rdquo;, &ldquo;CABLYN&rdquo;, &ldquo;Collectif du Bempt&rdquo;, &ldquo;Service Juridique&rdquo;, no name at all
+
+Reply EXACTLY: GENDER: &lt;M or F or UNKNOWN&gt; | NAME: &lt;first name or NONE&gt;
+
+Signature zone:
+<em>[signature zone text inserted here]</em></div>
+          <div style="margin-top: 6px; font-size: 0.85em; color: #667085;">Configuration: temperature=0, seed=42 (deterministic, reproducible output)</div>
+        </details>
+      </div>
+    </div>
+
+    <div class="anno-card">
+      <div class="anno-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="chevron">&#9654;</span>
+        <sup>3</sup> Why respondent Ollama success is so low (2.3% vs 35.9%)
+      </div>
+      <div class="anno-body">
+        The 1,237 respondent cases sent to Ollama are those where the heuristic and spaCy found NO name at all in the reply text. These are predominantly institutional signatures (<em>"Le Secr&eacute;tariat communal"</em>, <em>"Service Urbanisme"</em>), automated acknowledgments, or email disclaimers &mdash; texts that genuinely contain no personal first name. The requester rate is higher because many of the 379 cases DO contain a personal name that was simply not in the dictionaries.
+        <details style="margin-top: 10px; cursor: pointer;">
+          <summary style="font-weight: 600; color: #3182CE; font-size: 0.9em;">View exact respondent prompt sent to Ollama &darr;</summary>
+          <div style="margin-top: 8px; padding: 12px 16px; background: #F7FAFC; border-radius: 6px; border: 1px solid #E2E8F0; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.82em; line-height: 1.7; white-space: pre-wrap;">You are classifying the sex of the public official who signed a response to a FOI request.
+Look for a PERSONAL SIGNATURE after the closing formula. Names here belong to the person SIGNING, NOT the person being addressed in the greeting.
+
+IMPORTANT: Many government responses are automated, unsigned, or signed by a department &mdash; NOT by a person. If you do not see a clear personal signature with a first name, return UNKNOWN. Do NOT guess or invent a name. It is completely normal for there to be no name.
+
+Examples of valid signatures: &ldquo;Philippe Dubois&rdquo; &rarr; M, &ldquo;Karine Lallemand&rdquo; &rarr; F, &ldquo;Patrick Install&eacute;&rdquo; &rarr; M
+Examples of UNKNOWN: &ldquo;N. Dupont&rdquo;, &ldquo;Le Secr&eacute;tariat communal&rdquo;, &ldquo;Commune de Rebecq&rdquo;, email headers, no name at all
+
+Reply EXACTLY: GENDER: &lt;M or F or UNKNOWN&gt; | NAME: &lt;first name or NONE&gt;
+
+Signature zone:
+<em>[signature zone text inserted here]</em></div>
+          <div style="margin-top: 6px; font-size: 0.85em; color: #667085;">Configuration: temperature=0, seed=42 (deterministic, reproducible output)</div>
+        </details>
+      </div>
+    </div>
+
+    <div class="anno-card">
+      <div class="anno-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="chevron">&#9654;</span>
+        <sup>4</sup> BOTH / UNKNOWN (UNISEX)
+      </div>
+      <div class="anno-body">
+        Names like Claude, Dominique, or Camille are used for both sexes in French. Larousse marks these as <em>"mixte"</em>. For Statbel, a conservative 90% threshold is applied: a name is classified M or F only when &ge;90% of bearers in Belgian civil registry data are of that sex, ensuring high confidence. Names below this threshold are classified as BOTH (unisex) rather than M/F &mdash; they are never counted among the gendered results.<br><br>
+        <strong>Limitation:</strong> In theory, a small number of UNKNOWN cases from the pipeline could be names that a less conservative threshold might have resolved. However, this concerns at most a handful of cases: Tier 2 (Statbel) classifies only <strong>52 requester</strong> and <strong>40 respondent</strong> cases in total &mdash; a marginal share of the overall sample, where the vast majority are already identified by Tier 1 (Larousse) and Tier 3 (WGND). The practical impact of this threshold on the final UNKNOWN count is therefore negligible.<br><br>
+        <strong>Future integration:</strong> The 209 requester and 24 respondent BOTH cases could potentially be partially resolved through probabilistic gender assignment &mdash; a standard technique in gender studies (Blevins &amp; Mullen, 2015; Lax-Martinez et al., 2021). Rather than discarding unisex names, each case would be weighted by the actual male/female frequency ratio in population data (e.g., if Statbel shows 62% of &ldquo;Dominique&rdquo; bearers in Belgium are female, the case would count as 0.62 F + 0.38 M in the statistical analysis). This was not implemented in the current pipeline, which uses a conservative binary approach, but could be explored in future iterations to recover some of the BOTH cases without sacrificing confidence.
+      </div>
+    </div>
+
+    <div class="anno-card">
+      <div class="anno-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="chevron">&#9654;</span>
+        <sup>5</sup> Hallucination filter
+      </div>
+      <div class="anno-body">
+        This filter applies only to cases where the LLM returned a name with a gender classification (M/F or flagged for REVIEW). After the LLM returns a name, the pipeline checks that the name actually appears in the signature zone text it was given. If the name is absent (the LLM invented it), the classification is discarded and reclassified as UNKNOWN. Cases where the LLM returned UNKNOWN or produced no result are not affected &mdash; there was no name claim to verify.
+      </div>
+    </div>
+
+    <div class="anno-card">
+      <div class="anno-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="chevron">&#9654;</span>
+        <sup>6</sup> Why only 164 cases need review
+      </div>
+      <div class="anno-body">
+        Tiers 1&ndash;3 are deterministic dictionary lookups &mdash; same input always gives same output, no review needed. Only Tier 4 (LLM) is probabilistic, so ALL of its M/F outputs are flagged for human verification. UNKNOWN cases are NOT flagged because two independent methods (rules + LLM) both agreed no name exists.
+      </div>
+    </div>
+
+    <div class="anno-card">
+      <div class="anno-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="chevron">&#9654;</span>
+        <sup>7</sup> How platform boilerplate is identified
+      </div>
+      <div class="anno-body">
+        The Transparencia.be platform automatically appends a bilingual (French/Dutch) legal footer to every message &mdash; privacy disclaimers, usage notices, and contact links. This footer is not part of the actual correspondence. The pipeline identifies it by searching for 8 specific marker strings that always appear at the start of the footer. These markers were identified by manually inspecting the raw exported texts &mdash; they are machine-generated by the platform and identical across all messages. Everything from the first marker onward is stripped before signature zone extraction. For respondent texts, the pipeline also strips quoted original requests (detected via <em>&ldquo;-----Message d&rsquo;origine-----&rdquo;</em> and similar email quoting conventions) to prevent the requester&rsquo;s signature from being mistaken for the respondent&rsquo;s.
+        <details style="margin-top: 10px; cursor: pointer;">
+          <summary style="font-weight: 600; color: #3182CE; font-size: 0.9em;">View all 8 boilerplate markers &darr;</summary>
+          <div style="margin-top: 8px; padding: 10px 14px; background: #F7FAFC; border-radius: 6px; border: 1px solid #E2E8F0; font-size: 0.88em; line-height: 1.8;">
+            <strong>French (4):</strong><br>
+            &bull; <em>&ldquo;Si vous trouvez ce service utile en tant que plateforme&rdquo;</em><br>
+            &bull; <em>&ldquo;Merci d&rsquo;utiliser cette adresse email pour toutes les r&eacute;ponses&rdquo;</em><br>
+            &bull; <em>&ldquo;Attention : Ce message et les r&eacute;ponses/documents&rdquo;</em><br>
+            &bull; <em>&ldquo;Notez bien que dans certains cas, la publication&rdquo;</em><br>
+            <strong style="margin-top: 6px; display: inline-block;">Dutch (4):</strong><br>
+            &bull; <em>&ldquo;Gelieve dit e-mailadres te gebruiken voor alle antwoorden&rdquo;</em><br>
+            &bull; <em>&ldquo;Disclaimer: dit bericht en de antwoorden&rdquo;</em><br>
+            &bull; <em>&ldquo;Dank voor uw begrip dat in bepaalde gevallen&rdquo;</em><br>
+            &bull; <em>&ldquo;Als u deze dienstverlening inzake openbaarheid&rdquo;</em>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════ SECTION D: KEY DIFFERENCES ════════════ -->
+  <div class="section-label">D &mdash; Key Differences from <u>Previous</u> Methodology</div>
+
+  <div class="box box-accent" style="margin-bottom:20px;">
+    <h3 style="margin-bottom:4px;"><u>Previous</u> Classifications vs. New Pipeline</h3>
+    <p class="note">The article draft (BE_FOI_draft_13032026.docx) uses <u>previous</u> gender classifications. Below are the key differences with the new deterministic pipeline.</p>
+  </div>
+
+  <div class="box" style="margin-bottom:12px;">
+    <h3 style="color:#dc2626;">1. Respondent Sex Composition &mdash; Reversed</h3>
+    <p>This is the single biggest change.</p>
+    <table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:14px;">
+      <tr style="background:#f1f5f9;"><th style="text-align:left;padding:6px 12px;">Method</th><th style="padding:6px 12px;">% Female resp.</th><th style="padding:6px 12px;">% Male resp.</th></tr>
+      <tr><td style="padding:6px 12px;"><u>Previous</u> (current article)</td><td style="text-align:center;padding:6px 12px;"><strong>58.2%</strong></td><td style="text-align:center;padding:6px 12px;">41.8%</td></tr>
+      <tr style="background:#fef9c3;"><td style="padding:6px 12px;">New pipeline</td><td style="text-align:center;padding:6px 12px;">43.1%</td><td style="text-align:center;padding:6px 12px;"><strong>56.9%</strong></td></tr>
+    </table>
+    <p style="font-size:13px;color:#475467;">Likely cause: the <u>previous method</u> may have inferred sex from greeting formulas like <em>&ldquo;Madame&rdquo;</em> (which address the <strong>requester</strong>, not the respondent), while the pipeline strictly uses the signature at the end of the text.</p>
+    <p style="font-size:13px;color:#dc2626;margin-top:6px;"><strong>Impact:</strong> The sentence &ldquo;58.19% of responders are identified as female&rdquo; (current Table 2) must be reversed. The chi-square test for gender-neutral assignment will likely become significant.</p>
+  </div>
+
+  <div class="box" style="margin-bottom:12px;">
+    <h3>2. Known-Sex Pairs &mdash; Fewer</h3>
+    <table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:14px;">
+      <tr style="background:#f1f5f9;"><th style="text-align:left;padding:6px 12px;">Method</th><th style="padding:6px 12px;">Known-sex pairs</th><th style="padding:6px 12px;">% of all requests</th></tr>
+      <tr><td style="padding:6px 12px;"><u>Previous</u></td><td style="text-align:center;padding:6px 12px;">1,215</td><td style="text-align:center;padding:6px 12px;">28.5%</td></tr>
+      <tr style="background:#fef9c3;"><td style="padding:6px 12px;">New pipeline</td><td style="text-align:center;padding:6px 12px;">1,131</td><td style="text-align:center;padding:6px 12px;">26.5%</td></tr>
+    </table>
+    <p style="font-size:13px;color:#475467;">The pipeline is more conservative &mdash; it only classifies sex when a personal first name is unambiguously identified in the text, whereas the <u>previous method</u> occasionally inferred sex from contextual cues. This means 84 fewer cases for cross-gender analysis.</p>
+  </div>
+
+  <div class="box" style="margin-bottom:12px;">
+    <h3>3. Same-Sex Advantage &mdash; Confirmed but Weaker</h3>
+    <table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:14px;">
+      <tr style="background:#f1f5f9;"><th style="text-align:left;padding:6px 12px;">Metric</th><th style="padding:6px 12px;"><u>Previous</u></th><th style="padding:6px 12px;">New Pipeline</th></tr>
+      <tr><td style="padding:6px 12px;">M&rarr;M success rate</td><td style="text-align:center;padding:6px 12px;">62.4%</td><td style="text-align:center;padding:6px 12px;"><strong>57.8%</strong></td></tr>
+      <tr><td style="padding:6px 12px;">F&rarr;F success rate</td><td style="text-align:center;padding:6px 12px;"><strong>65.6%</strong> (highest)</td><td style="text-align:center;padding:6px 12px;">54.1%</td></tr>
+      <tr><td style="padding:6px 12px;">Same-sex gap (male req.)</td><td style="text-align:center;padding:6px 12px;">3.8pp</td><td style="text-align:center;padding:6px 12px;">0.8pp</td></tr>
+      <tr><td style="padding:6px 12px;">Same-sex gap (female req.)</td><td style="text-align:center;padding:6px 12px;">8.4pp</td><td style="text-align:center;padding:6px 12px;">5.1pp</td></tr>
+    </table>
+    <p style="font-size:13px;color:#475467;">The same-sex advantage is confirmed by both methods, but the effect is approximately halved. F&rarr;F is no longer the best-performing combo &mdash; M&rarr;M is.</p>
+  </div>
+
+  <div class="box" style="margin-bottom:12px;border-left:4px solid #16a34a;">
+    <h3 style="color:#16a34a;">4. Robust Findings (Confirmed)</h3>
+    <ul style="font-size:14px;line-height:1.8;padding-left:20px;">
+      <li><strong>T2 (Urban planning):</strong> Female respondents boost success rates by ~18pp regardless of requester sex. Holds in both methods (<u>Previous</u>: +17&ndash;20pp, Pipeline: +18pp). Most robust finding in the dataset.</li>
+      <li><strong>T4 (Council deliberations):</strong> Male requesters massively outperform female requesters. Not only confirmed but <strong>amplified</strong> (<u>Previous</u>: 25&ndash;28pp gap &rarr; Pipeline: 56&ndash;58pp gap).</li>
+      <li><strong>H1 (requester gender &amp; responsiveness):</strong> Male requesters more likely to receive a response. Should hold with new classifications.</li>
+      <li><strong>Requester agreement:</strong> 99.5% (3,502/3,518 comparable pairs) &mdash; requester classifications barely changed.</li>
+    </ul>
+  </div>
+
+  <div class="box" style="margin-bottom:12px;border-left:4px solid #dc2626;">
+    <h3 style="color:#dc2626;">5. What Must Change in the Article</h3>
+    <ul style="font-size:14px;line-height:1.8;padding-left:20px;">
+      <li><strong>Table 2</strong> (gender combo cross-tabulation): all percentages change</li>
+      <li><strong>Descriptive findings</strong> (gender interactions section): respondent composition reversal, new combo success rates</li>
+      <li><strong>Retention balance analysis:</strong> percentages change (currently &ldquo;54.2% of male requesters&rdquo; and &ldquo;58.8% of female requesters&rdquo;)</li>
+      <li><strong>Regressions (Models IV&ndash;VI):</strong> need re-running with new gender variables</li>
+      <li><strong>H4 (same-gender moderation):</strong> effect weakens but direction holds</li>
+    </ul>
+  </div>
+
+  <div class="box" style="margin-bottom:12px;border-left:4px solid #16a34a;">
+    <h3 style="color:#16a34a;">6. What Does Not Change</h3>
+    <ul style="font-size:14px;line-height:1.8;padding-left:20px;">
+      <li>All non-gender variables (topics, sentiment, request status) are identical &mdash; same dataset</li>
+      <li>Requester gender classifications: 99.5% agreement</li>
+      <li>H1, H2, H3 findings: depend on requester gender, which barely changed</li>
+      <li>Structural patterns (T2 respondent effect, T4 requester gap) are robust across both methods</li>
+    </ul>
+  </div>
+
+  <div class="box box-accent" style="margin-bottom:12px;">
+    <h3>Summary Comparison</h3>
+    <table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:14px;">
+      <tr style="background:#d9e1f2;"><th style="text-align:left;padding:8px 12px;">Metric</th><th style="padding:8px 12px;"><u>Previous</u></th><th style="padding:8px 12px;">New Pipeline</th></tr>
+      <tr><td style="padding:6px 12px;">Known-sex pairs</td><td style="text-align:center;">1,215</td><td style="text-align:center;">1,131</td></tr>
+      <tr style="background:#fef9c3;"><td style="padding:6px 12px;">Respondent % female</td><td style="text-align:center;">58.2%</td><td style="text-align:center;"><strong>43.1%</strong></td></tr>
+      <tr><td style="padding:6px 12px;">F&rarr;F success rate</td><td style="text-align:center;">65.6%</td><td style="text-align:center;">54.1%</td></tr>
+      <tr style="background:#f1f5f9;"><td style="padding:6px 12px;">M&rarr;M success rate</td><td style="text-align:center;">62.4%</td><td style="text-align:center;">57.8%</td></tr>
+      <tr><td style="padding:6px 12px;">Same-sex gap (male req.)</td><td style="text-align:center;">3.8pp</td><td style="text-align:center;">0.8pp</td></tr>
+      <tr style="background:#f1f5f9;"><td style="padding:6px 12px;">Same-sex gap (female req.)</td><td style="text-align:center;">8.4pp</td><td style="text-align:center;">5.1pp</td></tr>
+      <tr><td style="padding:6px 12px;">T2 female resp. boost</td><td style="text-align:center;">+17&ndash;20pp</td><td style="text-align:center;">+18pp</td></tr>
+      <tr style="background:#f1f5f9;"><td style="padding:6px 12px;">T4 requester gap</td><td style="text-align:center;">25&ndash;28pp</td><td style="text-align:center;">56&ndash;58pp</td></tr>
+      <tr><td style="padding:6px 12px;">Requester agreement with <u>previous method</u></td><td style="text-align:center;">&mdash;</td><td style="text-align:center;">99.5%</td></tr>
+      <tr style="background:#f1f5f9;"><td style="padding:6px 12px;">Respondent agreement with <u>previous method</u></td><td style="text-align:center;">&mdash;</td><td style="text-align:center;">90.2%</td></tr>
+    </table>
+  </div>
+
+  <div style="text-align:center;margin-top:48px;padding:16px;font-size:12px;color:#94a3b8;">
+    Pipeline Visualization &mdash; Transparencia.be FOI Gender Classification &mdash; March 2026
+  </div>
+
+</div>
+</body>
+</html>
