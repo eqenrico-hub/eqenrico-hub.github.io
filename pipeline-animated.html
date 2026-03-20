@@ -626,21 +626,22 @@ Jean Dupont</div></div>
   <div class="lookup-demo anim">
     <div class="lookup-token">&ldquo;Jean&rdquo;</div>
     <div class="lookup-arrow">&rarr;</div>
-    <div class="lookup-db">3.49M names</div>
+    <div class="lookup-db">Is it a first name?<br><span style="font-size:11px;">(all 3 databases combined)</span></div>
     <div class="lookup-arrow">&rarr;</div>
-    <div class="lookup-result found">&#x2705; FOUND</div>
+    <div class="lookup-result found">&#x2705; YES</div>
   </div>
 
   <div class="lookup-demo anim" style="margin-top:8px;">
     <div class="lookup-token" style="background:#f8fafc;border-color:#e2e8f0;color:#64748b;">&ldquo;Dupont&rdquo;</div>
     <div class="lookup-arrow">&rarr;</div>
-    <div class="lookup-db">3.49M names</div>
+    <div class="lookup-db">Is it a first name?<br><span style="font-size:11px;">(all 3 databases combined)</span></div>
     <div class="lookup-arrow">&rarr;</div>
-    <div class="lookup-result not-found">&#x274C; NOT a first name</div>
+    <div class="lookup-result not-found">&#x274C; NO</div>
   </div>
 
   <div class="card card-green anim" style="margin-top:20px;">
-    <strong>Result:</strong> first_name = <strong>&ldquo;Jean&rdquo;</strong> &rarr; normalized to <strong>&ldquo;JEAN&rdquo;</strong> for dictionary lookup (NFKD decomposition, strip accents, uppercase).
+    <strong>Result:</strong> first_name = <strong>&ldquo;Jean&rdquo;</strong> &rarr; normalized to <strong>&ldquo;JEAN&rdquo;</strong> for dictionary lookup (NFKD decomposition, strip accents, uppercase).<br>
+    <span style="font-size:13px;color:#475467;">Note: this step only identifies which token is the first name. It does not determine gender yet - that happens in the next step (Tier Cascade), where the name is looked up tier by tier in priority order to get M/F/BOTH.</span>
   </div>
 
   <div class="card anim" style="margin-top:12px;border-left:4px solid #2563eb;">
@@ -658,7 +659,7 @@ Jean Dupont</div></div>
 <div class="step" data-step="9">
   <div class="step-number anim">Step 9 of 17</div>
   <div class="step-title anim">The Tier Cascade</div>
-  <div class="step-subtitle anim">Each extracted first name passes through the four tiers in sequence. The cascade stops at the first match.</div>
+  <div class="step-subtitle anim">Now that we know the first name, we look up its gender. The name is checked through the three databases <strong>in priority order</strong> (Larousse first, then Statbel, then WGND). The cascade stops at the first match - this order matters because the sources may disagree on ambiguous names.</div>
 
   <div class="anim" style="font-weight:700;margin-bottom:8px;color:#2563eb;">Example 1: &ldquo;JEAN&rdquo; -common French name</div>
   <div class="cascade anim">
