@@ -616,7 +616,7 @@ Jean Dupont</div></div>
 <div class="step" data-step="8">
   <div class="step-number anim">Step 8 of 17</div>
   <div class="step-title anim">First Name Identification</div>
-  <div class="step-subtitle anim">The extracted full name is split into tokens. Each token is checked against all 3,486,454 known first names to isolate the actual first name.</div>
+  <div class="step-subtitle anim">Why not look up the gender directly from the extracted name? Because we first need to figure out <strong>which part is the first name</strong>.</div>
 
   <div class="anim" style="text-align:center;margin:24px 0;">
     <span style="font-size:22px;font-weight:800;color:#2563eb;background:#eff6ff;padding:10px 20px;border-radius:8px;border:2px solid #bfdbfe;">&ldquo;Jean Dupont&rdquo;</span>
@@ -643,7 +643,15 @@ Jean Dupont</div></div>
     <strong>Result:</strong> first_name = <strong>&ldquo;Jean&rdquo;</strong> &rarr; normalized to <strong>&ldquo;JEAN&rdquo;</strong> for dictionary lookup (NFKD decomposition, strip accents, uppercase).
   </div>
 
-  <div class="side-note anim">Name connectors like &ldquo;de&rdquo;, &ldquo;van&rdquo;, &ldquo;du&rdquo;, &ldquo;el&rdquo; are recognized as non-name tokens. Compound names like &ldquo;Jean-Pierre&rdquo; are tried as-is first, then the first part (&ldquo;Jean&rdquo;) is tried separately.</div>
+  <div class="card anim" style="margin-top:12px;border-left:4px solid #2563eb;">
+    <div style="font-weight:700;margin-bottom:8px;">Why this two-step process?</div>
+    <div style="font-size:13px;color:#475467;line-height:1.8;">
+      <strong>Step 7</strong> (name extraction) identifies the full name as a unit - spaCy NER needs sentence context to distinguish a real name from random words, and the heuristic uses line patterns (2-4 capitalized words). Without this step, checking individual words against the dictionary would produce false positives: words like "Le", "Paris", or "Commission" exist as names in the WGND database (from other cultures) but are clearly not personal names in a French FOI text.<br><br>
+      <strong>Step 8</strong> (this step) is needed because the first token is not always the first name. In standard French it's "Jean Dupont" (first name first), but in Belgian administrative practice signers often write "Dupont Jean" (surname first). By checking each token against 3.49M known first names, we correctly identify the first name regardless of the order it appears in.
+    </div>
+  </div>
+
+  <div class="side-note anim">Name connectors like "de", "van", "du", "el" are recognized as non-name tokens. Compound names like "Jean-Pierre" are tried as-is first, then the first part ("Jean") is tried separately.</div>
 </div>
 
 <!-- ══════════════ STEP 9: TIER CASCADE ══════════════ -->
