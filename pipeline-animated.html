@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pipeline Walkthrough &mdash; Transparencia.be Gender Classification</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: #f5f6f8;
+  color: #1a1a2e;
+  overflow-x: hidden;
+}
+
+/* ═══════ PROGRESS BAR ═══════ */
+#progress {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: #fff; border-bottom: 1px solid #d0d5dd;
+}
+#progress-fill {
+  height: 4px; background: linear-gradient(90deg, #2563eb, #7c3aed, #ea580c);
+  transition: width 0.5s cubic-bezier(.4,0,.2,1);
+}
+#progress-label {
+  padding: 8px 20px; font-size: 13px; color: #667085;
+  display: flex; justify-content: space-between; align-items: center;
+}
+#progress-label strong { color: #1a1a2e; }
+
+/* ═══════ STEP CONTAINER ═══════ */
+#steps {
+  max-width: 860px; margin: 0 auto;
+  padding: 80px 24px 100px;
+  min-height: 100vh;
+}
+.step {
+  display: none; opacity: 0;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  transform: translateX(30px);
+}
+.step.active {
+  display: block; opacity: 1; transform: translateX(0);
+}
+.step.exit-left {
+  opacity: 0; transform: translateX(-30px);
+}
+.step.exit-right {
+  opacity: 0; transform: translateX(30px);
+}
+
+.step-number {
+  font-size: 13px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 2px; color: #94a3b8; margin-bottom: 8px;
+}
+.step-title {
+  font-size: 28px; font-weight: 700; color: #1a1a2e; margin-bottom: 8px;
+}
+.step-subtitle {
+  font-size: 15px; color: #667085; margin-bottom: 32px; line-height: 1.6;
+}
+
+/* ═══════ NAV CONTROLS ═══════ */
+#nav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  background: #fff; border-top: 1px solid #d0d5dd;
+  padding: 12px 24px; display: flex; justify-content: center; align-items: center; gap: 20px;
+}
+.nav-btn {
+  padding: 10px 28px; border-radius: 8px; border: 1px solid #d0d5dd;
+  background: #fff; color: #1a1a2e; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+}
+.nav-btn:hover { background: #f1f5f9; border-color: #94a3b8; }
+.nav-btn.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+.nav-btn.primary:hover { background: #1d4ed8; }
+.nav-btn:disabled { opacity: 0.3; cursor: default; }
+#step-indicator { font-size: 14px; color: #94a3b8; font-weight: 600; min-width: 60px; text-align: center; }
+
+/* ═══════ ANIMATION SYSTEM ═══════ */
+.anim { opacity: 0; transform: translateY(24px); }
+.anim-play { animation: fadeInUp 0.6s cubic-bezier(.16,1,.3,1) forwards; }
+.anim-scale { opacity: 0; transform: scale(0.85); }
+.anim-scale.anim-play { animation: fadeInScale 0.5s cubic-bezier(.16,1,.3,1) forwards; }
+.anim-left { opacity: 0; transform: translateX(-30px); }
+.anim-left.anim-play { animation: slideInLeft 0.5s cubic-bezier(.16,1,.3,1) forwards; }
+.anim-right { opacity: 0; transform: translateX(30px); }
+.anim-right.anim-play { animation: slideInRight 0.5s cubic-bezier(.16,1,.3,1) forwards; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37,99,235,0.3); }
+  50% { box-shadow: 0 0 0 10px rgba(37,99,235,0); }
+}
+@keyframes highlightSweep {
+  from { background-size: 0% 100%; }
+  to { background-size: 100% 100%; }
+}
+@keyframes growWidth {
+  from { width: 0; }
+  to { width: var(--tw); }
+}
+@keyframes strikeAnim {
+  0% { width: 0; }
+  100% { width: 100%; }
+}
+@keyframes typeChar {
+  from { max-width: 0; }
+  to { max-width: 100%; }
+}
+
+/* ═══════ CARDS ═══════ */
+.card {
+  background: #fff; border: 1px solid #d0d5dd; border-radius: 12px;
+  padding: 24px; margin-bottom: 16px;
+}
+.card-blue { border-left: 4px solid #2563eb; background: #eff6ff; }
+.card-orange { border-left: 4px solid #ea580c; background: #fff7ed; }
+.card-green { border-left: 4px solid #16a34a; background: #f0fdf4; }
+.card-red { border-left: 4px solid #dc2626; background: #fef2f2; }
+.card-purple { border-left: 4px solid #7c3aed; background: #ede9fe; }
+
+/* ═══════ BIG COUNTER ═══════ */
+.big-counter {
+  font-size: 72px; font-weight: 800; color: #2563eb;
+  text-align: center; padding: 32px 0;
+  font-variant-numeric: tabular-nums;
+}
+.big-counter.orange { color: #ea580c; }
+.big-counter.green { color: #16a34a; }
+
+/* ═══════ TEXT BLOCK (FOI text) ═══════ */
+.text-block {
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+  font-size: 13px; line-height: 1.7; background: #fff; border: 1px solid #d0d5dd;
+  border-radius: 8px; padding: 20px; white-space: pre-wrap; color: #334155;
+}
+.text-block .boilerplate {
+  color: #dc2626; position: relative; transition: opacity 1s ease 1.5s;
+}
+.text-block .boilerplate.struck::after {
+  content: ''; position: absolute; left: 0; top: 50%;
+  height: 2px; background: #dc2626;
+  animation: strikeAnim 0.6s ease forwards;
+}
+.text-block .highlight-yellow {
+  background: linear-gradient(90deg, #fef08a, #fde047);
+  background-repeat: no-repeat; background-position: left center;
+  padding: 2px 4px; border-radius: 3px;
+}
+.text-block .highlight-blue {
+  background: #dbeafe; padding: 2px 4px; border-radius: 3px;
+}
+.text-block .highlight-red {
+  background: #fee2e2; padding: 2px 4px; border-radius: 3px;
+  text-decoration: line-through; text-decoration-color: #dc2626;
+}
+
+/* ═══════ SIGNATURE BRACKET ═══════ */
+.sig-zone {
+  border-left: 3px solid #eab308; padding-left: 12px;
+  background: #fefce8; border-radius: 0 8px 8px 0; padding: 12px 16px;
+  margin: 8px 0; transition: all 0.5s ease;
+}
+.sig-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: #a16207; margin-bottom: 4px;
+}
+
+/* ═══════ TIER BOXES ═══════ */
+.tier-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+.tier-box {
+  border-radius: 10px; padding: 16px; text-align: center; border: 2px solid;
+}
+.tier-1 { background: #ede9fe; border-color: #c4b5fd; }
+.tier-2 { background: #e0f2fe; border-color: #7dd3fc; }
+.tier-3 { background: #ecfdf5; border-color: #6ee7b7; }
+.tier-4 { background: #fef3c7; border-color: #fcd34d; }
+.tier-box .tier-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #64748b; }
+.tier-box .tier-name { font-size: 16px; font-weight: 700; margin: 6px 0; }
+.tier-box .tier-count { font-size: 24px; font-weight: 800; }
+
+/* ═══════ CASCADE DEMO ═══════ */
+.cascade { display: flex; flex-direction: column; gap: 8px; margin: 20px 0; }
+.cascade-row {
+  display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+  border-radius: 10px; border: 2px solid; transition: all 0.4s ease;
+}
+.cascade-row .cascade-label { font-weight: 700; min-width: 90px; }
+.cascade-row .cascade-status { margin-left: auto; font-weight: 700; font-size: 18px; }
+.cascade-row.hit { opacity: 1; }
+.cascade-row.miss { opacity: 0.35; }
+.cascade-row.skip { opacity: 0.15; }
+.cascade-arrow { text-align: center; font-size: 20px; color: #94a3b8; }
+
+/* ═══════ RESULT BOXES ═══════ */
+.result-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 20px 0; }
+.result-box {
+  border-radius: 12px; padding: 20px; text-align: center;
+}
+.result-box .result-pct { font-size: 36px; font-weight: 800; }
+.result-box .result-label { font-size: 13px; font-weight: 600; margin-top: 4px; }
+.result-box .result-count { font-size: 12px; color: #64748b; margin-top: 2px; }
+.result-green { background: #dcfce7; border: 2px solid #86efac; }
+.result-green .result-pct { color: #166534; }
+.result-amber { background: #fef9c3; border: 2px solid #fde047; }
+.result-amber .result-pct { color: #854d0e; }
+.result-red { background: #fee2e2; border: 2px solid #fca5a5; }
+.result-red .result-pct { color: #991b1b; }
+
+/* ═══════ STACKED BAR ═══════ */
+.stacked-bar {
+  display: flex; height: 32px; border-radius: 8px; overflow: hidden;
+  margin: 16px 0; border: 1px solid #d0d5dd;
+}
+.stacked-bar .bar-seg {
+  height: 100%; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #fff;
+  width: 0; transition: width 1.2s cubic-bezier(.16,1,.3,1);
+}
+
+/* ═══════ FOLDER TREE ═══════ */
+.folder-tree {
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+  font-size: 13px; line-height: 2; background: #1e293b; color: #e2e8f0;
+  border-radius: 10px; padding: 20px 24px; margin: 16px 0;
+}
+.folder-tree .folder { color: #fbbf24; }
+.folder-tree .file-blue { color: #93c5fd; }
+.folder-tree .file-orange { color: #fdba74; }
+.folder-tree .file-green { color: #86efac; }
+
+/* ═══════ FORMULA LIST ═══════ */
+.formula-list {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px;
+  font-size: 13px; margin: 12px 0; color: #475467;
+}
+.formula-list .fl-item { padding: 4px 8px; border-radius: 4px; }
+.formula-list .fl-item:nth-child(odd) { background: #fefce8; }
+
+/* ═══════ SPLIT FORK ═══════ */
+.fork-container { text-align: center; padding: 40px 0; }
+.fork-line { display: inline-block; width: 4px; height: 60px; background: #94a3b8; border-radius: 2px; }
+.fork-arms { display: flex; justify-content: center; gap: 0; margin-top: -2px; }
+.fork-arm {
+  width: 160px; height: 4px; border-radius: 2px;
+  position: relative; top: 0;
+}
+.fork-arm.blue { background: #2563eb; border-radius: 2px 0 0 2px; }
+.fork-arm.orange { background: #ea580c; border-radius: 0 2px 2px 0; }
+.fork-labels { display: flex; justify-content: center; gap: 80px; margin-top: 16px; }
+.fork-label {
+  padding: 12px 24px; border-radius: 10px; font-weight: 700; font-size: 15px;
+}
+.fork-label.blue { background: #eff6ff; color: #2563eb; border: 2px solid #bfdbfe; }
+.fork-label.orange { background: #fff7ed; color: #ea580c; border: 2px solid #fed7aa; }
+
+/* ═══════ CONFUSION MATRIX ═══════ */
+.matrix-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+.matrix-card { border-radius: 12px; padding: 20px; }
+.matrix-card h4 { font-size: 15px; margin-bottom: 12px; }
+.matrix-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; border-bottom: 1px solid rgba(0,0,0,0.06); }
+.matrix-row:last-child { border-bottom: none; }
+.matrix-row strong { font-size: 16px; }
+
+/* ═══════ PROMPT BOX ═══════ */
+.prompt-box {
+  background: #1e293b; color: #e2e8f0; border-radius: 10px; padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace; font-size: 12px;
+  line-height: 1.7; margin: 16px 0; max-height: 280px; overflow-y: auto;
+}
+.prompt-box .kw { color: #fbbf24; }
+.prompt-box .str { color: #86efac; }
+.prompt-box .cmt { color: #64748b; }
+
+/* ═══════ LOOKUP DEMO ═══════ */
+.lookup-demo { display: flex; align-items: center; gap: 16px; margin: 16px 0; flex-wrap: wrap; }
+.lookup-token {
+  font-size: 22px; font-weight: 800; padding: 10px 20px;
+  border-radius: 8px; background: #eff6ff; border: 2px solid #bfdbfe; color: #2563eb;
+}
+.lookup-arrow { font-size: 24px; color: #94a3b8; }
+.lookup-db {
+  padding: 10px 16px; border-radius: 8px; background: #f1f5f9;
+  border: 2px dashed #cbd5e1; font-size: 13px; font-weight: 600; color: #64748b;
+  text-align: center; min-width: 120px;
+}
+.lookup-result {
+  font-size: 28px; font-weight: 800; padding: 8px 16px; border-radius: 8px;
+}
+.lookup-result.found { background: #dcfce7; color: #166534; }
+.lookup-result.not-found { background: #fee2e2; color: #991b1b; }
+
+/* ═══════ SIDE NOTE ═══════ */
+.side-note {
+  font-size: 13px; color: #64748b; font-style: italic;
+  padding: 12px 16px; border-left: 3px solid #cbd5e1;
+  margin: 16px 0; background: #f8fafc; border-radius: 0 8px 8px 0;
+}
+
+/* ═══════ STAT ROW ═══════ */
+.stat-row { display: flex; gap: 16px; margin: 16px 0; flex-wrap: wrap; }
+.stat-item {
+  flex: 1; min-width: 140px; text-align: center; padding: 16px;
+  background: #fff; border: 1px solid #d0d5dd; border-radius: 10px;
+}
+.stat-item .stat-num { font-size: 28px; font-weight: 800; }
+.stat-item .stat-label { font-size: 12px; color: #64748b; margin-top: 4px; }
+
+/* ═══════ SUMMARY PIPELINE ═══════ */
+.mini-pipeline { display: flex; flex-direction: column; gap: 4px; margin: 20px 0; }
+.mini-step {
+  display: flex; align-items: center; gap: 12px; padding: 8px 14px;
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px;
+}
+.mini-step .ms-num {
+  width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.ms-blue { background: #2563eb; }
+.ms-purple { background: #7c3aed; }
+.ms-orange { background: #ea580c; }
+.ms-green { background: #16a34a; }
+
+/* ═══════ RESPONSIVE ═══════ */
+@media (max-width: 640px) {
+  .step-title { font-size: 22px; }
+  .big-counter { font-size: 48px; }
+  .tier-grid, .result-grid, .matrix-grid { grid-template-columns: 1fr; }
+  .formula-list { grid-template-columns: 1fr; }
+  .fork-labels { flex-direction: column; align-items: center; gap: 12px; }
+  .fork-arms { width: 80px; }
+  .lookup-demo { flex-direction: column; align-items: flex-start; }
+  #steps { padding: 72px 16px 90px; }
+  .stat-row { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════ PROGRESS BAR ═══════ -->
+<div id="progress">
+  <div id="progress-fill" style="width:5.88%"></div>
+  <div id="progress-label">
+    <span><strong>Step 1</strong> of 17</span>
+    <span id="progress-title">The Dataset</span>
+  </div>
+</div>
+
+<!-- ═══════ ALL 17 STEPS ═══════ -->
+<div id="steps">
+
+<!-- ══════════════ STEP 1: THE DATASET ══════════════ -->
+<div class="step active" data-step="1">
+  <div class="step-number anim">Step 1 of 17</div>
+  <div class="step-title anim">The Dataset</div>
+  <div class="step-subtitle anim">We start with the full corpus of Belgian Freedom of Information requests submitted through the Transparencia.be platform.</div>
+
+  <div class="big-counter anim-scale" data-count-to="4265">0</div>
+  <div class="anim" style="text-align:center;font-size:15px;color:#475467;margin-top:-16px;">FOI requests &mdash; 2016 to 2025</div>
+
+  <div class="stat-row" style="margin-top:32px;">
+    <div class="stat-item anim">
+      <div class="stat-num" style="color:#2563eb;">4,265</div>
+      <div class="stat-label">Total requests</div>
+    </div>
+    <div class="stat-item anim">
+      <div class="stat-num" style="color:#ea580c;">2,511</div>
+      <div class="stat-label">With a response</div>
+    </div>
+    <div class="stat-item anim">
+      <div class="stat-num" style="color:#dc2626;">1,754</div>
+      <div class="stat-label">No reply received</div>
+    </div>
+  </div>
+
+  <div class="side-note anim">Each request is a citizen asking a Belgian public body for access to administrative documents. The pipeline must identify the gender of both the requester and the respondent from the text of these communications.</div>
+</div>
+
+<!-- ══════════════ STEP 2: FOLDER STRUCTURE ══════════════ -->
+<div class="step" data-step="2">
+  <div class="step-number anim">Step 2 of 17</div>
+  <div class="step-title anim">Folder Structure</div>
+  <div class="step-subtitle anim">Each FOI request is stored as a folder containing outgoing (citizen &rarr; administration) and incoming (administration &rarr; citizen) text files.</div>
+
+  <div class="folder-tree anim">
+<span class="folder">transparencia-export-full/</span>
+  <span class="folder">demande-acces-permis-urbanisme-42/</span>
+    <span class="folder">2022-03-14T14-30-00/</span>
+      <span class="file-blue">outgoing_0001.txt</span>  &larr; citizen's request
+      <span class="file-orange">incoming_0001.txt</span>  &larr; official's response
+      <span class="file-orange">incoming_0002.txt</span>  &larr; follow-up
+    <span class="folder">2022-04-02T09-15-00/</span>
+      <span class="file-blue">outgoing_0002.txt</span>  &larr; citizen's reminder
+  <span class="folder">demande-proces-verbaux-conseil/</span>
+    <span class="folder">2023-01-10T11-00-00/</span>
+      <span class="file-blue">outgoing_0001.txt</span>
+      <span class="file-green">(no incoming files &mdash; no reply)</span>
+  <span style="color:#64748b;">... 4,263 more request folders</span>
+  </div>
+
+  <div class="card card-blue anim">
+    <strong>Rule:</strong> The pipeline always selects the <strong>first outgoing file</strong> (requester) and the <strong>first incoming file</strong> (respondent) per request &mdash; chronologically earliest timestamp. This ensures we identify the original signers, not follow-up authors.
+  </div>
+</div>
+
+<!-- ══════════════ STEP 3: REFERENCE DATABASES ══════════════ -->
+<div class="step" data-step="3">
+  <div class="step-number anim">Step 3 of 17</div>
+  <div class="step-title anim">Reference Databases</div>
+  <div class="step-subtitle anim">Before processing any text, the pipeline loads three curated name&ndash;gender dictionaries forming a <strong>four-tier cascade</strong>.</div>
+
+  <div class="tier-grid">
+    <div class="tier-box tier-1 anim">
+      <div class="tier-label">Tier 1</div>
+      <div class="tier-name">Larousse des pr&eacute;noms</div>
+      <div class="tier-count" data-count-to="9641">0</div>
+      <div style="font-size:12px;color:#64748b;">names (Ferey, 2019)</div>
+    </div>
+    <div class="tier-box tier-2 anim">
+      <div class="tier-label">Tier 2</div>
+      <div class="tier-name">Statbel Registry</div>
+      <div class="tier-count" data-count-to="8146">0</div>
+      <div style="font-size:12px;color:#64748b;">additional names (Belgian civil registry, 2017)</div>
+    </div>
+    <div class="tier-box tier-3 anim">
+      <div class="tier-label">Tier 3</div>
+      <div class="tier-name">WGND 2.0</div>
+      <div class="tier-count" data-count-to="3482709">0</div>
+      <div style="font-size:12px;color:#64748b;">names (Harvard Dataverse, 182 countries)</div>
+    </div>
+    <div class="tier-box tier-4 anim">
+      <div class="tier-label">Tier 4</div>
+      <div class="tier-name">Ollama LLM</div>
+      <div style="font-size:32px;font-weight:800;margin:8px 0;">&#x1F9E0;</div>
+      <div style="font-size:12px;color:#64748b;">Llama 3.2 &mdash; temp=0, seed=42</div>
+    </div>
+  </div>
+
+  <div class="card card-green anim">
+    <strong>Combined lookup capacity:</strong> <span style="font-size:20px;font-weight:800;color:#16a34a;" data-count-to="3486454">0</span> unique first names. Each name is tried in Tier 1 first, then 2, then 3. Only truly unresolved cases fall to Tier 4 (LLM).
+  </div>
+</div>
+
+<!-- ══════════════ STEP 4: FILE SELECTION ══════════════ -->
+<div class="step" data-step="4">
+  <div class="step-number anim">Step 4 of 17</div>
+  <div class="step-title anim">File Selection</div>
+  <div class="step-subtitle anim">For each of the 4,265 requests, the pipeline picks the first outgoing text file &mdash; the citizen's original FOI request.</div>
+
+  <div class="folder-tree anim">
+<span class="folder">demande-acces-permis-urbanisme-42/</span>
+  <span class="folder">2022-03-14T14-30-00/</span>
+    <span class="file-blue" style="background:#2563eb33;padding:2px 6px;border-radius:4px;">&#x2794; outgoing_0001.txt</span>  <span style="color:#86efac;font-weight:700;">SELECTED</span>
+    <span class="file-orange" style="opacity:0.4;">  incoming_0001.txt</span>  <span style="color:#64748b;opacity:0.4;">(respondent &mdash; processed later)</span>
+    <span class="file-orange" style="opacity:0.4;">  incoming_0002.txt</span>  <span style="color:#64748b;opacity:0.4;">(ignored &mdash; not first)</span>
+  <span class="folder" style="opacity:0.4;">2022-04-02T09-15-00/</span>
+    <span class="file-blue" style="opacity:0.4;">  outgoing_0002.txt</span>  <span style="color:#64748b;opacity:0.4;">(ignored &mdash; not first)</span>
+  </div>
+
+  <div class="stat-row" style="margin-top:24px;">
+    <div class="stat-item anim">
+      <div class="stat-num" style="color:#2563eb;">4,265</div>
+      <div class="stat-label">Outgoing files selected</div>
+    </div>
+    <div class="stat-item anim">
+      <div class="stat-num" style="color:#ea580c;">2,511</div>
+      <div class="stat-label">Incoming files found</div>
+    </div>
+    <div class="stat-item anim">
+      <div class="stat-num" style="color:#dc2626;">1,754</div>
+      <div class="stat-label">No incoming (no reply)</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ STEP 5: BOILERPLATE REMOVAL ══════════════ -->
+<div class="step" data-step="5">
+  <div class="step-number anim">Step 5 of 17</div>
+  <div class="step-title anim">Boilerplate Removal</div>
+  <div class="step-subtitle anim">Transparencia.be appends a platform footer to every message. The pipeline detects and strips it so it doesn't interfere with name extraction.</div>
+
+  <div class="text-block anim" id="boilerplate-demo">Monsieur,
+
+Par la pr&eacute;sente, je sollicite l'acc&egrave;s aux documents
+relatifs au permis d'urbanisme d&eacute;livr&eacute; le 14 mars 2022
+pour la parcelle situ&eacute;e rue de la Loi 42, 1000 Bruxelles.
+
+Je vous remercie d'avance pour votre r&eacute;ponse.
+
+Cordialement,
+Jean Dupont
+
+<span class="boilerplate" id="bp-line1">---</span>
+<span class="boilerplate" id="bp-line2">Si vous trouvez ce service utile en tant que plateforme</span>
+<span class="boilerplate" id="bp-line3">de transparence, vous pouvez soutenir notre travail en</span>
+<span class="boilerplate" id="bp-line4">faisant un don sur transparencia.be/soutenir</span></div>
+
+  <div class="side-note anim">The pipeline recognizes French, Dutch, and English boilerplate markers: <em>&ldquo;Si vous trouvez ce service utile&rdquo;</em>, <em>&ldquo;Gelieve dit e-mailadres te gebruiken&rdquo;</em>, <em>&ldquo;Please use this email address&rdquo;</em>. Everything from the first marker onward is removed.</div>
+</div>
+
+<!-- ══════════════ STEP 6: SIGNATURE ZONE ══════════════ -->
+<div class="step" data-step="6">
+  <div class="step-number anim">Step 6 of 17</div>
+  <div class="step-title anim">Signature Zone Detection</div>
+  <div class="step-subtitle anim">The pipeline scans the last 500 characters for a <strong>closing formula</strong> &mdash; a standard French/Dutch phrase that signals the start of the signature area.</div>
+
+  <div class="text-block anim" style="margin-bottom:16px;">Monsieur,
+
+Par la pr&eacute;sente, je sollicite l'acc&egrave;s aux documents
+relatifs au permis d'urbanisme d&eacute;livr&eacute; le 14 mars 2022
+pour la parcelle situ&eacute;e rue de la Loi 42, 1000 Bruxelles.
+
+Je vous remercie d'avance pour votre r&eacute;ponse.
+
+<div class="sig-zone"><div class="sig-label">&#x1F4CD; Signature Zone</div><span class="highlight-yellow">Cordialement,</span>
+Jean Dupont</div></div>
+
+  <div class="anim" style="margin-bottom:12px;font-weight:700;">The 16 closing formulas recognized:</div>
+  <div class="formula-list anim">
+    <div class="fl-item">1. Cordialement</div>
+    <div class="fl-item">2. Bien cordialement</div>
+    <div class="fl-item">3. Veuillez agr&eacute;er...</div>
+    <div class="fl-item">4. Veuillez accepter...</div>
+    <div class="fl-item">5. Je vous prie...</div>
+    <div class="fl-item">6. Salutations distingu&eacute;es</div>
+    <div class="fl-item">7. Respectueusement</div>
+    <div class="fl-item">8. Sinc&egrave;rement</div>
+    <div class="fl-item">9. Bien &agrave; vous</div>
+    <div class="fl-item">10. Merci d'avance</div>
+    <div class="fl-item">11. En vous remerciant</div>
+    <div class="fl-item">12. Dans l'attente...</div>
+    <div class="fl-item">13. Recevez ... salutations</div>
+    <div class="fl-item">14. Avec mes ... salutations</div>
+    <div class="fl-item" style="background:#e0f2fe;">15. Met vriendelijke groeten <span style="color:#94a3b8;">(NL)</span></div>
+    <div class="fl-item" style="background:#e0f2fe;">16. Hoogachtend <span style="color:#94a3b8;">(NL)</span></div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-item anim">
+      <div class="stat-num" style="color:#16a34a;">96.9%</div>
+      <div class="stat-label">Closing formula found</div>
+    </div>
+    <div class="stat-item anim">
+      <div class="stat-num" style="color:#dc2626;">3.1%</div>
+      <div class="stat-label">Fallback: last 200 chars</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ STEP 7: NAME EXTRACTION ══════════════ -->
+<div class="step" data-step="7">
+  <div class="step-number anim">Step 7 of 17</div>
+  <div class="step-title anim">Name Extraction</div>
+  <div class="step-subtitle anim">Two methods scan the signature zone in parallel to find the signer's name.</div>
+
+  <div class="sig-zone anim" style="margin-bottom:20px;">
+    <div class="sig-label">Signature Zone</div>
+    Cordialement,<br>
+    <span class="highlight-blue" style="font-weight:700;font-size:16px;">Jean Dupont</span>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0;">
+    <div class="card card-blue anim">
+      <div style="font-weight:700;margin-bottom:8px;">Method A: spaCy NER</div>
+      <div style="font-size:13px;color:#475467;">Named Entity Recognition detects PERSON entities.<br><br>
+      Found: <strong style="color:#2563eb;">&ldquo;Jean Dupont&rdquo;</strong> &mdash; PER<br>
+      Confidence: 0.85</div>
+      <div style="margin-top:10px;font-size:20px;">&#x2705;</div>
+    </div>
+    <div class="card card-purple anim">
+      <div style="font-weight:700;margin-bottom:8px;">Method B: Heuristic</div>
+      <div style="font-size:13px;color:#475467;">Pattern matching: 2&ndash;4 capitalized words where first word is a known name.<br><br>
+      Found: <strong style="color:#7c3aed;">&ldquo;Jean Dupont&rdquo;</strong> &mdash; match<br>
+      Confidence: 0.50</div>
+      <div style="margin-top:10px;font-size:20px;">&#x2705;</div>
+    </div>
+  </div>
+
+  <div class="card card-green anim">
+    <strong>Both methods agree:</strong> &ldquo;Jean Dupont&rdquo; &rarr; name extraction confirmed. When methods disagree, the one with higher confidence wins. When only one finds a name, that result is used.
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-item anim">
+      <div class="stat-num" style="color:#16a34a;">4,115</div>
+      <div class="stat-label">Names extracted (96.5%)</div>
+    </div>
+    <div class="stat-item anim">
+      <div class="stat-num" style="color:#dc2626;">150</div>
+      <div class="stat-label">No name found (3.5%)</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ STEP 8: FIRST NAME IDENTIFICATION ══════════════ -->
+<div class="step" data-step="8">
+  <div class="step-number anim">Step 8 of 17</div>
+  <div class="step-title anim">First Name Identification</div>
+  <div class="step-subtitle anim">The extracted full name is split into tokens. Each token is checked against all 3,486,454 known first names to isolate the actual first name.</div>
+
+  <div class="anim" style="text-align:center;margin:24px 0;">
+    <span style="font-size:22px;font-weight:800;color:#2563eb;background:#eff6ff;padding:10px 20px;border-radius:8px;border:2px solid #bfdbfe;">&ldquo;Jean Dupont&rdquo;</span>
+    <div style="font-size:24px;color:#94a3b8;margin:12px 0;">&darr; split into tokens &darr;</div>
+  </div>
+
+  <div class="lookup-demo anim">
+    <div class="lookup-token">&ldquo;Jean&rdquo;</div>
+    <div class="lookup-arrow">&rarr;</div>
+    <div class="lookup-db">3.48M names</div>
+    <div class="lookup-arrow">&rarr;</div>
+    <div class="lookup-result found">&#x2705; FOUND</div>
+  </div>
+
+  <div class="lookup-demo anim" style="margin-top:8px;">
+    <div class="lookup-token" style="background:#f8fafc;border-color:#e2e8f0;color:#64748b;">&ldquo;Dupont&rdquo;</div>
+    <div class="lookup-arrow">&rarr;</div>
+    <div class="lookup-db">3.48M names</div>
+    <div class="lookup-arrow">&rarr;</div>
+    <div class="lookup-result not-found">&#x274C; NOT a first name</div>
+  </div>
+
+  <div class="card card-green anim" style="margin-top:20px;">
+    <strong>Result:</strong> first_name = <strong>&ldquo;Jean&rdquo;</strong> &rarr; normalized to <strong>&ldquo;JEAN&rdquo;</strong> for dictionary lookup (NFKD decomposition, strip accents, uppercase).
+  </div>
+
+  <div class="side-note anim">Name connectors like &ldquo;de&rdquo;, &ldquo;van&rdquo;, &ldquo;du&rdquo;, &ldquo;el&rdquo; are recognized as non-name tokens. Compound names like &ldquo;Jean-Pierre&rdquo; are tried as-is first, then the first part (&ldquo;Jean&rdquo;) is tried separately.</div>
+</div>
+
+<!-- ══════════════ STEP 9: TIER CASCADE ══════════════ -->
+<div class="step" data-step="9">
+  <div class="step-number anim">Step 9 of 17</div>
+  <div class="step-title anim">The Tier Cascade</div>
+  <div class="step-subtitle anim">Each extracted first name passes through the four tiers in sequence. The cascade stops at the first match.</div>
+
+  <div class="anim" style="font-weight:700;margin-bottom:8px;color:#2563eb;">Example 1: &ldquo;JEAN&rdquo; &mdash; common French name</div>
+  <div class="cascade anim">
+    <div class="cascade-row tier-1 hit"><span class="cascade-label">Tier 1: Larousse</span> <span>Search &ldquo;JEAN&rdquo;</span> <span class="cascade-status" style="color:#16a34a;">&#x2705; M</span></div>
+    <div class="cascade-row tier-2 skip"><span class="cascade-label">Tier 2: Statbel</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">&mdash;</span></div>
+    <div class="cascade-row tier-3 skip"><span class="cascade-label">Tier 3: WGND</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">&mdash;</span></div>
+    <div class="cascade-row tier-4 skip"><span class="cascade-label">Tier 4: LLM</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">&mdash;</span></div>
+  </div>
+
+  <div class="anim" style="font-weight:700;margin:20px 0 8px;color:#0284c7;">Example 2: &ldquo;AYOUB&rdquo; &mdash; not in Larousse</div>
+  <div class="cascade anim">
+    <div class="cascade-row tier-1 miss"><span class="cascade-label">Tier 1: Larousse</span> <span>Search &ldquo;AYOUB&rdquo;</span> <span class="cascade-status" style="color:#dc2626;">&#x274C;</span></div>
+    <div class="cascade-row tier-2 hit"><span class="cascade-label">Tier 2: Statbel</span> <span>Search &ldquo;AYOUB&rdquo;</span> <span class="cascade-status" style="color:#16a34a;">&#x2705; M</span></div>
+    <div class="cascade-row tier-3 skip"><span class="cascade-label">Tier 3: WGND</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">&mdash;</span></div>
+    <div class="cascade-row tier-4 skip"><span class="cascade-label">Tier 4: LLM</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">&mdash;</span></div>
+  </div>
+
+  <div class="anim" style="font-weight:700;margin:20px 0 8px;color:#854d0e;">Example 3: &ldquo;CABLYN&rdquo; &mdash; unresolvable</div>
+  <div class="cascade anim">
+    <div class="cascade-row tier-1 miss"><span class="cascade-label">Tier 1: Larousse</span> <span>Search &ldquo;CABLYN&rdquo;</span> <span class="cascade-status" style="color:#dc2626;">&#x274C;</span></div>
+    <div class="cascade-row tier-2 miss"><span class="cascade-label">Tier 2: Statbel</span> <span>Search &ldquo;CABLYN&rdquo;</span> <span class="cascade-status" style="color:#dc2626;">&#x274C;</span></div>
+    <div class="cascade-row tier-3 miss"><span class="cascade-label">Tier 3: WGND</span> <span>Search &ldquo;CABLYN&rdquo;</span> <span class="cascade-status" style="color:#dc2626;">&#x274C;</span></div>
+    <div class="cascade-row tier-4 hit"><span class="cascade-label">Tier 4: LLM</span> <span>Ollama analyzes text&hellip;</span> <span class="cascade-status" style="color:#854d0e;">&#x26A0; UNKNOWN</span></div>
+  </div>
+
+  <div class="side-note anim">Tiers 1&ndash;3 are fully deterministic: same input always produces same output. Tier 4 (LLM) uses temperature=0 and seed=42 for near-deterministic results, but all its M/F outputs are flagged for manual review.</div>
+</div>
+
+<!-- ══════════════ STEP 10: TIER 4 LLM ══════════════ -->
+<div class="step" data-step="10">
+  <div class="step-number anim">Step 10 of 17</div>
+  <div class="step-title anim">Tier 4: The LLM Fallback</div>
+  <div class="step-subtitle anim">Only cases unresolved by Tiers 1&ndash;3 reach the LLM. An anti-hallucination prompt prevents the model from guessing.</div>
+
+  <div class="prompt-box anim"><span class="kw">SYSTEM PROMPT (requester):</span>
+
+You are classifying the sex of the person who signed a FOI request.
+Look for a <span class="str">PERSONAL SIGNATURE</span> after the closing formula.
+
+<span class="cmt">IMPORTANT: Many FOI requests have NO personal signature &mdash;
+they may be signed by organisations, pseudonyms, or contain
+only initials. If you do not see a clear first name + surname,
+return UNKNOWN. Do NOT guess or invent a name.</span>
+
+Examples of valid: &ldquo;Jean Dupont&rdquo; &rarr; M, &ldquo;Marie Lambert&rdquo; &rarr; F
+Examples of UNKNOWN: &ldquo;N. Dupont&rdquo;, &ldquo;Collectif du Bempt&rdquo;, &ldquo;Service Juridique&rdquo;
+
+Reply EXACTLY: <span class="str">GENDER: &lt;M or F or UNKNOWN&gt; | NAME: &lt;first name or NONE&gt;</span></div>
+
+  <div class="anim" style="font-weight:700;margin:16px 0 8px;">Hallucination Filter</div>
+  <div class="card anim" style="border-left:4px solid #eab308;">
+    <div style="font-size:14px;line-height:1.8;">
+      1. LLM returns: <code>GENDER: M | NAME: Philippe</code><br>
+      2. Filter checks: does &ldquo;Philippe&rdquo; appear in the input text?<br>
+      3. If <strong style="color:#16a34a;">YES</strong> &rarr; accept classification, flag for manual review<br>
+      4. If <strong style="color:#dc2626;">NO</strong> &rarr; hallucination detected, reclassify as <strong>UNKNOWN</strong>
+    </div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-item anim">
+      <div class="stat-num" style="color:#854d0e;">379</div>
+      <div class="stat-label">Cases reached Tier 4</div>
+    </div>
+    <div class="stat-item anim">
+      <div class="stat-num" style="color:#16a34a;">136</div>
+      <div class="stat-label">Classified M/F</div>
+    </div>
+    <div class="stat-item anim">
+      <div class="stat-num" style="color:#dc2626;">220</div>
+      <div class="stat-label">Confirmed UNKNOWN</div>
+    </div>
+    <div class="stat-item anim">
+      <div class="stat-num" style="color:#94a3b8;">23</div>
+      <div class="stat-label">No result</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ STEP 11: REQUESTER RESULTS ══════════════ -->
+<div class="step" data-step="11">
+  <div class="step-number anim">Step 11 of 17</div>
+  <div class="step-title anim">Requester Results</div>
+  <div class="step-subtitle anim">After the full four-tier cascade, here is how all 4,265 requesters are classified.</div>
+
+  <div class="result-grid">
+    <div class="result-box result-green anim-scale">
+      <div class="result-pct">89.4%</div>
+      <div class="result-label">M or F</div>
+      <div class="result-count">3,813 requesters</div>
+    </div>
+    <div class="result-box result-amber anim-scale">
+      <div class="result-pct">4.9%</div>
+      <div class="result-label">BOTH (unisex)</div>
+      <div class="result-count">209 requesters</div>
+    </div>
+    <div class="result-box result-red anim-scale">
+      <div class="result-pct">5.7%</div>
+      <div class="result-label">UNKNOWN</div>
+      <div class="result-count">243 requesters</div>
+    </div>
+  </div>
+
+  <div class="stacked-bar anim" id="req-bar">
+    <div class="bar-seg" style="background:#16a34a;--tw:89.4%;" data-width="89.4">89.4%</div>
+    <div class="bar-seg" style="background:#eab308;--tw:4.9%;" data-width="4.9">4.9%</div>
+    <div class="bar-seg" style="background:#dc2626;--tw:5.7%;" data-width="5.7">5.7%</div>
+  </div>
+
+  <div class="anim" style="font-size:14px;color:#475467;margin-top:8px;">
+    <strong>Tier breakdown:</strong> Larousse resolved 3,529 &bull; Statbel added 51 &bull; WGND added 97 &bull; LLM added 136 &bull; 136 cases flagged TO REVIEW
+  </div>
+
+  <div class="side-note anim">The high 89.4% classification rate is because most FOI requesters sign with their full name. The 5.7% UNKNOWN includes pseudonyms, initials-only, and collective/organizational signers.</div>
+</div>
+
+<!-- ══════════════ STEP 12: THE SPLIT ══════════════ -->
+<div class="step" data-step="12">
+  <div class="step-number anim">Step 12 of 17</div>
+  <div class="step-title anim">The Split: Two Lanes</div>
+  <div class="step-subtitle anim">The same pipeline runs for both requesters and respondents &mdash; but with very different outcomes.</div>
+
+  <div class="fork-container anim-scale">
+    <div class="fork-line"></div>
+    <div class="fork-arms">
+      <div class="fork-arm blue"></div>
+      <div class="fork-arm orange"></div>
+    </div>
+    <div class="fork-labels">
+      <div class="fork-label blue">Requester Lane<br><span style="font-size:12px;font-weight:400;">outgoing_*.txt</span></div>
+      <div class="fork-label orange">Respondent Lane<br><span style="font-size:12px;font-weight:400;">incoming_*.txt</span></div>
+    </div>
+  </div>
+
+  <div class="card card-red anim" style="text-align:center;margin-top:24px;">
+    <div style="font-size:36px;font-weight:800;color:#dc2626;" data-count-to="1754">0</div>
+    <div style="font-size:15px;font-weight:600;color:#991b1b;">requests received <strong>no reply at all</strong> (41.1%)</div>
+    <div style="font-size:13px;color:#64748b;margin-top:6px;">These are immediately classified as UNKNOWN for respondent gender.</div>
+  </div>
+
+  <div class="side-note anim">The respondent lane has much lower success because: (1) 41.1% of requests got no reply, (2) many official responses are unsigned or signed by a department rather than an individual, (3) automated/template responses have no personal signature.</div>
+</div>
+
+<!-- ══════════════ STEP 13: RESPONDENT PROCESSING ══════════════ -->
+<div class="step" data-step="13">
+  <div class="step-number anim">Step 13 of 17</div>
+  <div class="step-title anim">Respondent Processing</div>
+  <div class="step-subtitle anim">The respondent lane follows the same steps but with extra cleaning: quoted original messages must be stripped first.</div>
+
+  <div class="text-block anim">Madame, Monsieur,
+
+Nous accusons r&eacute;ception de votre demande d'acc&egrave;s
+du 14/03/2022. Votre demande a &eacute;t&eacute; transmise au
+service comp&eacute;tent.
+
+Le Secr&eacute;tariat communal
+Commune de Rebecq
+secretariat@rebecq.be
+
+<span class="highlight-red">-----Message d'origine-----</span>
+<span class="highlight-red">De: transparencia@example.be</span>
+<span class="highlight-red">Envoy&eacute;: lundi 14 mars 2022 14:30</span>
+<span class="highlight-red">Objet: Demande d'acc&egrave;s - permis d'urbanisme</span>
+<span class="highlight-red">[original request text quoted here...]</span></div>
+
+  <div class="card card-orange anim" style="margin-top:16px;">
+    <strong>Key challenge:</strong> The signer here is <em>&ldquo;Le Secr&eacute;tariat communal &mdash; Commune de Rebecq&rdquo;</em> &mdash; an institutional signature with <strong>no personal name</strong>. spaCy NER finds no PERSON entity. Heuristic finds no known first name. Result: <strong style="color:#dc2626;">UNKNOWN</strong>.
+  </div>
+
+  <div class="side-note anim">Quoted message removal is critical: without it, the pipeline might extract the <em>requester's</em> name from the quoted text instead of the <em>respondent's</em> name. The pipeline detects headers like &ldquo;-----Message d'origine-----&rdquo;, &ldquo;Van: ... Verzonden:&rdquo; (NL), &ldquo;De: ... Envoy&eacute;:&rdquo; (FR).</div>
+</div>
+
+<!-- ══════════════ STEP 14: RESPONDENT RESULTS ══════════════ -->
+<div class="step" data-step="14">
+  <div class="step-number anim">Step 14 of 17</div>
+  <div class="step-title anim">Respondent Results</div>
+  <div class="step-subtitle anim">The respondent lane has a much lower classification rate due to missing replies and institutional signatures.</div>
+
+  <div class="result-grid">
+    <div class="result-box result-green anim-scale">
+      <div class="result-pct">30.0%</div>
+      <div class="result-label">M or F</div>
+      <div class="result-count">1,278 respondents</div>
+    </div>
+    <div class="result-box result-amber anim-scale">
+      <div class="result-pct">0.6%</div>
+      <div class="result-label">BOTH (unisex)</div>
+      <div class="result-count">24 respondents</div>
+    </div>
+    <div class="result-box result-red anim-scale">
+      <div class="result-pct">69.5%</div>
+      <div class="result-label">UNKNOWN</div>
+      <div class="result-count">2,963 respondents</div>
+    </div>
+  </div>
+
+  <div class="stacked-bar anim" id="resp-bar">
+    <div class="bar-seg" style="background:#16a34a;--tw:30%;" data-width="30">30.0%</div>
+    <div class="bar-seg" style="background:#eab308;--tw:0.6%;" data-width="0.6"></div>
+    <div class="bar-seg" style="background:#dc2626;--tw:69.5%;" data-width="69.5">69.5%</div>
+  </div>
+
+  <div class="card anim" style="margin-top:12px;">
+    <div style="font-size:14px;line-height:1.8;">
+      <strong>Among the 2,511 requests with a reply:</strong> 51.9% were classified (1,302 / 2,511).<br>
+      <strong>28 cases</strong> flagged TO REVIEW from Tier 4.
+    </div>
+  </div>
+
+  <div class="side-note anim">The 69.5% UNKNOWN rate is not a pipeline failure &mdash; it accurately reflects that most government responses are either missing (41.1%) or institutionally signed (no personal name to classify).</div>
+</div>
+
+<!-- ══════════════ STEP 15: CONFUSION MATRIX ══════════════ -->
+<div class="step" data-step="15">
+  <div class="step-number anim">Step 15 of 17</div>
+  <div class="step-title anim">Validation: Confusion Matrix</div>
+  <div class="step-subtitle anim">The new pipeline's classifications are compared to the previous methodology (ChatGPT-based). How much changed?</div>
+
+  <div class="matrix-grid">
+    <div class="matrix-card card-green anim">
+      <h4 style="color:#16a34a;">Requester (stable)</h4>
+      <div class="matrix-row">Previous M &rarr; still M: <strong style="color:#16a34a;">93.9%</strong> <span style="color:#64748b;">(2,160/2,301)</span></div>
+      <div class="matrix-row">Previous F &rarr; still F: <strong style="color:#16a34a;">99.0%</strong> <span style="color:#64748b;">(1,342/1,355)</span></div>
+      <div class="matrix-row">Gender flips (M&harr;F): <strong>&lt;1%</strong></div>
+      <div class="matrix-row">Reclassified UNKNOWN: <strong>0.4&ndash;5.7%</strong></div>
+    </div>
+    <div class="matrix-card card-red anim">
+      <h4 style="color:#dc2626;">Respondent (significant changes)</h4>
+      <div class="matrix-row">Previous M &rarr; still M: <strong style="color:#dc2626;">67.8%</strong> <span style="color:#64748b;">(391/577)</span></div>
+      <div class="matrix-row">Previous F &rarr; still F: <strong style="color:#dc2626;">53.7%</strong> <span style="color:#64748b;">(437/814)</span></div>
+      <div class="matrix-row">Previous UNK &rarr; now M/F: <strong>32.0%</strong> <span style="color:#64748b;">(360/1,126)</span></div>
+      <div class="matrix-row">Reclassified UNKNOWN: <strong>29&ndash;37%</strong></div>
+    </div>
+  </div>
+
+  <div class="side-note anim">Requester classifications are very stable: almost all M and F were confirmed. Respondent classifications changed significantly: 29&ndash;37% of previously classified M/F respondents were reclassified as UNKNOWN by the stricter pipeline.</div>
+</div>
+
+<!-- ══════════════ STEP 16: MANUAL REVIEW ══════════════ -->
+<div class="step" data-step="16">
+  <div class="step-number anim">Step 16 of 17</div>
+  <div class="step-title anim">Manual Review</div>
+  <div class="step-subtitle anim">All classifications made by the LLM (Tier 4) are flagged for exhaustive human verification.</div>
+
+  <div class="big-counter anim-scale" style="color:#92400e;" data-count-to="164">0</div>
+  <div class="anim" style="text-align:center;font-size:16px;color:#475467;margin-top:-16px;">cases flagged for manual review</div>
+
+  <div class="stat-row" style="margin-top:28px;">
+    <div class="stat-item anim">
+      <div class="stat-num" style="color:#2563eb;">136</div>
+      <div class="stat-label">Requester cases</div>
+    </div>
+    <div class="stat-item anim">
+      <div class="stat-num" style="color:#ea580c;">28</div>
+      <div class="stat-label">Respondent cases</div>
+    </div>
+  </div>
+
+  <div class="card anim" style="margin-top:20px;">
+    <div style="font-size:14px;line-height:1.8;">
+      <strong>Why only Tier 4?</strong> Tiers 1&ndash;3 are fully deterministic dictionary lookups with curated, published sources. The LLM (Tier 4) is probabilistic and can hallucinate &mdash; so every M/F classification it makes is verified by a human researcher before inclusion in the final dataset.
+    </div>
+  </div>
+
+  <div class="card card-green anim">
+    <strong>After review, the final column is <code>sex_validated</code></strong> &mdash; incorporating corrections from manual verification. This is the column used in all downstream analysis.
+  </div>
+</div>
+
+<!-- ══════════════ STEP 17: FULL SUMMARY ══════════════ -->
+<div class="step" data-step="17">
+  <div class="step-number anim">Step 17 of 17</div>
+  <div class="step-title anim">Full Pipeline Summary</div>
+  <div class="step-subtitle anim">The complete flow from raw FOI text to validated gender classification.</div>
+
+  <div class="mini-pipeline anim">
+    <div class="mini-step"><div class="ms-num ms-blue">1</div> <strong>4,265</strong> FOI requests loaded from export folders</div>
+    <div class="mini-step"><div class="ms-num ms-blue">2</div> Platform boilerplate stripped (multilingual markers)</div>
+    <div class="mini-step"><div class="ms-num ms-blue">3</div> Signature zone detected via 16 closing formulas (96.9% success)</div>
+    <div class="mini-step"><div class="ms-num ms-blue">4</div> Name extracted: spaCy NER + heuristic fallback (96.5%)</div>
+    <div class="mini-step"><div class="ms-num ms-blue">5</div> First name identified against 3.49M known names</div>
+    <div class="mini-step"><div class="ms-num ms-purple">6</div> Tier 1: Larousse &mdash; 3,529 requester + 995 respondent</div>
+    <div class="mini-step"><div class="ms-num ms-purple">7</div> Tier 2: Statbel &mdash; +51 requester + 40 respondent</div>
+    <div class="mini-step"><div class="ms-num ms-purple">8</div> Tier 3: WGND &mdash; +97 requester + 215 respondent</div>
+    <div class="mini-step"><div class="ms-num ms-orange">9</div> Tier 4: Ollama LLM &mdash; +136 requester + 28 respondent</div>
+    <div class="mini-step"><div class="ms-num ms-orange">10</div> Hallucination filter &rarr; 164 cases flagged for manual review</div>
+    <div class="mini-step"><div class="ms-num ms-green">11</div> <strong>Requester:</strong> 89.4% M/F &bull; 4.9% BOTH &bull; 5.7% UNKNOWN</div>
+    <div class="mini-step"><div class="ms-num ms-green">12</div> <strong>Respondent:</strong> 30.0% M/F &bull; 0.6% BOTH &bull; 69.5% UNKNOWN</div>
+  </div>
+
+  <div class="stat-row" style="margin-top:20px;">
+    <div class="stat-item anim-scale">
+      <div class="stat-num" style="color:#16a34a;">3,813</div>
+      <div class="stat-label">Requesters classified M/F</div>
+    </div>
+    <div class="stat-item anim-scale">
+      <div class="stat-num" style="color:#16a34a;">1,278</div>
+      <div class="stat-label">Respondents classified M/F</div>
+    </div>
+    <div class="stat-item anim-scale">
+      <div class="stat-num" style="color:#7c3aed;">1,131</div>
+      <div class="stat-label">Known-sex pairs</div>
+    </div>
+  </div>
+
+  <div class="anim" style="text-align:center;margin-top:32px;">
+    <a href="pipeline.html" style="display:inline-block;padding:14px 32px;background:#2563eb;color:#fff;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none;transition:background 0.2s;">View Full Static Pipeline &rarr;</a>
+  </div>
+
+  <div style="text-align:center;margin-top:32px;font-size:12px;color:#94a3b8;" class="anim">
+    Pipeline Walkthrough &mdash; Transparencia.be FOI Gender Classification &mdash; March 2026
+  </div>
+</div>
+
+</div><!-- end #steps -->
+
+<!-- ═══════ NAVIGATION ═══════ -->
+<div id="nav">
+  <button class="nav-btn" id="prev-btn" disabled onclick="goToStep(currentStep-1)">&larr; Previous</button>
+  <span id="step-indicator">1 / 17</span>
+  <button class="nav-btn primary" id="next-btn" onclick="goToStep(currentStep+1)">Next &rarr;</button>
+</div>
+
+<script>
+// ═══════ STEP CONTROLLER ═══════
+let currentStep = 1;
+const totalSteps = 17;
+let isAnimating = false;
+
+const stepTitles = [
+  '', 'The Dataset', 'Folder Structure', 'Reference Databases', 'File Selection',
+  'Boilerplate Removal', 'Signature Zone Detection', 'Name Extraction',
+  'First Name Identification', 'The Tier Cascade', 'Tier 4: LLM Fallback',
+  'Requester Results', 'The Split: Two Lanes', 'Respondent Processing',
+  'Respondent Results', 'Validation: Confusion Matrix', 'Manual Review',
+  'Full Pipeline Summary'
+];
+
+function goToStep(n) {
+  if (isAnimating || n === currentStep || n < 1 || n > totalSteps) return;
+  isAnimating = true;
+
+  const oldStep = document.querySelector(`[data-step="${currentStep}"]`);
+  const newStep = document.querySelector(`[data-step="${n}"]`);
+  const direction = n > currentStep ? 'forward' : 'backward';
+
+  // Reset anims on new step
+  newStep.querySelectorAll('.anim-play').forEach(el => el.classList.remove('anim-play'));
+
+  // Fade out old
+  oldStep.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+  oldStep.style.opacity = '0';
+  oldStep.style.transform = direction === 'forward' ? 'translateX(-30px)' : 'translateX(30px)';
+
+  setTimeout(() => {
+    oldStep.classList.remove('active');
+    oldStep.style.opacity = '';
+    oldStep.style.transform = '';
+    oldStep.style.transition = '';
+
+    // Show new
+    newStep.style.opacity = '0';
+    newStep.style.transform = direction === 'forward' ? 'translateX(30px)' : 'translateX(-30px)';
+    newStep.classList.add('active');
+
+    requestAnimationFrame(() => {
+      newStep.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+      newStep.style.opacity = '1';
+      newStep.style.transform = 'translateX(0)';
+
+      // Trigger animations
+      triggerAnims(newStep);
+      triggerCounters(newStep);
+      triggerBars(newStep);
+    });
+
+    currentStep = n;
+    updateUI();
+
+    setTimeout(() => {
+      isAnimating = false;
+      newStep.style.transition = '';
+    }, 450);
+  }, 260);
+}
+
+function triggerAnims(step) {
+  const elems = step.querySelectorAll('.anim, .anim-scale, .anim-left, .anim-right');
+  elems.forEach((el, i) => {
+    el.style.animationDelay = `${i * 120 + 100}ms`;
+    el.classList.add('anim-play');
+  });
+}
+
+function triggerCounters(step) {
+  step.querySelectorAll('[data-count-to]').forEach(el => {
+    const target = parseInt(el.dataset.countTo);
+    const duration = target > 100000 ? 1800 : 1200;
+    const startTime = performance.now();
+    el.textContent = '0';
+
+    function tick(now) {
+      const progress = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.floor(eased * target).toLocaleString();
+      if (progress < 1) requestAnimationFrame(tick);
+    }
+    // Delay counter start
+    setTimeout(() => requestAnimationFrame(tick), 300);
+  });
+}
+
+function triggerBars(step) {
+  step.querySelectorAll('.stacked-bar .bar-seg').forEach((seg, i) => {
+    const w = seg.dataset.width;
+    setTimeout(() => { seg.style.width = w + '%'; }, 600 + i * 200);
+  });
+}
+
+function updateUI() {
+  // Progress bar
+  document.getElementById('progress-fill').style.width = ((currentStep / totalSteps) * 100) + '%';
+  document.querySelector('#progress-label span').innerHTML = `<strong>Step ${currentStep}</strong> of ${totalSteps}`;
+  document.getElementById('progress-title').textContent = stepTitles[currentStep];
+
+  // Nav
+  document.getElementById('step-indicator').textContent = `${currentStep} / ${totalSteps}`;
+  document.getElementById('prev-btn').disabled = currentStep === 1;
+  const nextBtn = document.getElementById('next-btn');
+  if (currentStep === totalSteps) {
+    nextBtn.textContent = 'Done';
+    nextBtn.disabled = true;
+  } else {
+    nextBtn.textContent = 'Next \u2192';
+    nextBtn.disabled = false;
+  }
+}
+
+// ═══════ KEYBOARD ═══════
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goToStep(currentStep + 1); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); goToStep(currentStep - 1); }
+});
+
+// ═══════ TOUCH SWIPE ═══════
+let touchStartX = 0;
+document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+document.addEventListener('touchend', e => {
+  const diff = touchStartX - e.changedTouches[0].clientX;
+  if (Math.abs(diff) > 60) {
+    if (diff > 0) goToStep(currentStep + 1);
+    else goToStep(currentStep - 1);
+  }
+}, { passive: true });
+
+// ═══════ INIT ═══════
+document.addEventListener('DOMContentLoaded', () => {
+  triggerAnims(document.querySelector('[data-step="1"]'));
+  triggerCounters(document.querySelector('[data-step="1"]'));
+});
+</script>
+</body>
+</html>
