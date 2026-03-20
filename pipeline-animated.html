@@ -580,15 +580,15 @@ Jean Dupont</div></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0;">
     <div class="card card-blue anim">
       <div style="font-weight:700;margin-bottom:8px;">Method A: spaCy NER</div>
-      <div style="font-size:13px;color:#475467;">Named Entity Recognition detects PERSON entities.<br><br>
-      Found: <strong style="color:#2563eb;">&ldquo;Jean Dupont&rdquo;</strong> -PER<br>
+      <div style="font-size:13px;color:#475467;line-height:1.7;">spaCy is an open-source Natural Language Processing library (Honnibal &amp; Montani, 2020). It uses a pre-trained French language model (<code>fr_core_news_sm</code>) that was trained on thousands of annotated French texts to recognize named entities: people, places, organizations, etc. When it reads text, it labels each word span with a category. We use the <strong>PER</strong> (person) label to find names.<br><br>
+      Found: <strong style="color:#2563eb;">&ldquo;Jean Dupont&rdquo;</strong> - PER<br>
       Fixed weight: <strong>0.85</strong></div>
       <div style="margin-top:10px;font-size:20px;">&#x2705;</div>
     </div>
     <div class="card card-purple anim">
-      <div style="font-weight:700;margin-bottom:8px;">Method B: Heuristic</div>
-      <div style="font-size:13px;color:#475467;">Pattern matching: 2&ndash;4 capitalized words where first word is a known name.<br><br>
-      Found: <strong style="color:#7c3aed;">&ldquo;Jean Dupont&rdquo;</strong> -match<br>
+      <div style="font-weight:700;margin-bottom:8px;">Method B: Heuristic (rule-based)</div>
+      <div style="font-size:13px;color:#475467;line-height:1.7;">A simpler, non-AI approach: scan each line in the signature zone for 2 to 4 capitalized words where at least one matches a known first name in our 3.49M name database. This catches names that spaCy might miss, and works without any machine learning.<br><br>
+      Found: <strong style="color:#7c3aed;">&ldquo;Jean Dupont&rdquo;</strong> - match<br>
       Fixed weight: <strong>0.50</strong> (single-name fallback: 0.40)</div>
       <div style="margin-top:10px;font-size:20px;">&#x2705;</div>
     </div>
