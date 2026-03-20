@@ -639,7 +639,7 @@ Jean Dupont</div></div>
     <strong>Result:</strong> first_name = <strong>&ldquo;Philippe&rdquo;</strong> &rarr; normalized to <strong>&ldquo;PHILIPPE&rdquo;</strong> (strip accents, uppercase). Gender is not determined yet - that's the next step.
   </div>
 
-  <div class="side-note anim">This works regardless of name order. "Jean Dupont" &rarr; "Jean" matches first. "Massenaux Philippe" &rarr; "Massenaux" fails, "Philippe" matches. Name connectors like "de", "van", "du" are skipped. Compound names like "Jean-Pierre" are tried as-is first, then just "Jean".</div>
+  <div class="side-note anim">This works regardless of name order. "Jean Dupont" &rarr; "Jean" matches first. "Massenaux Philippe" &rarr; "Massenaux" fails, "Philippe" matches. Short words like "de", "du", "le" (under 3 characters) are automatically skipped by a minimum length filter. Longer connectors like "van" or "den" simply don't appear in the first name databases, so they fail the lookup naturally. Compound names like "Jean-Pierre" are tried as-is first, then just "Jean".</div>
 </div>
 
 <!-- ══════════════ STEP 9: TIER CASCADE ══════════════ -->
@@ -696,11 +696,13 @@ Examples of UNKNOWN: &ldquo;N. Dupont&rdquo;, &ldquo;Collectif du Bempt&rdquo;, 
 
 Reply EXACTLY: <span class="str">GENDER: &lt;M or F or UNKNOWN&gt; | NAME: &lt;first name or NONE&gt;</span></div>
 
-  <div class="anim" style="font-weight:700;margin:16px 0 8px;">Hallucination Filter</div>
+  <div class="anim" style="font-weight:700;margin:16px 0 8px;">Two Safety Filters</div>
   <div class="card anim" style="border-left:4px solid #eab308;">
     <div style="font-size:14px;line-height:1.8;">
+      <strong>Filter 1 - False positive filter:</strong> If the LLM returns a common French function word as a "name" (e.g., "Le", "Je", "Madame", "Merci"), the result is silently discarded. These words are checked against a blocklist of articles, pronouns, prepositions, and common greetings.<br><br>
+      <strong>Filter 2 - Hallucination filter:</strong><br>
       1. LLM returns: <code>GENDER: M | NAME: Philippe</code><br>
-      2. Filter checks: does &ldquo;Philippe&rdquo; appear in the input text?<br>
+      2. Filter checks: does "Philippe" appear in the input text?<br>
       3. If <strong style="color:#16a34a;">YES</strong> &rarr; accept classification, flag for manual review<br>
       4. If <strong style="color:#dc2626;">NO</strong> &rarr; hallucination detected, reclassify as <strong>UNKNOWN</strong>
     </div>
