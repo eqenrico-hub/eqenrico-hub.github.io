@@ -866,26 +866,26 @@ secretariat@rebecq.be
 <div class="step" data-step="15">
   <div class="step-number anim">Step 15 of 17</div>
   <div class="step-title anim">Validation: Confusion Matrix</div>
-  <div class="step-subtitle anim">The new pipeline's classifications are compared to the previous methodology (ChatGPT-based). How much changed?</div>
+  <div class="step-subtitle anim">The old methodology used ChatGPT to classify gender. The new pipeline uses dictionary lookups + local LLM. How many classifications stayed the same?</div>
 
   <div class="matrix-grid">
     <div class="matrix-card card-green anim">
       <h4 style="color:#16a34a;">Requester (stable)</h4>
-      <div class="matrix-row">Previous M &rarr; still M: <strong style="color:#16a34a;">93.9%</strong> <span style="color:#64748b;">(2,160/2,301)</span></div>
-      <div class="matrix-row">Previous F &rarr; still F: <strong style="color:#16a34a;">99.0%</strong> <span style="color:#64748b;">(1,342/1,355)</span></div>
-      <div class="matrix-row">Gender flips (M&harr;F): <strong>&lt;1%</strong></div>
-      <div class="matrix-row">Reclassified UNKNOWN: <strong>0.4&ndash;5.7%</strong></div>
+      <div class="matrix-row">Old method said <strong>Male</strong> &rarr; new pipeline also says Male: <strong style="color:#16a34a;">93.9%</strong> <span style="color:#64748b;">(2,160 of 2,301)</span></div>
+      <div class="matrix-row">Old method said <strong>Female</strong> &rarr; new pipeline also says Female: <strong style="color:#16a34a;">99.0%</strong> <span style="color:#64748b;">(1,342 of 1,355)</span></div>
+      <div class="matrix-row">Old said M, new says F (or vice versa): <strong>&lt;1%</strong></div>
+      <div class="matrix-row">Old said M or F, new says UNKNOWN: <strong>0.4&ndash;5.7%</strong></div>
     </div>
     <div class="matrix-card card-red anim">
       <h4 style="color:#dc2626;">Respondent (significant changes)</h4>
-      <div class="matrix-row">Previous M &rarr; still M: <strong style="color:#dc2626;">67.8%</strong> <span style="color:#64748b;">(391/577)</span></div>
-      <div class="matrix-row">Previous F &rarr; still F: <strong style="color:#dc2626;">53.7%</strong> <span style="color:#64748b;">(437/814)</span></div>
-      <div class="matrix-row">Previous UNK &rarr; now M/F: <strong>32.0%</strong> <span style="color:#64748b;">(360/1,126)</span></div>
-      <div class="matrix-row">Reclassified UNKNOWN: <strong>29&ndash;37%</strong></div>
+      <div class="matrix-row">Old method said <strong>Male</strong> &rarr; new pipeline also says Male: <strong style="color:#dc2626;">67.8%</strong> <span style="color:#64748b;">(391 of 577)</span></div>
+      <div class="matrix-row">Old method said <strong>Female</strong> &rarr; new pipeline also says Female: <strong style="color:#dc2626;">53.7%</strong> <span style="color:#64748b;">(437 of 814)</span></div>
+      <div class="matrix-row">Old method said <strong>Unknown</strong> &rarr; new pipeline now classifies M/F: <strong>32.0%</strong> <span style="color:#64748b;">(360 of 1,126)</span></div>
+      <div class="matrix-row">Old said M or F, new says UNKNOWN: <strong>29&ndash;37%</strong></div>
     </div>
   </div>
 
-  <div class="side-note anim">Requester classifications are very stable: almost all M and F were confirmed. Respondent classifications changed significantly: 29&ndash;37% of previously classified M/F respondents were reclassified as UNKNOWN by the stricter pipeline.</div>
+  <div class="side-note anim"><strong>Reading this:</strong> High percentages = both methods agree. For requesters, agreement is very high (93&ndash;99%), meaning the new pipeline barely changed anything. For respondents, agreement is much lower &mdash; the new pipeline is stricter and reclassified 29&ndash;37% of previously gendered respondents as UNKNOWN (because it couldn't find a personal name in the text).</div>
 </div>
 
 <!-- ══════════════ STEP 16: MANUAL REVIEW ══════════════ -->
