@@ -960,17 +960,28 @@
     <div class="section-label">C &mdash; Validation &amp; Review</div>
 
     <div class="box box-accent">
-      <h3>Agreement with <u>Previous</u> Gender Identification Methodology&rsquo;s Results</h3>
-      <div class="agreement-row">
-        <div class="agreement-card">
-          <div class="big-num">99.5%</div>
-          <div class="label">Requester &mdash; 3,502 / 3,518 agree</div>
+      <h3>Confusion Matrix: New Pipeline vs <u>Previous</u> Methodology</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px;">
+        <div style="background:#f0fdf4;border-radius:12px;padding:16px;border:1px solid #bbf7d0;">
+          <div style="font-weight:700;font-size:15px;color:#16a34a;margin-bottom:10px;">Requester (stable)</div>
+          <div style="font-size:14px;line-height:1.8;color:#1e293b;">
+            Previous M &rarr; still M: <strong>93.9%</strong> (2,160/2,301)<br>
+            Previous F &rarr; still F: <strong>99.0%</strong> (1,342/1,355)<br>
+            Gender flips (M&harr;F): &lt;1%<br>
+            Reclassified UNKNOWN: 0.4&ndash;5.7%
+          </div>
         </div>
-        <div class="agreement-card">
-          <div class="big-num">90.2%</div>
-          <div class="label">Respondent &mdash; 828 / 918 agree</div>
+        <div style="background:#fef2f2;border-radius:12px;padding:16px;border:1px solid #fecaca;">
+          <div style="font-weight:700;font-size:15px;color:#dc2626;margin-bottom:10px;">Respondent (significant changes)</div>
+          <div style="font-size:14px;line-height:1.8;color:#1e293b;">
+            Previous M &rarr; still M: <strong>67.8%</strong> (391/577)<br>
+            Previous F &rarr; still F: <strong>53.7%</strong> (437/814)<br>
+            Previous UNK &rarr; now M/F: <strong>32.0%</strong> (360/1,126)<br>
+            Reclassified UNKNOWN: 29&ndash;37%
+          </div>
         </div>
       </div>
+      <p style="font-size:12px;color:#64748b;margin-top:12px;font-style:italic;">Previously reported as 99.5% / 90.2% &mdash; those figures counted only cases where both methods assigned M or F, excluding shifts to/from UNKNOWN.</p>
     </div>
 
     <div class="review-box">
@@ -1175,7 +1186,7 @@ Signature zone:
       <li><strong>T2 (Urban planning):</strong> Female respondents boost success rates by ~18pp regardless of requester sex. Holds in both methods (<u>Previous</u>: +17&ndash;20pp, Pipeline: +18pp). Most robust finding in the dataset.</li>
       <li><strong>T4 (Council deliberations):</strong> Male requesters massively outperform female requesters. Not only confirmed but <strong>amplified</strong> (<u>Previous</u>: 25&ndash;28pp gap &rarr; Pipeline: 56&ndash;58pp gap).</li>
       <li><strong>H1 (requester gender &amp; responsiveness):</strong> Male requesters more likely to receive a response. Should hold with new classifications.</li>
-      <li><strong>Requester agreement:</strong> 99.5% (3,502/3,518 comparable pairs) &mdash; requester classifications barely changed.</li>
+      <li><strong>Requester agreement:</strong> 93.9% of M confirmed, 99.0% of F confirmed &mdash; requester classifications barely changed (gender flips &lt;1%).</li>
     </ul>
   </div>
 
@@ -1194,7 +1205,7 @@ Signature zone:
     <h3 style="color:#16a34a;">6. What Does Not Change</h3>
     <ul style="font-size:14px;line-height:1.8;padding-left:20px;">
       <li>All non-gender variables (topics, sentiment, request status) are identical &mdash; same dataset</li>
-      <li>Requester gender classifications: 99.5% agreement</li>
+      <li>Requester gender classifications: 93.9% M confirmed, 99.0% F confirmed (flips &lt;1%)</li>
       <li>H1, H2, H3 findings: depend on requester gender, which barely changed</li>
       <li>Structural patterns (T2 respondent effect, T4 requester gap) are robust across both methods</li>
     </ul>
@@ -1212,8 +1223,8 @@ Signature zone:
       <tr style="background:#f1f5f9;"><td style="padding:6px 12px;">Same-sex gap (female req.)</td><td style="text-align:center;">8.4pp</td><td style="text-align:center;">5.1pp</td></tr>
       <tr><td style="padding:6px 12px;">T2 female resp. boost</td><td style="text-align:center;">+17&ndash;20pp</td><td style="text-align:center;">+18pp</td></tr>
       <tr style="background:#f1f5f9;"><td style="padding:6px 12px;">T4 requester gap</td><td style="text-align:center;">25&ndash;28pp</td><td style="text-align:center;">56&ndash;58pp</td></tr>
-      <tr><td style="padding:6px 12px;">Requester agreement with <u>previous method</u></td><td style="text-align:center;">&mdash;</td><td style="text-align:center;">99.5%</td></tr>
-      <tr style="background:#f1f5f9;"><td style="padding:6px 12px;">Respondent agreement with <u>previous method</u></td><td style="text-align:center;">&mdash;</td><td style="text-align:center;">90.2%</td></tr>
+      <tr><td style="padding:6px 12px;">Requester M confirmed / F confirmed</td><td style="text-align:center;">&mdash;</td><td style="text-align:center;">93.9% / 99.0%</td></tr>
+      <tr style="background:#f1f5f9;"><td style="padding:6px 12px;">Respondent M confirmed / F confirmed</td><td style="text-align:center;">&mdash;</td><td style="text-align:center;">67.8% / 53.7%</td></tr>
     </table>
   </div>
 
