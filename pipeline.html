@@ -570,6 +570,34 @@
   .lane-req .arrow-down .shaft::after { border-top-color: #93c5fd; }
   .lane-resp .arrow-down .shaft { background: #fdba74; }
   .lane-resp .arrow-down .shaft::after { border-top-color: #fdba74; }
+  /* ── RESPONSIVE: prevent horizontal scroll ── */
+  .folder-tree, .waterfall, .flow-accounting {
+    overflow-x: auto;
+  }
+
+  @media (max-width: 900px) {
+    .lanes {
+      display: block !important;
+    }
+    .lane {
+      width: 100% !important;
+      margin-bottom: 24px;
+    }
+    .split-container { display: none; }
+    .tier-row {
+      grid-template-columns: 1fr !important;
+      gap: 12px;
+    }
+    .agreement-row {
+      flex-direction: column;
+    }
+    .result-row {
+      flex-direction: column;
+      gap: 10px;
+    }
+    body { padding: 16px 8px; }
+    .header h1 { font-size: 20px; }
+  }
 </style>
 </head>
 <body>
