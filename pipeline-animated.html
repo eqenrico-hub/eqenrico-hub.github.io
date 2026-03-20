@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pipeline Walkthrough &mdash; Transparencia.be Gender Classification</title>
+<title>Pipeline Walkthrough -Transparencia.be Gender Classification</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -373,7 +373,7 @@ body {
   <div class="step-subtitle anim">We start with the full corpus of Belgian Freedom of Information requests submitted through the Transparencia.be platform.</div>
 
   <div class="big-counter anim-scale" data-count-to="4265">0</div>
-  <div class="anim" style="text-align:center;font-size:15px;color:#475467;margin-top:-16px;">FOI requests &mdash; 2016 to 2025</div>
+  <div class="anim" style="text-align:center;font-size:15px;color:#475467;margin-top:-16px;">FOI requests -2016 to 2025</div>
 
   <div class="stat-row" style="margin-top:32px;">
     <div class="stat-item anim">
@@ -411,12 +411,12 @@ body {
   <span class="folder">demande-proces-verbaux-conseil/</span>
     <span class="folder">2023-01-10T11-00-00/</span>
       <span class="file-blue">outgoing_0001.txt</span>
-      <span class="file-green">(no incoming files &mdash; no reply)</span>
+      <span class="file-green">(no incoming files -no reply)</span>
   <span style="color:#64748b;">... 4,263 more request folders</span>
   </div>
 
   <div class="card card-blue anim">
-    <strong>Rule:</strong> The pipeline always selects the <strong>first outgoing file</strong> (requester) and the <strong>first incoming file</strong> (respondent) per request &mdash; chronologically earliest timestamp. This ensures we identify the original signers, not follow-up authors.
+    <strong>Rule:</strong> The pipeline always selects the <strong>first outgoing file</strong> (requester) and the <strong>first incoming file</strong> (respondent) per request -chronologically earliest timestamp. This ensures we identify the original signers, not follow-up authors.
   </div>
 </div>
 
@@ -449,7 +449,7 @@ body {
       <div class="tier-label">Tier 4</div>
       <div class="tier-name">Ollama LLM</div>
       <div style="font-size:32px;font-weight:800;margin:8px 0;">&#x1F9E0;</div>
-      <div style="font-size:12px;color:#64748b;">Llama 3.2 &mdash; temp=0, seed=42</div>
+      <div style="font-size:12px;color:#64748b;">Llama 3.2 -temp=0, seed=42</div>
     </div>
   </div>
 
@@ -462,16 +462,16 @@ body {
 <div class="step" data-step="4">
   <div class="step-number anim">Step 4 of 17</div>
   <div class="step-title anim">File Selection</div>
-  <div class="step-subtitle anim">For each of the 4,265 requests, the pipeline picks the first outgoing text file &mdash; the citizen's original FOI request.</div>
+  <div class="step-subtitle anim">For each of the 4,265 requests, the pipeline picks the first outgoing text file -the citizen's original FOI request.</div>
 
   <div class="folder-tree anim">
 <span class="folder">demande-acces-permis-urbanisme-42/</span>
   <span class="folder">2022-03-14T14-30-00/</span>
     <span class="file-blue" style="background:#2563eb33;padding:2px 6px;border-radius:4px;">&#x2794; outgoing_0001.txt</span>  <span style="color:#86efac;font-weight:700;">SELECTED</span>
-    <span class="file-orange" style="opacity:0.4;">  incoming_0001.txt</span>  <span style="color:#64748b;opacity:0.4;">(respondent &mdash; processed later)</span>
-    <span class="file-orange" style="opacity:0.4;">  incoming_0002.txt</span>  <span style="color:#64748b;opacity:0.4;">(ignored &mdash; not first)</span>
+    <span class="file-orange" style="opacity:0.4;">  incoming_0001.txt</span>  <span style="color:#64748b;opacity:0.4;">(respondent -processed later)</span>
+    <span class="file-orange" style="opacity:0.4;">  incoming_0002.txt</span>  <span style="color:#64748b;opacity:0.4;">(ignored -not first)</span>
   <span class="folder" style="opacity:0.4;">2022-04-02T09-15-00/</span>
-    <span class="file-blue" style="opacity:0.4;">  outgoing_0002.txt</span>  <span style="color:#64748b;opacity:0.4;">(ignored &mdash; not first)</span>
+    <span class="file-blue" style="opacity:0.4;">  outgoing_0002.txt</span>  <span style="color:#64748b;opacity:0.4;">(ignored -not first)</span>
   </div>
 
   <div class="stat-row" style="margin-top:24px;">
@@ -519,7 +519,7 @@ Jean Dupont
 <div class="step" data-step="6">
   <div class="step-number anim">Step 6 of 17</div>
   <div class="step-title anim">Signature Zone Detection</div>
-  <div class="step-subtitle anim">The pipeline scans the last 500 characters for a <strong>closing formula</strong> &mdash; a standard French/Dutch phrase that signals the start of the signature area.</div>
+  <div class="step-subtitle anim">The pipeline scans the last 500 characters for a <strong>closing formula</strong> -a standard French/Dutch phrase that signals the start of the signature area.</div>
 
   <div class="text-block anim" style="margin-bottom:16px;">Monsieur,
 
@@ -580,14 +580,14 @@ Jean Dupont</div></div>
     <div class="card card-blue anim">
       <div style="font-weight:700;margin-bottom:8px;">Method A: spaCy NER</div>
       <div style="font-size:13px;color:#475467;">Named Entity Recognition detects PERSON entities.<br><br>
-      Found: <strong style="color:#2563eb;">&ldquo;Jean Dupont&rdquo;</strong> &mdash; PER<br>
+      Found: <strong style="color:#2563eb;">&ldquo;Jean Dupont&rdquo;</strong> -PER<br>
       Fixed weight: <strong>0.85</strong></div>
       <div style="margin-top:10px;font-size:20px;">&#x2705;</div>
     </div>
     <div class="card card-purple anim">
       <div style="font-weight:700;margin-bottom:8px;">Method B: Heuristic</div>
       <div style="font-size:13px;color:#475467;">Pattern matching: 2&ndash;4 capitalized words where first word is a known name.<br><br>
-      Found: <strong style="color:#7c3aed;">&ldquo;Jean Dupont&rdquo;</strong> &mdash; match<br>
+      Found: <strong style="color:#7c3aed;">&ldquo;Jean Dupont&rdquo;</strong> -match<br>
       Fixed weight: <strong>0.50</strong> (single-name fallback: 0.40)</div>
       <div style="margin-top:10px;font-size:20px;">&#x2705;</div>
     </div>
@@ -651,23 +651,23 @@ Jean Dupont</div></div>
   <div class="step-title anim">The Tier Cascade</div>
   <div class="step-subtitle anim">Each extracted first name passes through the four tiers in sequence. The cascade stops at the first match.</div>
 
-  <div class="anim" style="font-weight:700;margin-bottom:8px;color:#2563eb;">Example 1: &ldquo;JEAN&rdquo; &mdash; common French name</div>
+  <div class="anim" style="font-weight:700;margin-bottom:8px;color:#2563eb;">Example 1: &ldquo;JEAN&rdquo; -common French name</div>
   <div class="cascade anim">
     <div class="cascade-row tier-1 hit"><span class="cascade-label">Tier 1: Larousse</span> <span>Search &ldquo;JEAN&rdquo;</span> <span class="cascade-status" style="color:#16a34a;">&#x2705; M</span></div>
-    <div class="cascade-row tier-2 skip"><span class="cascade-label">Tier 2: Statbel</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">&mdash;</span></div>
-    <div class="cascade-row tier-3 skip"><span class="cascade-label">Tier 3: WGND</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">&mdash;</span></div>
-    <div class="cascade-row tier-4 skip"><span class="cascade-label">Tier 4: LLM</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">&mdash;</span></div>
+    <div class="cascade-row tier-2 skip"><span class="cascade-label">Tier 2: Statbel</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
+    <div class="cascade-row tier-3 skip"><span class="cascade-label">Tier 3: WGND</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
+    <div class="cascade-row tier-4 skip"><span class="cascade-label">Tier 4: LLM</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
   </div>
 
-  <div class="anim" style="font-weight:700;margin:20px 0 8px;color:#0284c7;">Example 2: &ldquo;AYOUB&rdquo; &mdash; not in Larousse</div>
+  <div class="anim" style="font-weight:700;margin:20px 0 8px;color:#0284c7;">Example 2: &ldquo;AYOUB&rdquo; -not in Larousse</div>
   <div class="cascade anim">
     <div class="cascade-row tier-1 miss"><span class="cascade-label">Tier 1: Larousse</span> <span>Search &ldquo;AYOUB&rdquo;</span> <span class="cascade-status" style="color:#dc2626;">&#x274C;</span></div>
     <div class="cascade-row tier-2 hit"><span class="cascade-label">Tier 2: Statbel</span> <span>Search &ldquo;AYOUB&rdquo;</span> <span class="cascade-status" style="color:#16a34a;">&#x2705; M</span></div>
-    <div class="cascade-row tier-3 skip"><span class="cascade-label">Tier 3: WGND</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">&mdash;</span></div>
-    <div class="cascade-row tier-4 skip"><span class="cascade-label">Tier 4: LLM</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">&mdash;</span></div>
+    <div class="cascade-row tier-3 skip"><span class="cascade-label">Tier 3: WGND</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
+    <div class="cascade-row tier-4 skip"><span class="cascade-label">Tier 4: LLM</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
   </div>
 
-  <div class="anim" style="font-weight:700;margin:20px 0 8px;color:#854d0e;">Example 3: &ldquo;CABLYN&rdquo; &mdash; unresolvable</div>
+  <div class="anim" style="font-weight:700;margin:20px 0 8px;color:#854d0e;">Example 3: &ldquo;CABLYN&rdquo; -unresolvable</div>
   <div class="cascade anim">
     <div class="cascade-row tier-1 miss"><span class="cascade-label">Tier 1: Larousse</span> <span>Search &ldquo;CABLYN&rdquo;</span> <span class="cascade-status" style="color:#dc2626;">&#x274C;</span></div>
     <div class="cascade-row tier-2 miss"><span class="cascade-label">Tier 2: Statbel</span> <span>Search &ldquo;CABLYN&rdquo;</span> <span class="cascade-status" style="color:#dc2626;">&#x274C;</span></div>
@@ -689,7 +689,7 @@ Jean Dupont</div></div>
 You are classifying the sex of the person who signed a FOI request.
 Look for a <span class="str">PERSONAL SIGNATURE</span> after the closing formula.
 
-<span class="cmt">IMPORTANT: Many FOI requests have NO personal signature &mdash;
+<span class="cmt">IMPORTANT: Many FOI requests have NO personal signature -
 they may be signed by organisations, pseudonyms, or contain
 only initials. If you do not see a clear first name + surname,
 return UNKNOWN. Do NOT guess or invent a name.</span>
@@ -770,7 +770,7 @@ Reply EXACTLY: <span class="str">GENDER: &lt;M or F or UNKNOWN&gt; | NAME: &lt;f
 <div class="step" data-step="12">
   <div class="step-number anim">Step 12 of 17</div>
   <div class="step-title anim">The Split: Two Lanes</div>
-  <div class="step-subtitle anim">The same pipeline runs for both requesters and respondents &mdash; but with very different outcomes.</div>
+  <div class="step-subtitle anim">The same pipeline runs for both requesters and respondents -but with very different outcomes.</div>
 
   <div class="fork-container anim-scale">
     <div class="fork-line"></div>
@@ -816,7 +816,7 @@ secretariat@rebecq.be
 <span class="highlight-red">[original request text quoted here...]</span></div>
 
   <div class="card card-orange anim" style="margin-top:16px;">
-    <strong>Key challenge:</strong> The signer here is <em>&ldquo;Le Secr&eacute;tariat communal &mdash; Commune de Rebecq&rdquo;</em> &mdash; an institutional signature with <strong>no personal name</strong>. spaCy NER finds no PERSON entity. Heuristic finds no known first name. Result: <strong style="color:#dc2626;">UNKNOWN</strong>.
+    <strong>Key challenge:</strong> The signer here is <em>&ldquo;Le Secr&eacute;tariat communal -Commune de Rebecq&rdquo;</em> -an institutional signature with <strong>no personal name</strong>. spaCy NER finds no PERSON entity. Heuristic finds no known first name. Result: <strong style="color:#dc2626;">UNKNOWN</strong>.
   </div>
 
   <div class="side-note anim">Quoted message removal is critical: without it, the pipeline might extract the <em>requester's</em> name from the quoted text instead of the <em>respondent's</em> name. The pipeline detects headers like &ldquo;-----Message d'origine-----&rdquo;, &ldquo;Van: ... Verzonden:&rdquo; (NL), &ldquo;De: ... Envoy&eacute;:&rdquo; (FR).</div>
@@ -859,7 +859,7 @@ secretariat@rebecq.be
     </div>
   </div>
 
-  <div class="side-note anim">The 69.5% UNKNOWN rate is not a pipeline failure &mdash; it accurately reflects that most government responses are either missing (41.1%) or institutionally signed (no personal name to classify).</div>
+  <div class="side-note anim">The 69.5% UNKNOWN rate is not a pipeline failure -it accurately reflects that most government responses are either missing (41.1%) or institutionally signed (no personal name to classify).</div>
 </div>
 
 <!-- ══════════════ STEP 15: CONFUSION MATRIX ══════════════ -->
@@ -885,7 +885,7 @@ secretariat@rebecq.be
     </div>
   </div>
 
-  <div class="side-note anim"><strong>Reading this:</strong> High percentages = both methods agree. For requesters, agreement is very high (93&ndash;99%), meaning the new pipeline barely changed anything. For respondents, agreement is much lower &mdash; the new pipeline is stricter and reclassified 29&ndash;37% of previously gendered respondents as UNKNOWN (because it couldn't find a personal name in the text).</div>
+  <div class="side-note anim"><strong>Reading this:</strong> High percentages = both methods agree. For requesters, agreement is very high (93&ndash;99%), meaning the new pipeline barely changed anything. For respondents, agreement is much lower -the new pipeline is stricter and reclassified 29&ndash;37% of previously gendered respondents as UNKNOWN (because it couldn't find a personal name in the text).</div>
 </div>
 
 <!-- ══════════════ STEP 16: MANUAL REVIEW ══════════════ -->
@@ -910,7 +910,7 @@ secretariat@rebecq.be
 
   <div class="card anim" style="margin-top:20px;">
     <div style="font-size:14px;line-height:1.8;">
-      <strong>Why only Tier 4 M/F cases?</strong> Tiers 1&ndash;3 are fully deterministic dictionary lookups with curated, published sources. The LLM (Tier 4) is probabilistic and can hallucinate &mdash; so every M/F classification it makes is verified by a human researcher before inclusion in the final dataset.
+      <strong>Why only Tier 4 M/F cases?</strong> Tiers 1&ndash;3 are fully deterministic dictionary lookups with curated, published sources. The LLM (Tier 4) is probabilistic and can hallucinate -so every M/F classification it makes is verified by a human researcher before inclusion in the final dataset.
     </div>
   </div>
 
@@ -937,7 +937,7 @@ secretariat@rebecq.be
   </div>
 
   <div class="card card-green anim">
-    <strong>After review, the final column is <code>sex_validated</code></strong> &mdash; incorporating corrections from manual verification. This is the column used in all downstream analysis.
+    <strong>After review, the final column is <code>sex_validated</code></strong> -incorporating corrections from manual verification. This is the column used in all downstream analysis.
   </div>
 </div>
 
@@ -953,10 +953,10 @@ secretariat@rebecq.be
     <div class="mini-step"><div class="ms-num ms-blue">3</div> Signature zone detected via 16 closing formulas (96.9% success)</div>
     <div class="mini-step"><div class="ms-num ms-blue">4</div> Name extracted: spaCy NER + heuristic fallback (96.5%)</div>
     <div class="mini-step"><div class="ms-num ms-blue">5</div> First name identified against 3.49M known names</div>
-    <div class="mini-step"><div class="ms-num ms-purple">6</div> Tier 1: Larousse &mdash; 3,529 requester + 995 respondent</div>
-    <div class="mini-step"><div class="ms-num ms-purple">7</div> Tier 2: Statbel &mdash; +51 requester + 40 respondent</div>
-    <div class="mini-step"><div class="ms-num ms-purple">8</div> Tier 3: WGND &mdash; +97 requester + 215 respondent</div>
-    <div class="mini-step"><div class="ms-num ms-orange">9</div> Tier 4: Ollama LLM &mdash; +136 requester + 28 respondent</div>
+    <div class="mini-step"><div class="ms-num ms-purple">6</div> Tier 1: Larousse -3,529 requester + 995 respondent</div>
+    <div class="mini-step"><div class="ms-num ms-purple">7</div> Tier 2: Statbel -+51 requester + 40 respondent</div>
+    <div class="mini-step"><div class="ms-num ms-purple">8</div> Tier 3: WGND -+97 requester + 215 respondent</div>
+    <div class="mini-step"><div class="ms-num ms-orange">9</div> Tier 4: Ollama LLM -+136 requester + 28 respondent</div>
     <div class="mini-step"><div class="ms-num ms-orange">10</div> Hallucination filter &rarr; 164 cases flagged for manual review</div>
     <div class="mini-step"><div class="ms-num ms-green">11</div> <strong>Requester:</strong> 89.4% M/F &bull; 4.9% BOTH &bull; 5.7% UNKNOWN</div>
     <div class="mini-step"><div class="ms-num ms-green">12</div> <strong>Respondent:</strong> 30.0% M/F &bull; 0.6% BOTH &bull; 69.5% UNKNOWN</div>
@@ -982,7 +982,7 @@ secretariat@rebecq.be
   </div>
 
   <div style="text-align:center;margin-top:32px;font-size:12px;color:#94a3b8;" class="anim">
-    Pipeline Walkthrough &mdash; Transparencia.be FOI Gender Classification &mdash; March 2026
+    Pipeline Walkthrough -Transparencia.be FOI Gender Classification -March 2026
   </div>
 </div>
 

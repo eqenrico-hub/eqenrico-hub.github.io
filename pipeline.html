@@ -607,11 +607,11 @@
   <div class="header">
     <h1>Gender Classification Pipeline — Transparencia.be FOI Dataset</h1>
     <div class="subtitle">4-Tier Deterministic Cascade: Larousse &rarr; Statbel &rarr; WGND 2.0 &rarr; Ollama LLM</div>
-    <div class="author">Enrico Quaglia &mdash; March 2026</div>
+    <div class="author">Enrico Quaglia -March 2026</div>
   </div>
 
   <!-- ════════════ SECTION A: SHARED INPUT ════════════ -->
-  <div class="section-label">A &mdash; Shared Input</div>
+  <div class="section-label">A -Shared Input</div>
 
   <!-- Box 1 -->
   <div class="box box-accent">
@@ -657,7 +657,7 @@
   </div>
 
   <!-- ════════════ SECTION B: SPLIT ════════════ -->
-  <div class="section-label">B &mdash; Parallel Processing</div>
+  <div class="section-label">B -Parallel Processing</div>
 
   <div class="split-container">
     <div class="split-line"></div>
@@ -676,7 +676,7 @@
       <div class="lane-title">Requester Lane</div>
 
       <!-- R1 -->
-      <div class="step-tag">R1 &mdash; File Selection</div>
+      <div class="step-tag">R1 -File Selection</div>
       <div class="box">
         <h3>Select First Outgoing Text</h3>
         <p>Earliest-timestamped outgoing file per request</p>
@@ -686,7 +686,7 @@
       <div class="arrow-down arrow-sm"><div class="shaft"></div></div>
 
       <!-- R2 -->
-      <div class="step-tag">R2 &mdash; Boilerplate Removal</div>
+      <div class="step-tag">R2 -Boilerplate Removal</div>
       <div class="box">
         <h3>Strip Platform Footer<sup>7</sup></h3>
         <p>Remove Transparencia.be platform boilerplate text</p>
@@ -695,7 +695,7 @@
       <div class="arrow-down arrow-sm"><div class="shaft"></div></div>
 
       <!-- R3 -->
-      <div class="step-tag">R3 &mdash; Signature Zone Extraction</div>
+      <div class="step-tag">R3 -Signature Zone Extraction</div>
       <div class="box">
         <h3>Closing Formula Detection<sup>1</sup></h3>
         <p>Scan last <span class="num">500</span> characters for closing formula</p>
@@ -706,7 +706,7 @@
       <div class="arrow-down arrow-sm"><div class="shaft"></div></div>
 
       <!-- R4 -->
-      <div class="step-tag">R4 &mdash; Name Extraction</div>
+      <div class="step-tag">R4 -Name Extraction</div>
       <div class="box">
         <h3>Multi-Method Name Extraction</h3>
         <ul class="sub-list">
@@ -722,7 +722,7 @@
       <div class="arrow-label">4,115 tokens</div>
 
       <!-- R5 -->
-      <div class="step-tag">R5 &mdash; First Name Validation</div>
+      <div class="step-tag">R5 -First Name Validation</div>
       <div class="box">
         <h3>Dictionary Lookup</h3>
         <p>Check each token against <span class="num">3,486,454</span> known names (&ge;3 chars)</p>
@@ -733,22 +733,22 @@
       <div class="arrow-label">&rarr; dictionary cascade</div>
 
       <!-- R6 -->
-      <div class="step-tag">R6 &mdash; Tier Cascade</div>
+      <div class="step-tag">R6 -Tier Cascade</div>
 
       <div class="tier-box tier-1">
-        <span class="tier-label-inline">TIER 1 &mdash; LAROUSSE</span><br>
+        <span class="tier-label-inline">TIER 1 -LAROUSSE</span><br>
         <span class="num">3,529</span> M/F + <span class="num">208</span> BOTH
       </div>
       <div class="tier-fallthrough">&darr; not found</div>
 
       <div class="tier-box tier-2">
-        <span class="tier-label-inline">TIER 2 &mdash; STATBEL</span><br>
+        <span class="tier-label-inline">TIER 2 -STATBEL</span><br>
         <span class="num">51</span> M/F + <span class="num">1</span> BOTH
       </div>
       <div class="tier-fallthrough">&darr; not found</div>
 
       <div class="tier-box tier-3">
-        <span class="tier-label-inline">TIER 3 &mdash; WGND 2.0</span><br>
+        <span class="tier-label-inline">TIER 3 -WGND 2.0</span><br>
         <span class="num">97</span> M/F
       </div>
       <div class="tier-fallthrough">&darr; 229 names not in any dictionary</div>
@@ -764,7 +764,7 @@
       <div class="arrow-label">379 remaining</div>
 
       <div class="tier-box tier-4">
-        <span class="tier-label-inline">TIER 4 &mdash; OLLAMA LLM</span><sup>2</sup><br>
+        <span class="tier-label-inline">TIER 4 -OLLAMA LLM</span><sup>2</sup><br>
         <span class="num">379</span> cases (229 unmatched names + 150 no name)<br>
         <span style="font-size:12.5px;color:#92400e;">Temperature=0, seed=42, anti-hallucination prompt</span><br>
         Results: <span class="num">136</span> M/F &nbsp;|&nbsp; <span class="num">220</span> UNKNOWN &nbsp;|&nbsp; <span class="num">23</span> no result<br>
@@ -780,7 +780,7 @@
 
       <div class="arrow-down arrow-sm"><div class="shaft"></div></div>
 
-      <div class="waterfall"><span class="wf-title">Requester Waterfall &mdash; All 4,265 Cases</span><span class="wf-green">&#9500;&#9472;&#9472; 3,529 Tier 1 (Larousse)     &#9488;</span>
+      <div class="waterfall"><span class="wf-title">Requester Waterfall -All 4,265 Cases</span><span class="wf-green">&#9500;&#9472;&#9472; 3,529 Tier 1 (Larousse)     &#9488;</span>
 <span class="wf-green">&#9500;&#9472;&#9472;    51 Tier 2 (Statbel)      &#9474; 3,677 M/F</span>
 <span class="wf-green">&#9500;&#9472;&#9472;    97 Tier 3 (WGND)         &#9496;</span>
 <span class="wf-amber">&#9500;&#9472;&#9472;   208 Tier 1 BOTH (Larousse) &#9488;</span>
@@ -792,19 +792,19 @@
     4,265 <span class="wf-check">&#10003;</span></div>
 
       <!-- R7 -->
-      <div class="step-tag">R7 &mdash; Final Classification (sex_final)</div>
+      <div class="step-tag">R7 -Final Classification (sex_final)</div>
       <div class="result-row">
         <div class="result-box result-green">
           <span class="big-num">3,813</span>
-          M/F &mdash; 89.4%
+          M/F -89.4%
         </div>
         <div class="result-box result-amber">
           <span class="big-num">209</span>
-          BOTH<sup>4</sup> &mdash; 4.9%
+          BOTH<sup>4</sup> -4.9%
         </div>
         <div class="result-box result-red">
           <span class="big-num">243</span>
-          UNKNOWN &mdash; 5.7%
+          UNKNOWN -5.7%
         </div>
       </div>
       <div class="flag-note">136 Tier 4 cases flagged TO REVIEW</div>
@@ -815,14 +815,14 @@
       <div class="lane-title">Respondent Lane</div>
 
       <!-- S1 -->
-      <div class="step-tag">S1 &mdash; File Selection</div>
+      <div class="step-tag">S1 -File Selection</div>
       <div class="box">
         <h3>Select First Incoming Text</h3>
         <p>Earliest-timestamped incoming file per request</p>
         <p><span class="num">4,265</span> requests checked</p>
       </div>
       <div class="dropoff">
-        <span class="num">1,754 (41.1%)</span> &mdash; NO REPLY received<br>
+        <span class="num">1,754 (41.1%)</span> -NO REPLY received<br>
         <span style="font-size:12px;">&empty; dead end</span>
       </div>
       <div class="box" style="margin-top:6px;">
@@ -833,7 +833,7 @@
       <div class="arrow-label">2,511 with text</div>
 
       <!-- S2 -->
-      <div class="step-tag">S2 &mdash; Boilerplate Removal</div>
+      <div class="step-tag">S2 -Boilerplate Removal</div>
       <div class="box">
         <h3>Strip Footer &amp; Quoted Request<sup>7</sup></h3>
         <p>Remove platform footer + quoted original request text</p>
@@ -842,7 +842,7 @@
       <div class="arrow-down arrow-sm"><div class="shaft"></div></div>
 
       <!-- S3 -->
-      <div class="step-tag">S3 &mdash; Signature Zone Extraction</div>
+      <div class="step-tag">S3 -Signature Zone Extraction</div>
       <div class="box">
         <h3>Closing Formula Detection<sup>1</sup></h3>
         <p><span class="num">59.8%</span> have closing formula</p>
@@ -852,7 +852,7 @@
       <div class="arrow-down arrow-sm"><div class="shaft"></div></div>
 
       <!-- S4 -->
-      <div class="step-tag">S4 &mdash; Name Extraction</div>
+      <div class="step-tag">S4 -Name Extraction</div>
       <div class="box">
         <h3>Multi-Method Name Extraction</h3>
         <ul class="sub-list">
@@ -867,7 +867,7 @@
       <div class="arrow-down arrow-sm"><div class="shaft"></div></div>
 
       <!-- S5 -->
-      <div class="step-tag">S5 &mdash; First Name Validation</div>
+      <div class="step-tag">S5 -First Name Validation</div>
       <div class="box">
         <h3>Dictionary Lookup</h3>
         <p>Check each token against <span class="num">3,486,454</span> known names (&ge;3 chars)</p>
@@ -878,22 +878,22 @@
       <div class="arrow-label">&rarr; dictionary cascade</div>
 
       <!-- S6 -->
-      <div class="step-tag">S6 &mdash; Tier Cascade</div>
+      <div class="step-tag">S6 -Tier Cascade</div>
 
       <div class="tier-box tier-1">
-        <span class="tier-label-inline">TIER 1 &mdash; LAROUSSE</span><br>
+        <span class="tier-label-inline">TIER 1 -LAROUSSE</span><br>
         <span class="num">995</span> M/F + <span class="num">24</span> BOTH
       </div>
       <div class="tier-fallthrough">&darr; not found</div>
 
       <div class="tier-box tier-2">
-        <span class="tier-label-inline">TIER 2 &mdash; STATBEL</span><br>
+        <span class="tier-label-inline">TIER 2 -STATBEL</span><br>
         <span class="num">40</span> M/F
       </div>
       <div class="tier-fallthrough">&darr; not found</div>
 
       <div class="tier-box tier-3">
-        <span class="tier-label-inline">TIER 3 &mdash; WGND 2.0</span><br>
+        <span class="tier-label-inline">TIER 3 -WGND 2.0</span><br>
         <span class="num">215</span> M/F
       </div>
       <div class="tier-fallthrough">&darr; 0 unmatched names (every extracted name was found in a dictionary)</div>
@@ -907,9 +907,9 @@
       <div class="arrow-label">1,237 remaining</div>
 
       <div class="tier-box tier-4">
-        <span class="tier-label-inline">TIER 4 &mdash; OLLAMA LLM</span><sup>3</sup><br>
+        <span class="tier-label-inline">TIER 4 -OLLAMA LLM</span><sup>3</sup><br>
         <span class="num">1,237</span> cases with reply text but no name extracted<br>
-        <span style="font-size:12.5px;color:#92400e;">1,754 had no reply at all (skipped &mdash; nothing to analyze)</span><br>
+        <span style="font-size:12.5px;color:#92400e;">1,754 had no reply at all (skipped -nothing to analyze)</span><br>
         Results: <span class="num">28</span> M/F &nbsp;|&nbsp; <span class="num">39</span> UNKNOWN &nbsp;|&nbsp; <span class="num">1,170</span> no result<br>
         <span style="font-size:12px;color:#475467;line-height:1.5;display:block;margin-top:6px;text-align:left;">
           <strong>M/F</strong> = LLM found a clear personal first name + surname in the signature zone<br>
@@ -923,7 +923,7 @@
 
       <div class="arrow-down arrow-sm"><div class="shaft"></div></div>
 
-      <div class="waterfall"><span class="wf-title">Respondent Waterfall &mdash; All 4,265 Cases</span><span class="wf-gray">&#9500;&#9472;&#9472; 1,754 no reply received        (no text exists)</span>
+      <div class="waterfall"><span class="wf-title">Respondent Waterfall -All 4,265 Cases</span><span class="wf-gray">&#9500;&#9472;&#9472; 1,754 no reply received        (no text exists)</span>
 <span class="wf-green">&#9500;&#9472;&#9472;   995 Tier 1 (Larousse)     &#9488;</span>
 <span class="wf-green">&#9500;&#9472;&#9472;    40 Tier 2 (Statbel)      &#9474; 1,250 M/F</span>
 <span class="wf-green">&#9500;&#9472;&#9472;   215 Tier 3 (WGND)         &#9496;</span>
@@ -935,19 +935,19 @@
     4,265 requests for which we checked the response <span class="wf-check">&#10003;</span></div>
 
       <!-- S7 -->
-      <div class="step-tag">S7 &mdash; Final Classification (sex_final)</div>
+      <div class="step-tag">S7 -Final Classification (sex_final)</div>
       <div class="result-row">
         <div class="result-box result-green">
           <span class="big-num">1,278</span>
-          M/F &mdash; 30.0%
+          M/F -30.0%
         </div>
         <div class="result-box result-amber">
           <span class="big-num">24</span>
-          BOTH<sup>4</sup> &mdash; 0.6%
+          BOTH<sup>4</sup> -0.6%
         </div>
         <div class="result-box result-red">
           <span class="big-num">2,963</span>
-          UNKNOWN &mdash; 69.5%
+          UNKNOWN -69.5%
         </div>
       </div>
       <div class="secondary-stat">Among 2,511 with reply: <span class="num">51.9%</span> classified</div>
@@ -957,7 +957,7 @@
 
   <!-- ════════════ SECTION C: BOTTOM ════════════ -->
   <div class="bottom-section">
-    <div class="section-label">C &mdash; Validation &amp; Review</div>
+    <div class="section-label">C -Validation &amp; Review</div>
 
     <div class="box box-accent">
       <h3>Confusion Matrix: New Pipeline vs <u>Previous</u> Methodology</h3>
@@ -981,15 +981,15 @@
           </div>
         </div>
       </div>
-      <p style="font-size:12px;color:#64748b;margin-top:12px;font-style:italic;">Note: Earlier drafts reported agreement rates of 99.5% (requester) and 90.2% (respondent). Those figures were calculated by comparing only the subset of cases where both the old method (ChatGPT) and the new pipeline assigned M or F &mdash; ignoring all cases where either method classified someone as UNKNOWN. The rates above are more accurate because they show what happened to every case, including those reclassified as UNKNOWN by the new pipeline.</p>
+      <p style="font-size:12px;color:#64748b;margin-top:12px;font-style:italic;">Note: Earlier drafts reported agreement rates of 99.5% (requester) and 90.2% (respondent). Those figures were calculated by comparing only the subset of cases where both the old method (ChatGPT) and the new pipeline assigned M or F -ignoring all cases where either method classified someone as UNKNOWN. The rates above are more accurate because they show what happened to every case, including those reclassified as UNKNOWN by the new pipeline.</p>
     </div>
 
     <div class="review-box">
       <h3 style="margin-bottom:8px;color:#92400e;">Manual Review<sup>6</sup></h3>
       <div class="big-num">164 M/F cases</div>
-      <p style="font-size:14px;color:#475467;margin-top:6px;">136 requester + 28 respondent &mdash; all undergo exhaustive manual verification</p>
+      <p style="font-size:14px;color:#475467;margin-top:6px;">136 requester + 28 respondent -all undergo exhaustive manual verification</p>
       <div style="margin-top:12px;padding:12px 16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:13px;color:#166534;">
-        <strong>259 UNKNOWN cases validated:</strong> All 259 Tier 4 UNKNOWN cases were manually reviewed by reading the original FOI texts. Result: <strong>250 (96.5%)</strong> confirmed as genuinely unclassifiable. Only 9 cases (3.5%, 8 unique individuals) contained a missed name due to non-standard formatting &mdash; representing 0.2% of the full dataset.
+        <strong>259 UNKNOWN cases validated:</strong> All 259 Tier 4 UNKNOWN cases were manually reviewed by reading the original FOI texts. Result: <strong>250 (96.5%)</strong> confirmed as genuinely unclassifiable. Only 9 cases (3.5%, 8 unique individuals) contained a missed name due to non-standard formatting -representing 0.2% of the full dataset.
       </div>
     </div>
   </div>
@@ -1004,7 +1004,7 @@
         <sup>1</sup> Closing formula
       </div>
       <div class="anno-body">
-        French administrative letters conventionally end with a politeness formula (e.g., <em>"Cordialement"</em>, <em>"Veuillez agr&eacute;er mes salutations distingu&eacute;es"</em>) followed by the signer's name. The pipeline searches the last 500 characters for such formulas and extracts everything from the formula to the end of the text &mdash; this is the "signature zone" where the author's name appears.
+        French administrative letters conventionally end with a politeness formula (e.g., <em>"Cordialement"</em>, <em>"Veuillez agr&eacute;er mes salutations distingu&eacute;es"</em>) followed by the signer's name. The pipeline searches the last 500 characters for such formulas and extracts everything from the formula to the end of the text -this is the "signature zone" where the author's name appears.
         <details style="margin-top: 10px; cursor: pointer;">
           <summary style="font-weight: 600; color: #3182CE; font-size: 0.9em;">View all 16 closing formulas used by the pipeline &darr;</summary>
           <div style="margin-top: 8px; padding: 10px 14px; background: #F7FAFC; border-radius: 6px; border: 1px solid #E2E8F0; font-size: 0.88em; line-height: 1.8;">
@@ -1037,13 +1037,13 @@
         <sup>2</sup> Why 379 requester cases for Ollama
       </div>
       <div class="anno-body">
-        229 cases where a name token was extracted but not found in any of the three dictionaries (possibly a surname, rare name, or false positive), plus 150 cases where no name was extracted at all. Ollama receives only the signature zone text (not the entire document) to minimize the risk of picking up names from the body of the letter that belong to other people. Since the FOI data could not be sent to cloud-based LLMs for privacy reasons (Transparencia.be requested that data not be processed by external services), a locally hosted model (Llama 3.2 via Ollama) was used &mdash; a smaller, less powerful model, but one that runs entirely on the researcher&rsquo;s machine with no data leaving the local environment.
+        229 cases where a name token was extracted but not found in any of the three dictionaries (possibly a surname, rare name, or false positive), plus 150 cases where no name was extracted at all. Ollama receives only the signature zone text (not the entire document) to minimize the risk of picking up names from the body of the letter that belong to other people. Since the FOI data could not be sent to cloud-based LLMs for privacy reasons (Transparencia.be requested that data not be processed by external services), a locally hosted model (Llama 3.2 via Ollama) was used -a smaller, less powerful model, but one that runs entirely on the researcher&rsquo;s machine with no data leaving the local environment.
         <details style="margin-top: 10px; cursor: pointer;">
           <summary style="font-weight: 600; color: #3182CE; font-size: 0.9em;">View exact requester prompt sent to Ollama &darr;</summary>
           <div style="margin-top: 8px; padding: 12px 16px; background: #F7FAFC; border-radius: 6px; border: 1px solid #E2E8F0; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.82em; line-height: 1.7; white-space: pre-wrap;">You are classifying the sex of the person who signed a FOI request.
 Look for a PERSONAL SIGNATURE after the closing formula (Cordialement, Veuillez agr&eacute;er, etc.).
 
-IMPORTANT: Many FOI requests have NO personal signature &mdash; they may be signed by organisations, pseudonyms, or contain only initials. If you do not see a clear first name + surname, return UNKNOWN. Do NOT guess or invent a name.
+IMPORTANT: Many FOI requests have NO personal signature -they may be signed by organisations, pseudonyms, or contain only initials. If you do not see a clear first name + surname, return UNKNOWN. Do NOT guess or invent a name.
 
 Examples of valid signatures: &ldquo;Jean Dupont&rdquo; &rarr; M, &ldquo;Marie Lambert&rdquo; &rarr; F, &ldquo;Sophie Martin, Directrice&rdquo; &rarr; F
 Examples of UNKNOWN: &ldquo;N. Dupont&rdquo;, &ldquo;CABLYN&rdquo;, &ldquo;Collectif du Bempt&rdquo;, &ldquo;Service Juridique&rdquo;, no name at all
@@ -1063,13 +1063,13 @@ Signature zone:
         <sup>3</sup> Why respondent Ollama success is so low (2.3% vs 35.9%)
       </div>
       <div class="anno-body">
-        The 1,237 respondent cases sent to Ollama are those where the heuristic and spaCy found NO name at all in the reply text. These are predominantly institutional signatures (<em>"Le Secr&eacute;tariat communal"</em>, <em>"Service Urbanisme"</em>), automated acknowledgments, or email disclaimers &mdash; texts that genuinely contain no personal first name. The requester rate is higher because many of the 379 cases DO contain a personal name that was simply not in the dictionaries.
+        The 1,237 respondent cases sent to Ollama are those where the heuristic and spaCy found NO name at all in the reply text. These are predominantly institutional signatures (<em>"Le Secr&eacute;tariat communal"</em>, <em>"Service Urbanisme"</em>), automated acknowledgments, or email disclaimers -texts that genuinely contain no personal first name. The requester rate is higher because many of the 379 cases DO contain a personal name that was simply not in the dictionaries.
         <details style="margin-top: 10px; cursor: pointer;">
           <summary style="font-weight: 600; color: #3182CE; font-size: 0.9em;">View exact respondent prompt sent to Ollama &darr;</summary>
           <div style="margin-top: 8px; padding: 12px 16px; background: #F7FAFC; border-radius: 6px; border: 1px solid #E2E8F0; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.82em; line-height: 1.7; white-space: pre-wrap;">You are classifying the sex of the public official who signed a response to a FOI request.
 Look for a PERSONAL SIGNATURE after the closing formula. Names here belong to the person SIGNING, NOT the person being addressed in the greeting.
 
-IMPORTANT: Many government responses are automated, unsigned, or signed by a department &mdash; NOT by a person. If you do not see a clear personal signature with a first name, return UNKNOWN. Do NOT guess or invent a name. It is completely normal for there to be no name.
+IMPORTANT: Many government responses are automated, unsigned, or signed by a department -NOT by a person. If you do not see a clear personal signature with a first name, return UNKNOWN. Do NOT guess or invent a name. It is completely normal for there to be no name.
 
 Examples of valid signatures: &ldquo;Philippe Dubois&rdquo; &rarr; M, &ldquo;Karine Lallemand&rdquo; &rarr; F, &ldquo;Patrick Install&eacute;&rdquo; &rarr; M
 Examples of UNKNOWN: &ldquo;N. Dupont&rdquo;, &ldquo;Le Secr&eacute;tariat communal&rdquo;, &ldquo;Commune de Rebecq&rdquo;, email headers, no name at all
@@ -1089,9 +1089,9 @@ Signature zone:
         <sup>4</sup> BOTH / UNKNOWN (UNISEX)
       </div>
       <div class="anno-body">
-        Names like Claude, Dominique, or Camille are used for both sexes in French. Larousse marks these as <em>"mixte"</em>. For Statbel, a conservative 90% threshold is applied: a name is classified M or F only when &ge;90% of bearers in Belgian civil registry data are of that sex, ensuring high confidence. Names below this threshold are classified as BOTH (unisex) rather than M/F &mdash; they are never counted among the gendered results.<br><br>
-        <strong>Limitation:</strong> In theory, a small number of UNKNOWN cases from the pipeline could be names that a less conservative threshold might have resolved. However, this concerns at most a handful of cases: Tier 2 (Statbel) classifies only <strong>52 requester</strong> and <strong>40 respondent</strong> cases in total &mdash; a marginal share of the overall sample, where the vast majority are already identified by Tier 1 (Larousse) and Tier 3 (WGND). The practical impact of this threshold on the final UNKNOWN count is therefore negligible.<br><br>
-        <strong>Future integration:</strong> The 209 requester and 24 respondent BOTH cases could potentially be partially resolved through probabilistic gender assignment &mdash; a standard technique in gender studies (Blevins &amp; Mullen, 2015; Lax-Martinez et al., 2021). Rather than discarding unisex names, each case would be weighted by the actual male/female frequency ratio in population data (e.g., if Statbel shows 62% of &ldquo;Dominique&rdquo; bearers in Belgium are female, the case would count as 0.62 F + 0.38 M in the statistical analysis). This was not implemented in the current pipeline, which uses a conservative binary approach, but could be explored in future iterations to recover some of the BOTH cases without sacrificing confidence.
+        Names like Claude, Dominique, or Camille are used for both sexes in French. Larousse marks these as <em>"mixte"</em>. For Statbel, a conservative 90% threshold is applied: a name is classified M or F only when &ge;90% of bearers in Belgian civil registry data are of that sex, ensuring high confidence. Names below this threshold are classified as BOTH (unisex) rather than M/F -they are never counted among the gendered results.<br><br>
+        <strong>Limitation:</strong> In theory, a small number of UNKNOWN cases from the pipeline could be names that a less conservative threshold might have resolved. However, this concerns at most a handful of cases: Tier 2 (Statbel) classifies only <strong>52 requester</strong> and <strong>40 respondent</strong> cases in total -a marginal share of the overall sample, where the vast majority are already identified by Tier 1 (Larousse) and Tier 3 (WGND). The practical impact of this threshold on the final UNKNOWN count is therefore negligible.<br><br>
+        <strong>Future integration:</strong> The 209 requester and 24 respondent BOTH cases could potentially be partially resolved through probabilistic gender assignment -a standard technique in gender studies (Blevins &amp; Mullen, 2015; Lax-Martinez et al., 2021). Rather than discarding unisex names, each case would be weighted by the actual male/female frequency ratio in population data (e.g., if Statbel shows 62% of &ldquo;Dominique&rdquo; bearers in Belgium are female, the case would count as 0.62 F + 0.38 M in the statistical analysis). This was not implemented in the current pipeline, which uses a conservative binary approach, but could be explored in future iterations to recover some of the BOTH cases without sacrificing confidence.
       </div>
     </div>
 
@@ -1101,7 +1101,7 @@ Signature zone:
         <sup>5</sup> Hallucination filter
       </div>
       <div class="anno-body">
-        This filter applies only to cases where the LLM returned a name with a gender classification (M/F or flagged for REVIEW). After the LLM returns a name, the pipeline checks that the name actually appears in the signature zone text it was given. If the name is absent (the LLM invented it), the classification is discarded and reclassified as UNKNOWN. Cases where the LLM returned UNKNOWN or produced no result are not affected &mdash; there was no name claim to verify.
+        This filter applies only to cases where the LLM returned a name with a gender classification (M/F or flagged for REVIEW). After the LLM returns a name, the pipeline checks that the name actually appears in the signature zone text it was given. If the name is absent (the LLM invented it), the classification is discarded and reclassified as UNKNOWN. Cases where the LLM returned UNKNOWN or produced no result are not affected -there was no name claim to verify.
       </div>
     </div>
 
@@ -1111,7 +1111,7 @@ Signature zone:
         <sup>6</sup> Why only 164 cases need review
       </div>
       <div class="anno-body">
-        Tiers 1&ndash;3 are deterministic dictionary lookups &mdash; same input always gives same output, no review needed. Only Tier 4 (LLM) is probabilistic, so ALL of its M/F outputs are flagged for human verification. The 259 UNKNOWN cases were not included in this review because no gender claim was made. To verify this was justified, all 259 UNKNOWN cases were manually reviewed by reading the original FOI texts from the export folder. Of these, 250 (96.5%) were confirmed through manual review as genuinely unclassifiable (initials, pseudonyms, organizational signatures, or no name present). Only 9 cases (3.5%, 8 unique individuals) contained a classifiable first name missed due to non-standard formatting (surname-first order, ALL CAPS, username formats) &mdash; representing 0.2% of the full dataset (9/4,265).
+        Tiers 1&ndash;3 are deterministic dictionary lookups -same input always gives same output, no review needed. Only Tier 4 (LLM) is probabilistic, so ALL of its M/F outputs are flagged for human verification. The 259 UNKNOWN cases were not included in this review because no gender claim was made. To verify this was justified, all 259 UNKNOWN cases were manually reviewed by reading the original FOI texts from the export folder. Of these, 250 (96.5%) were confirmed through manual review as genuinely unclassifiable (initials, pseudonyms, organizational signatures, or no name present). Only 9 cases (3.5%, 8 unique individuals) contained a classifiable first name missed due to non-standard formatting (surname-first order, ALL CAPS, username formats) -representing 0.2% of the full dataset (9/4,265).
       </div>
     </div>
 
@@ -1121,7 +1121,7 @@ Signature zone:
         <sup>7</sup> How platform boilerplate is identified
       </div>
       <div class="anno-body">
-        The Transparencia.be platform automatically appends a bilingual (French/Dutch) legal footer to every message &mdash; privacy disclaimers, usage notices, and contact links. This footer is not part of the actual correspondence. The pipeline identifies it by searching for 8 specific marker strings that always appear at the start of the footer. These markers were identified by manually inspecting the raw exported texts &mdash; they are machine-generated by the platform and identical across all messages. Everything from the first marker onward is stripped before signature zone extraction. For respondent texts, the pipeline also strips quoted original requests (detected via <em>&ldquo;-----Message d&rsquo;origine-----&rdquo;</em> and similar email quoting conventions) to prevent the requester&rsquo;s signature from being mistaken for the respondent&rsquo;s.
+        The Transparencia.be platform automatically appends a bilingual (French/Dutch) legal footer to every message -privacy disclaimers, usage notices, and contact links. This footer is not part of the actual correspondence. The pipeline identifies it by searching for 8 specific marker strings that always appear at the start of the footer. These markers were identified by manually inspecting the raw exported texts -they are machine-generated by the platform and identical across all messages. Everything from the first marker onward is stripped before signature zone extraction. For respondent texts, the pipeline also strips quoted original requests (detected via <em>&ldquo;-----Message d&rsquo;origine-----&rdquo;</em> and similar email quoting conventions) to prevent the requester&rsquo;s signature from being mistaken for the respondent&rsquo;s.
         <details style="margin-top: 10px; cursor: pointer;">
           <summary style="font-weight: 600; color: #3182CE; font-size: 0.9em;">View all 8 boilerplate markers &darr;</summary>
           <div style="margin-top: 8px; padding: 10px 14px; background: #F7FAFC; border-radius: 6px; border: 1px solid #E2E8F0; font-size: 0.88em; line-height: 1.8;">
@@ -1142,7 +1142,7 @@ Signature zone:
   </div>
 
   <!-- ════════════ SECTION D: KEY DIFFERENCES ════════════ -->
-  <div class="section-label">D &mdash; Key Differences from <u>Previous</u> Methodology</div>
+  <div class="section-label">D -Key Differences from <u>Previous</u> Methodology</div>
 
   <div class="box box-accent" style="margin-bottom:20px;">
     <h3 style="margin-bottom:4px;"><u>Previous</u> Classifications vs. New Pipeline</h3>
@@ -1150,7 +1150,7 @@ Signature zone:
   </div>
 
   <div class="box" style="margin-bottom:12px;">
-    <h3 style="color:#dc2626;">1. Respondent Sex Composition &mdash; Reversed</h3>
+    <h3 style="color:#dc2626;">1. Respondent Sex Composition -Reversed</h3>
     <p>This is the single biggest change.</p>
     <table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:14px;">
       <tr style="background:#f1f5f9;"><th style="text-align:left;padding:6px 12px;">Method</th><th style="padding:6px 12px;">% Female resp.</th><th style="padding:6px 12px;">% Male resp.</th></tr>
@@ -1162,17 +1162,17 @@ Signature zone:
   </div>
 
   <div class="box" style="margin-bottom:12px;">
-    <h3>2. Known-Sex Pairs &mdash; Fewer</h3>
+    <h3>2. Known-Sex Pairs -Fewer</h3>
     <table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:14px;">
       <tr style="background:#f1f5f9;"><th style="text-align:left;padding:6px 12px;">Method</th><th style="padding:6px 12px;">Known-sex pairs</th><th style="padding:6px 12px;">% of all requests</th></tr>
       <tr><td style="padding:6px 12px;"><u>Previous</u></td><td style="text-align:center;padding:6px 12px;">1,215</td><td style="text-align:center;padding:6px 12px;">28.5%</td></tr>
       <tr style="background:#fef9c3;"><td style="padding:6px 12px;">New pipeline</td><td style="text-align:center;padding:6px 12px;">1,131</td><td style="text-align:center;padding:6px 12px;">26.5%</td></tr>
     </table>
-    <p style="font-size:13px;color:#475467;">The pipeline is more conservative &mdash; it only classifies sex when a personal first name is unambiguously identified in the text, whereas the <u>previous method</u> occasionally inferred sex from contextual cues. This means 84 fewer cases for cross-gender analysis.</p>
+    <p style="font-size:13px;color:#475467;">The pipeline is more conservative -it only classifies sex when a personal first name is unambiguously identified in the text, whereas the <u>previous method</u> occasionally inferred sex from contextual cues. This means 84 fewer cases for cross-gender analysis.</p>
   </div>
 
   <div class="box" style="margin-bottom:12px;">
-    <h3>3. Same-Sex Advantage &mdash; Confirmed but Weaker</h3>
+    <h3>3. Same-Sex Advantage -Confirmed but Weaker</h3>
     <table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:14px;">
       <tr style="background:#f1f5f9;"><th style="text-align:left;padding:6px 12px;">Metric</th><th style="padding:6px 12px;"><u>Previous</u></th><th style="padding:6px 12px;">New Pipeline</th></tr>
       <tr><td style="padding:6px 12px;">M&rarr;M success rate</td><td style="text-align:center;padding:6px 12px;">62.4%</td><td style="text-align:center;padding:6px 12px;"><strong>57.8%</strong></td></tr>
@@ -1180,7 +1180,7 @@ Signature zone:
       <tr><td style="padding:6px 12px;">Same-sex gap (male req.)</td><td style="text-align:center;padding:6px 12px;">3.8pp</td><td style="text-align:center;padding:6px 12px;">0.8pp</td></tr>
       <tr><td style="padding:6px 12px;">Same-sex gap (female req.)</td><td style="text-align:center;padding:6px 12px;">8.4pp</td><td style="text-align:center;padding:6px 12px;">5.1pp</td></tr>
     </table>
-    <p style="font-size:13px;color:#475467;">The same-sex advantage is confirmed by both methods, but the effect is approximately halved. F&rarr;F is no longer the best-performing combo &mdash; M&rarr;M is.</p>
+    <p style="font-size:13px;color:#475467;">The same-sex advantage is confirmed by both methods, but the effect is approximately halved. F&rarr;F is no longer the best-performing combo -M&rarr;M is.</p>
   </div>
 
   <div class="box" style="margin-bottom:12px;border-left:4px solid #16a34a;">
@@ -1189,7 +1189,7 @@ Signature zone:
       <li><strong>T2 (Urban planning):</strong> Female respondents boost success rates by ~18pp regardless of requester sex. Holds in both methods (<u>Previous</u>: +17&ndash;20pp, Pipeline: +18pp). Most robust finding in the dataset.</li>
       <li><strong>T4 (Council deliberations):</strong> Male requesters massively outperform female requesters. Not only confirmed but <strong>amplified</strong> (<u>Previous</u>: 25&ndash;28pp gap &rarr; Pipeline: 56&ndash;58pp gap).</li>
       <li><strong>H1 (requester gender &amp; responsiveness):</strong> Male requesters more likely to receive a response. Should hold with new classifications.</li>
-      <li><strong>Requester agreement:</strong> 93.9% of M confirmed, 99.0% of F confirmed &mdash; requester classifications barely changed (gender flips &lt;1%).</li>
+      <li><strong>Requester agreement:</strong> 93.9% of M confirmed, 99.0% of F confirmed -requester classifications barely changed (gender flips &lt;1%).</li>
     </ul>
   </div>
 
@@ -1207,7 +1207,7 @@ Signature zone:
   <div class="box" style="margin-bottom:12px;border-left:4px solid #16a34a;">
     <h3 style="color:#16a34a;">6. What Does Not Change</h3>
     <ul style="font-size:14px;line-height:1.8;padding-left:20px;">
-      <li>All non-gender variables (topics, sentiment, request status) are identical &mdash; same dataset</li>
+      <li>All non-gender variables (topics, sentiment, request status) are identical -same dataset</li>
       <li>Requester gender classifications: 93.9% M confirmed, 99.0% F confirmed (flips &lt;1%)</li>
       <li>H1, H2, H3 findings: depend on requester gender, which barely changed</li>
       <li>Structural patterns (T2 respondent effect, T4 requester gap) are robust across both methods</li>
@@ -1226,13 +1226,13 @@ Signature zone:
       <tr style="background:#f1f5f9;"><td style="padding:6px 12px;">Same-sex gap (female req.)</td><td style="text-align:center;">8.4pp</td><td style="text-align:center;">5.1pp</td></tr>
       <tr><td style="padding:6px 12px;">T2 female resp. boost</td><td style="text-align:center;">+17&ndash;20pp</td><td style="text-align:center;">+18pp</td></tr>
       <tr style="background:#f1f5f9;"><td style="padding:6px 12px;">T4 requester gap</td><td style="text-align:center;">25&ndash;28pp</td><td style="text-align:center;">56&ndash;58pp</td></tr>
-      <tr><td style="padding:6px 12px;">Requester M confirmed / F confirmed</td><td style="text-align:center;">&mdash;</td><td style="text-align:center;">93.9% / 99.0%</td></tr>
-      <tr style="background:#f1f5f9;"><td style="padding:6px 12px;">Respondent M confirmed / F confirmed</td><td style="text-align:center;">&mdash;</td><td style="text-align:center;">67.8% / 53.7%</td></tr>
+      <tr><td style="padding:6px 12px;">Requester M confirmed / F confirmed</td><td style="text-align:center;">-</td><td style="text-align:center;">93.9% / 99.0%</td></tr>
+      <tr style="background:#f1f5f9;"><td style="padding:6px 12px;">Respondent M confirmed / F confirmed</td><td style="text-align:center;">-</td><td style="text-align:center;">67.8% / 53.7%</td></tr>
     </table>
   </div>
 
   <div style="text-align:center;margin-top:48px;padding:16px;font-size:12px;color:#94a3b8;">
-    Pipeline Visualization &mdash; Transparencia.be FOI Gender Classification &mdash; March 2026
+    Pipeline Visualization -Transparencia.be FOI Gender Classification -March 2026
   </div>
 
 </div>
