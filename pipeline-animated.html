@@ -895,23 +895,45 @@ secretariat@rebecq.be
   <div class="step-subtitle anim">All classifications made by the LLM (Tier 4) are flagged for exhaustive human verification.</div>
 
   <div class="big-counter anim-scale" style="color:#92400e;" data-count-to="164">0</div>
-  <div class="anim" style="text-align:center;font-size:16px;color:#475467;margin-top:-16px;">cases flagged for manual review</div>
+  <div class="anim" style="text-align:center;font-size:16px;color:#475467;margin-top:-16px;">M/F cases flagged for manual review</div>
 
   <div class="stat-row" style="margin-top:28px;">
     <div class="stat-item anim">
       <div class="stat-num" style="color:#2563eb;">136</div>
-      <div class="stat-label">Requester cases</div>
+      <div class="stat-label">Requester M/F cases</div>
     </div>
     <div class="stat-item anim">
       <div class="stat-num" style="color:#ea580c;">28</div>
-      <div class="stat-label">Respondent cases</div>
+      <div class="stat-label">Respondent M/F cases</div>
     </div>
   </div>
 
   <div class="card anim" style="margin-top:20px;">
     <div style="font-size:14px;line-height:1.8;">
-      <strong>Why only Tier 4?</strong> Tiers 1&ndash;3 are fully deterministic dictionary lookups with curated, published sources. The LLM (Tier 4) is probabilistic and can hallucinate &mdash; so every M/F classification it makes is verified by a human researcher before inclusion in the final dataset.
+      <strong>Why only Tier 4 M/F cases?</strong> Tiers 1&ndash;3 are fully deterministic dictionary lookups with curated, published sources. The LLM (Tier 4) is probabilistic and can hallucinate &mdash; so every M/F classification it makes is verified by a human researcher before inclusion in the final dataset.
     </div>
+  </div>
+
+  <div class="card anim" style="border-left:4px solid #16a34a;margin-top:12px;">
+    <div style="font-size:14px;line-height:1.8;">
+      <strong style="color:#16a34a;">What about the 259 UNKNOWN cases?</strong><br>
+      The remaining 259 cases where Tier 4 returned UNKNOWN (220 requester + 39 respondent) were not included in the M/F review because no gender claim was made. To verify this was justified, all 259 UNKNOWN cases were manually reviewed by reading the original FOI texts.
+    </div>
+    <div class="stat-row" style="margin-top:12px;">
+      <div class="stat-item">
+        <div class="stat-num" style="color:#16a34a;">96.5%</div>
+        <div class="stat-label">Confirmed unclassifiable</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num" style="color:#dc2626;">9</div>
+        <div class="stat-label">Missed names (3.5%)</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num" style="color:#7c3aed;">0.2%</div>
+        <div class="stat-label">Of full dataset (9/4,265)</div>
+      </div>
+    </div>
+    <div style="font-size:13px;color:#475467;margin-top:8px;">The 9 missed names were due to non-standard formatting: surname-first order, ALL CAPS, or username formats. All 39 respondent UNKNOWNs were confirmed correct (0% error).</div>
   </div>
 
   <div class="card card-green anim">

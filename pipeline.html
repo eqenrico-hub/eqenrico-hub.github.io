@@ -986,8 +986,11 @@
 
     <div class="review-box">
       <h3 style="margin-bottom:8px;color:#92400e;">Manual Review<sup>6</sup></h3>
-      <div class="big-num">164 cases</div>
+      <div class="big-num">164 M/F cases</div>
       <p style="font-size:14px;color:#475467;margin-top:6px;">136 requester + 28 respondent &mdash; all undergo exhaustive manual verification</p>
+      <div style="margin-top:12px;padding:12px 16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:13px;color:#166534;">
+        <strong>259 UNKNOWN cases validated:</strong> All 259 Tier 4 UNKNOWN cases were manually reviewed by reading the original FOI texts. Result: <strong>250 (96.5%)</strong> confirmed as genuinely unclassifiable. Only 9 cases (3.5%, 8 unique individuals) contained a missed name due to non-standard formatting &mdash; representing 0.2% of the full dataset.
+      </div>
     </div>
   </div>
 
@@ -1108,7 +1111,7 @@ Signature zone:
         <sup>6</sup> Why only 164 cases need review
       </div>
       <div class="anno-body">
-        Tiers 1&ndash;3 are deterministic dictionary lookups &mdash; same input always gives same output, no review needed. Only Tier 4 (LLM) is probabilistic, so ALL of its M/F outputs are flagged for human verification. UNKNOWN cases are NOT flagged because two independent methods (rules + LLM) both agreed no name exists.
+        Tiers 1&ndash;3 are deterministic dictionary lookups &mdash; same input always gives same output, no review needed. Only Tier 4 (LLM) is probabilistic, so ALL of its M/F outputs are flagged for human verification. The 259 UNKNOWN cases were not included in this review because no gender claim was made. To verify this was justified, all 259 UNKNOWN cases were manually reviewed by reading the original FOI texts from the export folder. Of these, 250 (96.5%) were confirmed through manual review as genuinely unclassifiable (initials, pseudonyms, organizational signatures, or no name present). Only 9 cases (3.5%, 8 unique individuals) contained a classifiable first name missed due to non-standard formatting (surname-first order, ALL CAPS, username formats) &mdash; representing 0.2% of the full dataset (9/4,265).
       </div>
     </div>
 
