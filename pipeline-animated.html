@@ -615,51 +615,42 @@ Jean Dupont</div></div>
 <!-- ══════════════ STEP 8: FIRST NAME IDENTIFICATION ══════════════ -->
 <div class="step" data-step="8">
   <div class="step-number anim">Step 8 of 17</div>
-  <div class="step-title anim">First Name Identification</div>
-  <div class="step-subtitle anim">Why not look up the gender directly from the extracted name? Because we first need to figure out <strong>which part is the first name</strong>.</div>
+  <div class="step-title anim">Isolating the First Name</div>
+  <div class="step-subtitle anim">Step 7 gave us the full name (e.g., "Massenaux Philippe"). But which part is the first name and which is the surname? In Belgian admin practice, signers write either "Jean Dupont" (first name first) or "Dupont Jean" (surname first). We need to figure out which token is the first name before we can look up its gender.</div>
 
   <div class="anim" style="text-align:center;margin:24px 0;">
-    <span style="font-size:22px;font-weight:800;color:#2563eb;background:#eff6ff;padding:10px 20px;border-radius:8px;border:2px solid #bfdbfe;">&ldquo;Jean Dupont&rdquo;</span>
-    <div style="font-size:24px;color:#94a3b8;margin:12px 0;">&darr; split into tokens &darr;</div>
+    <span style="font-size:22px;font-weight:800;color:#2563eb;background:#eff6ff;padding:10px 20px;border-radius:8px;border:2px solid #bfdbfe;">&ldquo;Massenaux Philippe&rdquo;</span>
+    <div style="font-size:24px;color:#94a3b8;margin:12px 0;">&darr; check each word against 3.49M known first names &darr;</div>
   </div>
 
   <div class="lookup-demo anim">
-    <div class="lookup-token">&ldquo;Jean&rdquo;</div>
+    <div class="lookup-token" style="background:#f8fafc;border-color:#e2e8f0;color:#64748b;">&ldquo;Massenaux&rdquo;</div>
     <div class="lookup-arrow">&rarr;</div>
-    <div class="lookup-db">Is it a first name?<br><span style="font-size:11px;">(all 3 databases combined)</span></div>
+    <div class="lookup-db">Known first name?</div>
+    <div class="lookup-arrow">&rarr;</div>
+    <div class="lookup-result not-found">&#x274C; NO (surname)</div>
+  </div>
+
+  <div class="lookup-demo anim" style="margin-top:8px;">
+    <div class="lookup-token">&ldquo;Philippe&rdquo;</div>
+    <div class="lookup-arrow">&rarr;</div>
+    <div class="lookup-db">Known first name?</div>
     <div class="lookup-arrow">&rarr;</div>
     <div class="lookup-result found">&#x2705; YES</div>
   </div>
 
-  <div class="lookup-demo anim" style="margin-top:8px;">
-    <div class="lookup-token" style="background:#f8fafc;border-color:#e2e8f0;color:#64748b;">&ldquo;Dupont&rdquo;</div>
-    <div class="lookup-arrow">&rarr;</div>
-    <div class="lookup-db">Is it a first name?<br><span style="font-size:11px;">(all 3 databases combined)</span></div>
-    <div class="lookup-arrow">&rarr;</div>
-    <div class="lookup-result not-found">&#x274C; NO</div>
-  </div>
-
   <div class="card card-green anim" style="margin-top:20px;">
-    <strong>Result:</strong> first_name = <strong>&ldquo;Jean&rdquo;</strong> &rarr; normalized to <strong>&ldquo;JEAN&rdquo;</strong> for dictionary lookup (NFKD decomposition, strip accents, uppercase).<br>
-    <span style="font-size:13px;color:#475467;">Note: this step only identifies which token is the first name. It does not determine gender yet - that happens in the next step (Tier Cascade), where the name is looked up tier by tier in priority order to get M/F/BOTH.<br>All 4,115 requester names and 1,274 respondent names successfully had a first name token identified (100%) - because the extraction methods in Step 7 already require at least one token to match a known first name before accepting the line as a name.</span>
+    <strong>Result:</strong> first_name = <strong>&ldquo;Philippe&rdquo;</strong> &rarr; normalized to <strong>&ldquo;PHILIPPE&rdquo;</strong> (strip accents, uppercase). Gender is not determined yet - that's the next step.
   </div>
 
-  <div class="card anim" style="margin-top:12px;border-left:4px solid #2563eb;">
-    <div style="font-weight:700;margin-bottom:8px;">Why this two-step process?</div>
-    <div style="font-size:13px;color:#475467;line-height:1.8;">
-      <strong>Step 7</strong> (name extraction) identifies the full name as a unit - spaCy NER needs sentence context to distinguish a real name from random words, and the heuristic uses line patterns (2-4 capitalized words). Without this step, checking individual words against the dictionary would produce false positives: words like "Le", "Paris", or "Commission" exist as names in the WGND database (from other cultures) but are clearly not personal names in a French FOI text.<br><br>
-      <strong>Step 8</strong> (this step) is needed because the first token is not always the first name. In standard French it's "Jean Dupont" (first name first), but in Belgian administrative practice signers often write "Dupont Jean" (surname first). By checking each token against 3.49M known first names, we correctly identify the first name regardless of the order it appears in.
-    </div>
-  </div>
-
-  <div class="side-note anim">Name connectors like "de", "van", "du", "el" are recognized as non-name tokens. Compound names like "Jean-Pierre" are tried as-is first, then the first part ("Jean") is tried separately.</div>
+  <div class="side-note anim">This works regardless of name order. "Jean Dupont" &rarr; "Jean" matches first. "Massenaux Philippe" &rarr; "Massenaux" fails, "Philippe" matches. Name connectors like "de", "van", "du" are skipped. Compound names like "Jean-Pierre" are tried as-is first, then just "Jean".</div>
 </div>
 
 <!-- ══════════════ STEP 9: TIER CASCADE ══════════════ -->
 <div class="step" data-step="9">
   <div class="step-number anim">Step 9 of 17</div>
-  <div class="step-title anim">The Tier Cascade</div>
-  <div class="step-subtitle anim">Now that we know the first name, we look up its gender. The name is checked through the three databases <strong>in priority order</strong> (Larousse first, then Statbel, then WGND). The cascade stops at the first match - this order matters because the sources may disagree on ambiguous names.</div>
+  <div class="step-title anim">Gender Lookup - The Tier Cascade</div>
+  <div class="step-subtitle anim">Now we know the first name (e.g., "PHILIPPE"). To find its gender, we check the three databases <strong>one at a time, in priority order</strong>. We stop at the first match. The order matters because sources can disagree on ambiguous names - Larousse (the most authoritative for French names) always wins.</div>
 
   <div class="anim" style="font-weight:700;margin-bottom:8px;color:#2563eb;">Example 1: &ldquo;JEAN&rdquo; -common French name</div>
   <div class="cascade anim">
