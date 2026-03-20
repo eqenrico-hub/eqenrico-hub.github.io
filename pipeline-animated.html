@@ -581,21 +581,23 @@ Jean Dupont</div></div>
       <div style="font-weight:700;margin-bottom:8px;">Method A: spaCy NER</div>
       <div style="font-size:13px;color:#475467;">Named Entity Recognition detects PERSON entities.<br><br>
       Found: <strong style="color:#2563eb;">&ldquo;Jean Dupont&rdquo;</strong> &mdash; PER<br>
-      Confidence: 0.85</div>
+      Fixed weight: <strong>0.85</strong></div>
       <div style="margin-top:10px;font-size:20px;">&#x2705;</div>
     </div>
     <div class="card card-purple anim">
       <div style="font-weight:700;margin-bottom:8px;">Method B: Heuristic</div>
       <div style="font-size:13px;color:#475467;">Pattern matching: 2&ndash;4 capitalized words where first word is a known name.<br><br>
       Found: <strong style="color:#7c3aed;">&ldquo;Jean Dupont&rdquo;</strong> &mdash; match<br>
-      Confidence: 0.50</div>
+      Fixed weight: <strong>0.50</strong> (single-name fallback: 0.40)</div>
       <div style="margin-top:10px;font-size:20px;">&#x2705;</div>
     </div>
   </div>
 
   <div class="card card-green anim">
-    <strong>Both methods agree:</strong> &ldquo;Jean Dupont&rdquo; &rarr; name extraction confirmed. When methods disagree, the one with higher confidence wins. When only one finds a name, that result is used.
+    <strong>Both methods agree:</strong> &ldquo;Jean Dupont&rdquo; &rarr; name extraction confirmed. When methods disagree, the one with the higher weight wins. When only one finds a name, that result is used.
   </div>
+
+  <div class="side-note anim">These weights are <strong>fixed by design</strong>, not computed per result. They serve as tie-breakers: NER (0.85) is trusted over heuristic pattern matching (0.50), which is trusted over single-name fallback (0.40). This ensures that when both methods find different names, the more reliable method prevails.</div>
 
   <div class="stat-row">
     <div class="stat-item anim">
