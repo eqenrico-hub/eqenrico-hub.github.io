@@ -655,34 +655,7 @@ Jean Dupont</div></div>
   <div class="step-title anim">Gender Lookup - The Tier Cascade</div>
   <div class="step-subtitle anim">Now we know the first name (e.g., "PHILIPPE"). To find its gender, we run a five-tier cascade. First, we check how the administration addressed the requester in their response (Tier 0). If a gendered greeting is found, that takes precedence as direct evidence of perceived gender. Otherwise, we check the three name databases in priority order (Tiers 1&ndash;3). If no match is found, the LLM attempts classification (Tier 4). The order matters because sources can disagree on ambiguous names &mdash; Tier 0 (response greeting) takes precedence as it reflects the administration&rsquo;s direct perception. Among name-based tiers, Larousse (the most authoritative for French names) has priority.</div>
 
-  <div class="anim" style="font-weight:700;margin-bottom:8px;color:#2563eb;">Example 1: &ldquo;JEAN&rdquo; -common French name</div>
-  <div class="cascade anim">
-    <div class="cascade-row tier-1 skip" style="background:#f0fdf4;border-color:#6ee7b7;"><span class="cascade-label">Tier 0: Greeting</span> <span style="color:#94a3b8;">No greeting or already resolved</span> <span class="cascade-status">-</span></div>
-    <div class="cascade-row tier-1 hit"><span class="cascade-label">Tier 1: Larousse</span> <span>Search &ldquo;JEAN&rdquo;</span> <span class="cascade-status" style="color:#16a34a;">&#x2705; M</span></div>
-    <div class="cascade-row tier-2 skip"><span class="cascade-label">Tier 2: Statbel</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
-    <div class="cascade-row tier-3 skip"><span class="cascade-label">Tier 3: WGND</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
-    <div class="cascade-row tier-4 skip"><span class="cascade-label">Tier 4: LLM</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
-  </div>
-
-  <div class="anim" style="font-weight:700;margin:20px 0 8px;color:#0284c7;">Example 2: &ldquo;AYOUB&rdquo; -not in Larousse</div>
-  <div class="cascade anim">
-    <div class="cascade-row tier-1 skip" style="background:#f0fdf4;border-color:#6ee7b7;"><span class="cascade-label">Tier 0: Greeting</span> <span style="color:#94a3b8;">No greeting</span> <span class="cascade-status">-</span></div>
-    <div class="cascade-row tier-1 miss"><span class="cascade-label">Tier 1: Larousse</span> <span>Search &ldquo;AYOUB&rdquo;</span> <span class="cascade-status" style="color:#dc2626;">&#x274C;</span></div>
-    <div class="cascade-row tier-2 hit"><span class="cascade-label">Tier 2: Statbel</span> <span>Search &ldquo;AYOUB&rdquo;</span> <span class="cascade-status" style="color:#16a34a;">&#x2705; M</span></div>
-    <div class="cascade-row tier-3 skip"><span class="cascade-label">Tier 3: WGND</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
-    <div class="cascade-row tier-4 skip"><span class="cascade-label">Tier 4: LLM</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
-  </div>
-
-  <div class="anim" style="font-weight:700;margin:20px 0 8px;color:#854d0e;">Example 3: &ldquo;CABLYN&rdquo; -unresolvable</div>
-  <div class="cascade anim">
-    <div class="cascade-row tier-1 skip" style="background:#f0fdf4;border-color:#6ee7b7;"><span class="cascade-label">Tier 0: Greeting</span> <span style="color:#94a3b8;">No greeting</span> <span class="cascade-status">-</span></div>
-    <div class="cascade-row tier-1 miss"><span class="cascade-label">Tier 1: Larousse</span> <span>Search &ldquo;CABLYN&rdquo;</span> <span class="cascade-status" style="color:#dc2626;">&#x274C;</span></div>
-    <div class="cascade-row tier-2 miss"><span class="cascade-label">Tier 2: Statbel</span> <span>Search &ldquo;CABLYN&rdquo;</span> <span class="cascade-status" style="color:#dc2626;">&#x274C;</span></div>
-    <div class="cascade-row tier-3 miss"><span class="cascade-label">Tier 3: WGND</span> <span>Search &ldquo;CABLYN&rdquo;</span> <span class="cascade-status" style="color:#dc2626;">&#x274C;</span></div>
-    <div class="cascade-row tier-4 hit"><span class="cascade-label">Tier 4: LLM</span> <span>Ollama analyzes text&hellip;</span> <span class="cascade-status" style="color:#854d0e;">&#x26A0; UNKNOWN</span></div>
-  </div>
-
-  <div class="anim" style="font-weight:700;margin:20px 0 8px;color:#7c3aed;">Example 4: &ldquo;DOMINIQUE&rdquo; -unisex name resolved by greeting</div>
+  <div class="anim" style="font-weight:700;margin-bottom:8px;color:#7c3aed;">Example 1: &ldquo;DOMINIQUE&rdquo; -unisex name resolved by Tier 0</div>
   <div class="anim" style="font-size:13px;color:#6b7280;margin-bottom:8px;font-style:italic;">Dictionaries say &ldquo;Dominique&rdquo; is used for both sexes. But the administration addressed this person as &ldquo;Cher Monsieur&rdquo; &mdash; direct evidence of how they perceived the requester. Since our study examines the effect of perceived gender on responsiveness, this perception is the relevant signal.</div>
   <div class="cascade anim">
     <div class="cascade-row tier-1 hit" style="background:#f5f3ff;border-color:#c4b5fd;"><span class="cascade-label">Tier 0: Greeting</span> <span>Response says &ldquo;Cher Monsieur&rdquo;</span> <span class="cascade-status" style="color:#7c3aed;">&#x2705; M</span></div>
@@ -692,7 +665,7 @@ Jean Dupont</div></div>
     <div class="cascade-row tier-4 skip"><span class="cascade-label">Tier 4: LLM</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
   </div>
 
-  <div class="anim" style="font-weight:700;margin:20px 0 8px;color:#7c3aed;">Example 5: &ldquo;N. DUPONT&rdquo; -initials only, but greeting reveals gender</div>
+  <div class="anim" style="font-weight:700;margin:20px 0 8px;color:#7c3aed;">Example 2: &ldquo;N. DUPONT&rdquo; -initials only, but Tier 0 reveals gender</div>
   <div class="anim" style="font-size:13px;color:#6b7280;margin-bottom:8px;font-style:italic;">The requester signed with initials only &mdash; no classifiable first name. Name-based tiers cannot help. But the administration&rsquo;s response opens with &ldquo;Ch&egrave;re Madame&rdquo; &mdash; they knew (from the platform account or prior correspondence) that the requester is female. This is the only source of gender information for this case.</div>
   <div class="cascade anim">
     <div class="cascade-row tier-1 hit" style="background:#f5f3ff;border-color:#c4b5fd;"><span class="cascade-label">Tier 0: Greeting</span> <span>Response says &ldquo;Ch&egrave;re Madame&rdquo;</span> <span class="cascade-status" style="color:#7c3aed;">&#x2705; F</span></div>
@@ -700,6 +673,33 @@ Jean Dupont</div></div>
     <div class="cascade-row tier-2 skip"><span class="cascade-label">Tier 2: Statbel</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
     <div class="cascade-row tier-3 skip"><span class="cascade-label">Tier 3: WGND</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
     <div class="cascade-row tier-4 skip"><span class="cascade-label">Tier 4: LLM</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
+  </div>
+
+  <div class="anim" style="font-weight:700;margin:20px 0 8px;color:#2563eb;">Example 3: &ldquo;JEAN&rdquo; -common French name (no greeting available)</div>
+  <div class="cascade anim">
+    <div class="cascade-row tier-1 skip" style="background:#f0fdf4;border-color:#6ee7b7;"><span class="cascade-label">Tier 0: Greeting</span> <span style="color:#94a3b8;">No greeting or no response received</span> <span class="cascade-status">-</span></div>
+    <div class="cascade-row tier-1 hit"><span class="cascade-label">Tier 1: Larousse</span> <span>Search &ldquo;JEAN&rdquo;</span> <span class="cascade-status" style="color:#16a34a;">&#x2705; M</span></div>
+    <div class="cascade-row tier-2 skip"><span class="cascade-label">Tier 2: Statbel</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
+    <div class="cascade-row tier-3 skip"><span class="cascade-label">Tier 3: WGND</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
+    <div class="cascade-row tier-4 skip"><span class="cascade-label">Tier 4: LLM</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
+  </div>
+
+  <div class="anim" style="font-weight:700;margin:20px 0 8px;color:#0284c7;">Example 4: &ldquo;AYOUB&rdquo; -not in Larousse</div>
+  <div class="cascade anim">
+    <div class="cascade-row tier-1 skip" style="background:#f0fdf4;border-color:#6ee7b7;"><span class="cascade-label">Tier 0: Greeting</span> <span style="color:#94a3b8;">No greeting</span> <span class="cascade-status">-</span></div>
+    <div class="cascade-row tier-1 miss"><span class="cascade-label">Tier 1: Larousse</span> <span>Search &ldquo;AYOUB&rdquo;</span> <span class="cascade-status" style="color:#dc2626;">&#x274C;</span></div>
+    <div class="cascade-row tier-2 hit"><span class="cascade-label">Tier 2: Statbel</span> <span>Search &ldquo;AYOUB&rdquo;</span> <span class="cascade-status" style="color:#16a34a;">&#x2705; M</span></div>
+    <div class="cascade-row tier-3 skip"><span class="cascade-label">Tier 3: WGND</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
+    <div class="cascade-row tier-4 skip"><span class="cascade-label">Tier 4: LLM</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
+  </div>
+
+  <div class="anim" style="font-weight:700;margin:20px 0 8px;color:#854d0e;">Example 5: &ldquo;CABLYN&rdquo; -unresolvable</div>
+  <div class="cascade anim">
+    <div class="cascade-row tier-1 skip" style="background:#f0fdf4;border-color:#6ee7b7;"><span class="cascade-label">Tier 0: Greeting</span> <span style="color:#94a3b8;">No greeting</span> <span class="cascade-status">-</span></div>
+    <div class="cascade-row tier-1 miss"><span class="cascade-label">Tier 1: Larousse</span> <span>Search &ldquo;CABLYN&rdquo;</span> <span class="cascade-status" style="color:#dc2626;">&#x274C;</span></div>
+    <div class="cascade-row tier-2 miss"><span class="cascade-label">Tier 2: Statbel</span> <span>Search &ldquo;CABLYN&rdquo;</span> <span class="cascade-status" style="color:#dc2626;">&#x274C;</span></div>
+    <div class="cascade-row tier-3 miss"><span class="cascade-label">Tier 3: WGND</span> <span>Search &ldquo;CABLYN&rdquo;</span> <span class="cascade-status" style="color:#dc2626;">&#x274C;</span></div>
+    <div class="cascade-row tier-4 hit"><span class="cascade-label">Tier 4: LLM</span> <span>Ollama analyzes text&hellip;</span> <span class="cascade-status" style="color:#854d0e;">&#x26A0; UNKNOWN</span></div>
   </div>
 
   <div class="side-note anim">Tier 0 takes precedence because it reflects the administration&rsquo;s direct perception of the requester&rsquo;s gender &mdash; the signal that drives the bureaucratic behavior under study. Tiers 1&ndash;3 still run for audit purposes. Tier 0 resolved 1,339 requester cases (77 with no name, 74 unisex, 23 disagreements with dictionaries). Tier 4 (LLM) uses temperature=0 and seed=42 for near-deterministic results; all its M/F outputs are flagged for manual review.</div>
