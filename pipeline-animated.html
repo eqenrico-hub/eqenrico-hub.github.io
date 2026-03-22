@@ -278,6 +278,7 @@ body {
 .matrix-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; border-bottom: 1px solid rgba(0,0,0,0.06); }
 .matrix-row:last-child { border-bottom: none; }
 .matrix-row strong { font-size: 16px; }
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
 
 /* ═══════ PROMPT BOX ═══════ */
 .prompt-box {
@@ -342,7 +343,7 @@ body {
 @media (max-width: 640px) {
   .step-title { font-size: 22px; }
   .big-counter { font-size: 48px; }
-  .tier-grid, .result-grid, .matrix-grid { grid-template-columns: 1fr; }
+  .tier-grid, .result-grid, .matrix-grid, .compare-grid { grid-template-columns: 1fr; }
   .formula-list { grid-template-columns: 1fr; }
   .fork-labels { flex-direction: column; align-items: center; gap: 12px; }
   .fork-arms { width: 80px; }
@@ -424,7 +425,13 @@ body {
 <div class="step" data-step="3">
   <div class="step-number anim">Step 3 of 17</div>
   <div class="step-title anim">Reference Databases</div>
-  <div class="step-subtitle anim">Before processing any text, the pipeline loads three curated name&ndash;gender dictionaries forming a <strong>four-tier cascade</strong>.</div>
+  <div class="step-subtitle anim">Before processing any text, the pipeline loads three curated name&ndash;gender dictionaries forming a <strong>five-tier cascade</strong>.</div>
+
+  <div class="card card-green anim" style="text-align:center;margin-bottom:12px;">
+    <div class="tier-label">Tier 0</div>
+    <div class="tier-name" style="font-size:18px;">Response Greeting</div>
+    <div style="font-size:14px;color:#475467;margin-top:4px;">Detects gendered greetings (<em>&ldquo;Monsieur&rdquo;</em>, <em>&ldquo;Madame&rdquo;</em>) in the response text to classify the requester</div>
+  </div>
 
   <div class="tier-grid">
     <div class="tier-box tier-1 anim">
@@ -449,12 +456,12 @@ body {
       <div class="tier-label">Tier 4</div>
       <div class="tier-name">Ollama LLM</div>
       <div style="font-size:32px;font-weight:800;margin:8px 0;">&#x1F9E0;</div>
-      <div style="font-size:12px;color:#64748b;">Llama 3.2 -temp=0, seed=42</div>
+      <div style="font-size:12px;color:#64748b;">Qwen 2.5 -temp=0, seed=42</div>
     </div>
   </div>
 
   <div class="card card-green anim">
-    <strong>Combined lookup capacity:</strong> <span style="font-size:20px;font-weight:800;color:#16a34a;" data-count-to="3486454">0</span> unique first names. Each name is tried in Tier 1 first, then 2, then 3. Only truly unresolved cases fall to Tier 4 (LLM).
+    <strong>Combined lookup capacity:</strong> <span style="font-size:20px;font-weight:800;color:#16a34a;" data-count-to="3486454">0</span> unique first names. Tier 0 checks the response greeting first, then each name is tried in Tier 1, then 2, then 3. Only truly unresolved cases fall to Tier 4 (LLM).
   </div>
 </div>
 
@@ -646,10 +653,11 @@ Jean Dupont</div></div>
 <div class="step" data-step="9">
   <div class="step-number anim">Step 9 of 17</div>
   <div class="step-title anim">Gender Lookup - The Tier Cascade</div>
-  <div class="step-subtitle anim">Now we know the first name (e.g., "PHILIPPE"). To find its gender, we check the three databases <strong>one at a time, in priority order</strong>. We stop at the first match. The order matters because sources can disagree on ambiguous names - Larousse (the most authoritative for French names) always wins.</div>
+  <div class="step-subtitle anim">Now we know the first name (e.g., "PHILIPPE"). To find its gender, we run a five-tier cascade. First, we check how the administration addressed the requester in their response (Tier 0). If a gendered greeting is found, that takes precedence as direct evidence of perceived gender. Otherwise, we check the three name databases in priority order (Tiers 1&ndash;3). If no match is found, the LLM attempts classification (Tier 4). The order matters because sources can disagree on ambiguous names &mdash; Tier 0 (response greeting) takes precedence as it reflects the administration&rsquo;s direct perception. Among name-based tiers, Larousse (the most authoritative for French names) has priority.</div>
 
   <div class="anim" style="font-weight:700;margin-bottom:8px;color:#2563eb;">Example 1: &ldquo;JEAN&rdquo; -common French name</div>
   <div class="cascade anim">
+    <div class="cascade-row tier-1 skip" style="background:#f0fdf4;border-color:#6ee7b7;"><span class="cascade-label">Tier 0: Greeting</span> <span style="color:#94a3b8;">No greeting or already resolved</span> <span class="cascade-status">-</span></div>
     <div class="cascade-row tier-1 hit"><span class="cascade-label">Tier 1: Larousse</span> <span>Search &ldquo;JEAN&rdquo;</span> <span class="cascade-status" style="color:#16a34a;">&#x2705; M</span></div>
     <div class="cascade-row tier-2 skip"><span class="cascade-label">Tier 2: Statbel</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
     <div class="cascade-row tier-3 skip"><span class="cascade-label">Tier 3: WGND</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
@@ -658,6 +666,7 @@ Jean Dupont</div></div>
 
   <div class="anim" style="font-weight:700;margin:20px 0 8px;color:#0284c7;">Example 2: &ldquo;AYOUB&rdquo; -not in Larousse</div>
   <div class="cascade anim">
+    <div class="cascade-row tier-1 skip" style="background:#f0fdf4;border-color:#6ee7b7;"><span class="cascade-label">Tier 0: Greeting</span> <span style="color:#94a3b8;">No greeting</span> <span class="cascade-status">-</span></div>
     <div class="cascade-row tier-1 miss"><span class="cascade-label">Tier 1: Larousse</span> <span>Search &ldquo;AYOUB&rdquo;</span> <span class="cascade-status" style="color:#dc2626;">&#x274C;</span></div>
     <div class="cascade-row tier-2 hit"><span class="cascade-label">Tier 2: Statbel</span> <span>Search &ldquo;AYOUB&rdquo;</span> <span class="cascade-status" style="color:#16a34a;">&#x2705; M</span></div>
     <div class="cascade-row tier-3 skip"><span class="cascade-label">Tier 3: WGND</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
@@ -666,20 +675,39 @@ Jean Dupont</div></div>
 
   <div class="anim" style="font-weight:700;margin:20px 0 8px;color:#854d0e;">Example 3: &ldquo;CABLYN&rdquo; -unresolvable</div>
   <div class="cascade anim">
+    <div class="cascade-row tier-1 skip" style="background:#f0fdf4;border-color:#6ee7b7;"><span class="cascade-label">Tier 0: Greeting</span> <span style="color:#94a3b8;">No greeting</span> <span class="cascade-status">-</span></div>
     <div class="cascade-row tier-1 miss"><span class="cascade-label">Tier 1: Larousse</span> <span>Search &ldquo;CABLYN&rdquo;</span> <span class="cascade-status" style="color:#dc2626;">&#x274C;</span></div>
     <div class="cascade-row tier-2 miss"><span class="cascade-label">Tier 2: Statbel</span> <span>Search &ldquo;CABLYN&rdquo;</span> <span class="cascade-status" style="color:#dc2626;">&#x274C;</span></div>
     <div class="cascade-row tier-3 miss"><span class="cascade-label">Tier 3: WGND</span> <span>Search &ldquo;CABLYN&rdquo;</span> <span class="cascade-status" style="color:#dc2626;">&#x274C;</span></div>
     <div class="cascade-row tier-4 hit"><span class="cascade-label">Tier 4: LLM</span> <span>Ollama analyzes text&hellip;</span> <span class="cascade-status" style="color:#854d0e;">&#x26A0; UNKNOWN</span></div>
   </div>
 
-  <div class="side-note anim">Tiers 1&ndash;3 are fully deterministic: same input always produces same output. Tier 4 (LLM) uses temperature=0 and seed=42 for near-deterministic results, but all its M/F outputs are flagged for manual review.</div>
+  <div class="anim" style="font-weight:700;margin:20px 0 8px;color:#7c3aed;">Example 4: &ldquo;DOMINIQUE&rdquo; -unisex name resolved by greeting</div>
+  <div class="cascade anim">
+    <div class="cascade-row tier-1 hit" style="background:#f5f3ff;border-color:#c4b5fd;"><span class="cascade-label">Tier 0: Greeting</span> <span>Response says &ldquo;Cher Monsieur&rdquo;</span> <span class="cascade-status" style="color:#7c3aed;">&#x2705; M</span></div>
+    <div class="cascade-row tier-1 skip" style="opacity:0.5;"><span class="cascade-label">Tier 1: Larousse</span> <span>Would say BOTH (unisex)</span> <span class="cascade-status" style="color:#94a3b8;">overridden</span></div>
+    <div class="cascade-row tier-2 skip"><span class="cascade-label">Tier 2: Statbel</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
+    <div class="cascade-row tier-3 skip"><span class="cascade-label">Tier 3: WGND</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
+    <div class="cascade-row tier-4 skip"><span class="cascade-label">Tier 4: LLM</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
+  </div>
+
+  <div class="anim" style="font-weight:700;margin:20px 0 8px;color:#7c3aed;">Example 5: &ldquo;N. DUPONT&rdquo; -initials only, but greeting reveals gender</div>
+  <div class="cascade anim">
+    <div class="cascade-row tier-1 hit" style="background:#f5f3ff;border-color:#c4b5fd;"><span class="cascade-label">Tier 0: Greeting</span> <span>Response says &ldquo;Ch&egrave;re Madame&rdquo;</span> <span class="cascade-status" style="color:#7c3aed;">&#x2705; F</span></div>
+    <div class="cascade-row tier-1 skip" style="opacity:0.5;"><span class="cascade-label">Tier 1: Larousse</span> <span>&ldquo;Dupont&rdquo; = surname, not found</span> <span class="cascade-status" style="color:#94a3b8;">overridden</span></div>
+    <div class="cascade-row tier-2 skip"><span class="cascade-label">Tier 2: Statbel</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
+    <div class="cascade-row tier-3 skip"><span class="cascade-label">Tier 3: WGND</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
+    <div class="cascade-row tier-4 skip"><span class="cascade-label">Tier 4: LLM</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
+  </div>
+
+  <div class="side-note anim">Tier 0 takes precedence because it reflects the administration&rsquo;s direct perception of the requester&rsquo;s gender &mdash; the signal that drives the bureaucratic behavior under study. Tiers 1&ndash;3 still run for audit purposes. Tier 0 resolved 1,339 requester cases (77 with no name, 74 unisex, 23 disagreements with dictionaries). Tier 4 (LLM) uses temperature=0 and seed=42 for near-deterministic results; all its M/F outputs are flagged for manual review.</div>
 </div>
 
 <!-- ══════════════ STEP 10: TIER 4 LLM ══════════════ -->
 <div class="step" data-step="10">
   <div class="step-number anim">Step 10 of 17</div>
   <div class="step-title anim">Tier 4: The LLM Fallback</div>
-  <div class="step-subtitle anim">Only cases unresolved by Tiers 1&ndash;3 reach the LLM. An anti-hallucination prompt prevents the model from guessing.</div>
+  <div class="step-subtitle anim">Only cases unresolved by Tiers 0&ndash;3 reach the LLM. With Tier 0 resolving many requester cases via response greetings, fewer cases need LLM classification. An anti-hallucination prompt prevents the model from guessing.</div>
 
   <div class="prompt-box anim"><span class="kw">SYSTEM PROMPT (requester):</span>
 
@@ -708,22 +736,28 @@ Reply EXACTLY: <span class="str">GENDER: &lt;M or F or UNKNOWN&gt; | NAME: &lt;f
     </div>
   </div>
 
+  <div class="anim" style="font-weight:700;margin:16px 0 8px;">Filter Results (All Tier 4 — Requester + Respondent Combined)</div>
+  <div class="card anim" style="border-left:4px solid #7c3aed;background:#ede9fe;">
+    <div style="font-size:14px;line-height:1.9;">
+      Before filtering: <strong>140</strong> LLM M/F responses<br>
+      False positive filter: <strong style="color:#16a34a;">0 caught</strong> <span style="color:#64748b;">(Qwen never returned function words as names)</span><br>
+      Hallucination filter: <strong style="color:#dc2626;">14 caught</strong> <span style="color:#64748b;">(names not in text, e.g., fabricated names)</span><br>
+      After filtering: <strong style="color:#16a34a;">126 clean M/F accepted</strong> <span style="color:#64748b;">(10.0% rejection rate)</span>
+    </div>
+  </div>
+
   <div class="stat-row">
     <div class="stat-item anim">
-      <div class="stat-num" style="color:#854d0e;">379</div>
+      <div class="stat-num" style="color:#854d0e;">302</div>
       <div class="stat-label">Cases reached Tier 4</div>
     </div>
     <div class="stat-item anim">
-      <div class="stat-num" style="color:#16a34a;">136</div>
+      <div class="stat-num" style="color:#16a34a;">9</div>
       <div class="stat-label">Classified M/F</div>
     </div>
     <div class="stat-item anim">
-      <div class="stat-num" style="color:#dc2626;">220</div>
+      <div class="stat-num" style="color:#dc2626;">293</div>
       <div class="stat-label">Confirmed UNKNOWN</div>
-    </div>
-    <div class="stat-item anim">
-      <div class="stat-num" style="color:#94a3b8;">23</div>
-      <div class="stat-label">No result</div>
     </div>
   </div>
 </div>
@@ -732,37 +766,37 @@ Reply EXACTLY: <span class="str">GENDER: &lt;M or F or UNKNOWN&gt; | NAME: &lt;f
 <div class="step" data-step="11">
   <div class="step-number anim">Step 11 of 17</div>
   <div class="step-title anim">Requester Results</div>
-  <div class="step-subtitle anim">After the full four-tier cascade, here is how all 4,265 requesters are classified.</div>
+  <div class="step-subtitle anim">After the full five-tier cascade, here is how all 4,265 requesters are classified.</div>
 
   <div class="result-grid">
     <div class="result-box result-green anim-scale">
-      <div class="result-pct">89.4%</div>
+      <div class="result-pct">90.0%</div>
       <div class="result-label">M or F</div>
-      <div class="result-count">3,813 requesters</div>
+      <div class="result-count">3,837 requesters</div>
     </div>
     <div class="result-box result-amber anim-scale">
-      <div class="result-pct">4.9%</div>
+      <div class="result-pct">3.2%</div>
       <div class="result-label">BOTH (unisex)</div>
-      <div class="result-count">209 requesters</div>
+      <div class="result-count">135 requesters</div>
     </div>
     <div class="result-box result-red anim-scale">
-      <div class="result-pct">5.7%</div>
+      <div class="result-pct">6.9%</div>
       <div class="result-label">UNKNOWN</div>
-      <div class="result-count">243 requesters</div>
+      <div class="result-count">293 requesters</div>
     </div>
   </div>
 
   <div class="stacked-bar anim" id="req-bar">
-    <div class="bar-seg" style="background:#16a34a;--tw:89.4%;" data-width="89.4">89.4%</div>
-    <div class="bar-seg" style="background:#eab308;--tw:4.9%;" data-width="4.9">4.9%</div>
-    <div class="bar-seg" style="background:#dc2626;--tw:5.7%;" data-width="5.7">5.7%</div>
+    <div class="bar-seg" style="background:#16a34a;--tw:90%;" data-width="90">90.0%</div>
+    <div class="bar-seg" style="background:#eab308;--tw:3.2%;" data-width="3.2">3.2%</div>
+    <div class="bar-seg" style="background:#dc2626;--tw:6.9%;" data-width="6.9">6.9%</div>
   </div>
 
   <div class="anim" style="font-size:14px;color:#475467;margin-top:8px;">
-    <strong>Tier breakdown:</strong> Larousse resolved 3,529 &bull; Statbel added 51 &bull; WGND added 97 &bull; LLM added 136 &bull; 136 cases flagged TO REVIEW
+    <strong>Tier breakdown:</strong> Greeting resolved 1,339 &bull; Larousse resolved 3,529 &bull; Statbel added 51 &bull; WGND added 97 &bull; LLM added 9 &bull; 9 cases flagged TO REVIEW
   </div>
 
-  <div class="side-note anim">The high 89.4% classification rate is because most FOI requesters sign with their full name. The 5.7% UNKNOWN includes pseudonyms, initials-only, and collective/organizational signers.</div>
+  <div class="side-note anim">The high 90.0% classification rate is because most FOI requesters sign with their full name. The 6.9% UNKNOWN includes pseudonyms, initials-only, and collective/organizational signers.</div>
 </div>
 
 <!-- ══════════════ STEP 12: THE SPLIT ══════════════ -->
@@ -829,9 +863,9 @@ secretariat@rebecq.be
 
   <div class="result-grid">
     <div class="result-box result-green anim-scale">
-      <div class="result-pct">30.0%</div>
+      <div class="result-pct">32.2%</div>
       <div class="result-label">M or F</div>
-      <div class="result-count">1,278 respondents</div>
+      <div class="result-count">1,373 respondents</div>
     </div>
     <div class="result-box result-amber anim-scale">
       <div class="result-pct">0.6%</div>
@@ -839,52 +873,90 @@ secretariat@rebecq.be
       <div class="result-count">24 respondents</div>
     </div>
     <div class="result-box result-red anim-scale">
-      <div class="result-pct">69.5%</div>
+      <div class="result-pct">67.2%</div>
       <div class="result-label">UNKNOWN</div>
-      <div class="result-count">2,963 respondents</div>
+      <div class="result-count">2,868 respondents</div>
     </div>
   </div>
 
   <div class="stacked-bar anim" id="resp-bar">
-    <div class="bar-seg" style="background:#16a34a;--tw:30%;" data-width="30">30.0%</div>
+    <div class="bar-seg" style="background:#16a34a;--tw:32.2%;" data-width="32.2">32.2%</div>
     <div class="bar-seg" style="background:#eab308;--tw:0.6%;" data-width="0.6"></div>
-    <div class="bar-seg" style="background:#dc2626;--tw:69.5%;" data-width="69.5">69.5%</div>
+    <div class="bar-seg" style="background:#dc2626;--tw:67.2%;" data-width="67.2">67.2%</div>
   </div>
 
   <div class="card anim" style="margin-top:12px;">
     <div style="font-size:14px;line-height:1.8;">
-      <strong>Among the 2,511 requests with a reply:</strong> 51.9% were classified (1,302 / 2,511).<br>
-      <strong>28 cases</strong> flagged TO REVIEW from Tier 4.
+      <strong>Among the 2,511 requests with a reply:</strong> 50.7% classified by Tiers 1&ndash;3 (32.2% full pipeline).<br>
+      <strong>123 cases</strong> flagged TO REVIEW from Tier 4.
     </div>
   </div>
 
-  <div class="side-note anim">The 69.5% UNKNOWN rate is not a pipeline failure -it accurately reflects that most government responses are either missing (41.1%) or institutionally signed (no personal name to classify).</div>
+  <div class="side-note anim">The 67.2% UNKNOWN rate is not a pipeline failure -it accurately reflects that most government responses are either missing (41.1%) or institutionally signed (no personal name to classify).</div>
 </div>
 
 <!-- ══════════════ STEP 15: CONFUSION MATRIX ══════════════ -->
 <div class="step" data-step="15">
   <div class="step-number anim">Step 15 of 17</div>
   <div class="step-title anim">Validation: Confusion Matrix</div>
-  <div class="step-subtitle anim">The old methodology used ChatGPT to classify gender. The new pipeline uses dictionary lookups + local LLM. How many classifications stayed the same?</div>
+  <div class="step-subtitle anim">Three methods compared: the old ChatGPT approach, the initial Llama pipeline, and the final Qwen+Tier&nbsp;0 pipeline. Higher agreement with ChatGPT = more consistent. More known-sex pairs = more usable data.</div>
 
-  <div class="matrix-grid">
-    <div class="matrix-card card-green anim">
-      <h4 style="color:#16a34a;">Requester (stable)</h4>
-      <div class="matrix-row">Old method said <strong>Male</strong> &rarr; new pipeline also says Male: <strong style="color:#16a34a;">93.9%</strong> <span style="color:#64748b;">(2,160 of 2,301)</span></div>
-      <div class="matrix-row">Old method said <strong>Female</strong> &rarr; new pipeline also says Female: <strong style="color:#16a34a;">99.0%</strong> <span style="color:#64748b;">(1,342 of 1,355)</span></div>
-      <div class="matrix-row">Old said M, new says F (or vice versa): <strong>&lt;1%</strong></div>
-      <div class="matrix-row">Old said M or F, new says UNKNOWN: <strong>0.4&ndash;5.7%</strong></div>
-    </div>
-    <div class="matrix-card card-red anim">
-      <h4 style="color:#dc2626;">Respondent (significant changes)</h4>
-      <div class="matrix-row">Old method said <strong>Male</strong> &rarr; new pipeline also says Male: <strong style="color:#dc2626;">67.8%</strong> <span style="color:#64748b;">(391 of 577)</span></div>
-      <div class="matrix-row">Old method said <strong>Female</strong> &rarr; new pipeline also says Female: <strong style="color:#dc2626;">53.7%</strong> <span style="color:#64748b;">(437 of 814)</span></div>
-      <div class="matrix-row">Old method said <strong>Unknown</strong> &rarr; new pipeline now classifies M/F: <strong>32.0%</strong> <span style="color:#64748b;">(360 of 1,126)</span></div>
-      <div class="matrix-row">Old said M or F, new says UNKNOWN: <strong>29&ndash;37%</strong></div>
+  <div class="card card-purple anim" style="margin-bottom:20px;">
+    <div style="font-size:14px;line-height:1.8;">
+      <strong>Pipeline evolution:</strong> The pipeline evolved through two iterations. An initial run with Llama 3.2 (3B parameters) produced a 74% error rate in Tier 4 classifications, identified during manual review by a co-author. The pipeline was re-run with Qwen 2.5 (7.6B) and Tier 0 (response greeting detection, suggested by a co-author). The table below compares both iterations against the original ChatGPT classifications.
     </div>
   </div>
 
-  <div class="side-note anim"><strong>Reading this:</strong> High percentages = both methods agree. For requesters, agreement is very high (93&ndash;99%), meaning the new pipeline barely changed anything. For respondents, agreement is much lower -the new pipeline is stricter and reclassified 29&ndash;37% of previously gendered respondents as UNKNOWN (because it couldn't find a personal name in the text).</div>
+  <!-- REQUESTER comparison -->
+  <div class="anim" style="font-weight:700;font-size:16px;margin-bottom:12px;color:#16a34a;">Requester Agreement with ChatGPT</div>
+  <div class="compare-grid">
+    <div class="card card-blue anim" style="padding:16px;">
+      <h4 style="color:#2563eb;font-size:14px;margin-bottom:10px;">ChatGPT vs Llama (initial)</h4>
+      <div class="matrix-row">Old M &rarr; still M: <strong style="color:#2563eb;">93.9%</strong> <span style="color:#64748b;">(2,160/2,301)</span></div>
+      <div class="matrix-row">Old F &rarr; still F: <strong style="color:#2563eb;">99.0%</strong> <span style="color:#64748b;">(1,342/1,355)</span></div>
+    </div>
+    <div class="card card-green anim" style="padding:16px;">
+      <h4 style="color:#16a34a;font-size:14px;margin-bottom:10px;">ChatGPT vs Qwen+Tier&nbsp;0 (final)</h4>
+      <div class="matrix-row">Old M &rarr; still M: <strong style="color:#16a34a;">95.9%</strong> <span style="color:#64748b;">(2,206/2,301)</span></div>
+      <div class="matrix-row">Old F &rarr; still F: <strong style="color:#16a34a;">98.7%</strong> <span style="color:#64748b;">(1,337/1,355)</span></div>
+    </div>
+  </div>
+
+  <!-- RESPONDENT comparison -->
+  <div class="anim" style="font-weight:700;font-size:16px;margin-bottom:12px;color:#dc2626;">Respondent Agreement with ChatGPT</div>
+  <div class="compare-grid">
+    <div class="card card-blue anim" style="padding:16px;">
+      <h4 style="color:#2563eb;font-size:14px;margin-bottom:10px;">ChatGPT vs Llama (initial)</h4>
+      <div class="matrix-row">Old M &rarr; still M: <strong style="color:#2563eb;">67.8%</strong> <span style="color:#64748b;">(391/577)</span></div>
+      <div class="matrix-row">Old F &rarr; still F: <strong style="color:#2563eb;">53.7%</strong> <span style="color:#64748b;">(437/814)</span></div>
+      <div class="matrix-row">Old UNKNOWN &rarr; now M/F: <strong style="color:#2563eb;">32.0%</strong> <span style="color:#64748b;">(360/1,126)</span></div>
+    </div>
+    <div class="card card-green anim" style="padding:16px;">
+      <h4 style="color:#16a34a;font-size:14px;margin-bottom:10px;">ChatGPT vs Qwen+Tier&nbsp;0 (final)</h4>
+      <div class="matrix-row">Old M &rarr; still M: <strong style="color:#16a34a;">69.8%</strong> <span style="color:#64748b;">(403/577)</span></div>
+      <div class="matrix-row">Old F &rarr; still F: <strong style="color:#16a34a;">56.0%</strong> <span style="color:#64748b;">(456/814)</span></div>
+      <div class="matrix-row">Old UNKNOWN &rarr; now M/F: <strong style="color:#16a34a;">14.2%</strong> <span style="color:#64748b;">(406/2,857)</span></div>
+    </div>
+  </div>
+
+  <!-- Known-sex pairs comparison -->
+  <div class="anim" style="font-weight:700;font-size:16px;margin-bottom:12px;color:#7c3aed;">Known-Sex Pairs (both requester &amp; respondent classified M/F)</div>
+  <div class="stat-row" style="margin-bottom:16px;">
+    <div class="stat-item anim">
+      <div class="stat-num" style="color:#94a3b8;">1,215</div>
+      <div class="stat-label">ChatGPT (28.5%)</div>
+    </div>
+    <div class="stat-item anim">
+      <div class="stat-num" style="color:#2563eb;">1,131</div>
+      <div class="stat-label">Llama (26.5%)</div>
+    </div>
+    <div class="stat-item anim">
+      <div class="stat-num" style="color:#16a34a;">1,278</div>
+      <div class="stat-label">Qwen+Tier&nbsp;0 (30.0%)</div>
+    </div>
+  </div>
+
+  <div class="side-note anim"><strong>Key finding:</strong> The final Qwen+Tier&nbsp;0 pipeline has <strong>higher agreement</strong> with ChatGPT than Llama did on requesters (95.9% vs 93.9% for males, both ~99% for females) and respondents (69.8% vs 67.8% for males, 56.0% vs 53.7% for females). It also produces <strong>more known-sex pairs</strong> (1,278 vs 1,131) -meaning more usable data for downstream analysis. The final pipeline improves on both the old method and the initial Llama attempt.</div>
 </div>
 
 <!-- ══════════════ STEP 16: MANUAL REVIEW ══════════════ -->
@@ -893,30 +965,31 @@ secretariat@rebecq.be
   <div class="step-title anim">Manual Review</div>
   <div class="step-subtitle anim">All classifications made by the LLM (Tier 4) are flagged for exhaustive human verification.</div>
 
-  <div class="big-counter anim-scale" style="color:#92400e;" data-count-to="164">0</div>
+  <div class="big-counter anim-scale" style="color:#92400e;" data-count-to="155">0</div>
   <div class="anim" style="text-align:center;font-size:16px;color:#475467;margin-top:-16px;">M/F cases flagged for manual review</div>
+  <div class="anim" style="text-align:center;font-size:13px;color:#64748b;margin-top:4px;">132 Tier 4 M/F + 23 Tier 0 disagreements = 155</div>
 
   <div class="stat-row" style="margin-top:28px;">
     <div class="stat-item anim">
-      <div class="stat-num" style="color:#2563eb;">136</div>
+      <div class="stat-num" style="color:#2563eb;">9</div>
       <div class="stat-label">Requester M/F cases</div>
     </div>
     <div class="stat-item anim">
-      <div class="stat-num" style="color:#ea580c;">28</div>
+      <div class="stat-num" style="color:#ea580c;">123</div>
       <div class="stat-label">Respondent M/F cases</div>
     </div>
   </div>
 
   <div class="card anim" style="margin-top:20px;">
     <div style="font-size:14px;line-height:1.8;">
-      <strong>Why only Tier 4 M/F cases?</strong> Tiers 1&ndash;3 are fully deterministic dictionary lookups with curated, published sources. The LLM (Tier 4) is probabilistic and can hallucinate -so every M/F classification it makes is verified by a human researcher before inclusion in the final dataset.
+      <strong>Why only Tier 4 M/F cases and Tier 0 disagreements?</strong> Tiers 1&ndash;3 are fully deterministic dictionary lookups with curated, published sources. The LLM (Tier 4) is probabilistic and can hallucinate -so every M/F classification it makes is verified by a human researcher. Tier 0 (greeting) disagreements with name-based tiers are also reviewed before inclusion in the final dataset.
     </div>
   </div>
 
   <div class="card anim" style="border-left:4px solid #16a34a;margin-top:12px;">
     <div style="font-size:14px;line-height:1.8;">
-      <strong style="color:#16a34a;">What about the 259 UNKNOWN cases?</strong><br>
-      The remaining 259 cases where Tier 4 returned UNKNOWN (220 requester + 39 respondent) were not included in the M/F review because no gender claim was made. To verify this was justified, all 259 UNKNOWN cases were manually reviewed by reading the original FOI texts.
+      <strong style="color:#16a34a;">What about the UNKNOWN cases?</strong><br>
+      Cases where Tier 4 returned UNKNOWN were not included in the M/F review because no gender claim was made. To verify this was justified, a 200-sample manual review of Qwen UNKNOWN outputs was conducted by reading the original FOI texts.
     </div>
     <div class="stat-row" style="margin-top:12px;">
       <div class="stat-item">
@@ -952,27 +1025,28 @@ secretariat@rebecq.be
     <div class="mini-step"><div class="ms-num ms-blue">3</div> Signature zone detected via 16 closing formulas (96.9% success)</div>
     <div class="mini-step"><div class="ms-num ms-blue">4</div> Name extracted: spaCy NER + heuristic fallback (96.5%)</div>
     <div class="mini-step"><div class="ms-num ms-blue">5</div> First name identified against 3.49M known names</div>
-    <div class="mini-step"><div class="ms-num ms-purple">6</div> Tier 1: Larousse -3,529 requester + 995 respondent</div>
-    <div class="mini-step"><div class="ms-num ms-purple">7</div> Tier 2: Statbel -+51 requester + 40 respondent</div>
-    <div class="mini-step"><div class="ms-num ms-purple">8</div> Tier 3: WGND -+97 requester + 215 respondent</div>
-    <div class="mini-step"><div class="ms-num ms-orange">9</div> Tier 4: Ollama LLM -+136 requester + 28 respondent</div>
-    <div class="mini-step"><div class="ms-num ms-orange">10</div> Hallucination filter &rarr; 164 cases flagged for manual review</div>
-    <div class="mini-step"><div class="ms-num ms-green">11</div> <strong>Requester:</strong> 89.4% M/F &bull; 4.9% BOTH &bull; 5.7% UNKNOWN</div>
-    <div class="mini-step"><div class="ms-num ms-green">12</div> <strong>Respondent:</strong> 30.0% M/F &bull; 0.6% BOTH &bull; 69.5% UNKNOWN</div>
+    <div class="mini-step"><div class="ms-num ms-purple" style="background:#16a34a;">6</div> Tier 0: Response Greeting -1,339 requester resolved</div>
+    <div class="mini-step"><div class="ms-num ms-purple">7</div> Tier 1: Larousse -3,529 requester + 995 respondent</div>
+    <div class="mini-step"><div class="ms-num ms-purple">8</div> Tier 2: Statbel -+51 requester + 40 respondent</div>
+    <div class="mini-step"><div class="ms-num ms-purple">9</div> Tier 3: WGND -+97 requester + 215 respondent</div>
+    <div class="mini-step"><div class="ms-num ms-orange">10</div> Tier 4: Ollama LLM -+9 requester + 123 respondent</div>
+    <div class="mini-step"><div class="ms-num ms-orange">11</div> Hallucination filter &rarr; 155 cases flagged for manual review</div>
+    <div class="mini-step"><div class="ms-num ms-green">12</div> <strong>Requester:</strong> 90.0% M/F &bull; 3.2% BOTH &bull; 6.9% UNKNOWN</div>
+    <div class="mini-step"><div class="ms-num ms-green">13</div> <strong>Respondent:</strong> 32.2% M/F &bull; 0.6% BOTH &bull; 67.2% UNKNOWN</div>
   </div>
 
   <div class="stat-row" style="margin-top:20px;">
     <div class="stat-item anim-scale">
-      <div class="stat-num" style="color:#16a34a;">3,813</div>
+      <div class="stat-num" style="color:#16a34a;">3,837</div>
       <div class="stat-label">Requesters classified M/F</div>
     </div>
     <div class="stat-item anim-scale">
-      <div class="stat-num" style="color:#16a34a;">1,278</div>
+      <div class="stat-num" style="color:#16a34a;">1,373</div>
       <div class="stat-label">Respondents classified M/F</div>
     </div>
     <div class="stat-item anim-scale">
-      <div class="stat-num" style="color:#7c3aed;">1,131</div>
-      <div class="stat-label">Known-sex pairs</div>
+      <div class="stat-num" style="color:#7c3aed;">1,278</div>
+      <div class="stat-label">Known-sex pairs (30.0%)</div>
     </div>
   </div>
 
@@ -982,6 +1056,12 @@ secretariat@rebecq.be
 
   <div style="text-align:center;margin-top:32px;font-size:12px;color:#94a3b8;" class="anim">
     Pipeline Walkthrough -Transparencia.be FOI Gender Classification -March 2026
+  </div>
+
+  <div class="card anim" style="margin-top:32px;border-left:4px solid #94a3b8;background:#f8fafc;">
+    <div style="font-size:13px;color:#64748b;line-height:1.7;">
+      <strong style="color:#475467;">Disclaimer:</strong> This interactive walkthrough is a visual summary of the gender classification pipeline. For the full technical methodology including all design decisions, limitations, validation results, and cited sources, see <strong>methodology-QWEN.docx</strong>.
+    </div>
   </div>
 </div>
 
