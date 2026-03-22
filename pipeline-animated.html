@@ -722,7 +722,7 @@ Jean Dupont</div></div>
 <div class="step" data-step="10">
   <div class="step-number anim">Step 10 of 17</div>
   <div class="step-title anim">Tier 4: The LLM Fallback</div>
-  <div class="step-subtitle anim">Only cases unresolved by Tiers 0&ndash;3 reach the LLM. With Tier 0 resolving many requester cases via response greetings, fewer cases need LLM classification. An anti-hallucination prompt prevents the model from guessing.</div>
+  <div class="step-subtitle anim">Only cases unresolved by Tiers 0&ndash;3 reach the LLM. The LLM receives only the <strong>signature zone</strong> (not the full text) &mdash; the last ~500 characters containing the closing formula and signature &mdash; to avoid picking up names from the body that belong to other people. With Tier 0 resolving many requester cases via response greetings, fewer cases need LLM classification. An anti-hallucination prompt prevents the model from guessing.</div>
 
   <div class="prompt-box anim"><span class="kw">SYSTEM PROMPT (requester):</span>
 
