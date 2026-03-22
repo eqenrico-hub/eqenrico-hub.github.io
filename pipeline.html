@@ -769,7 +769,8 @@
     150 no name extracted (from R4)  &#9496;
 
 <span style="color:#7c3aed;font-weight:700;">Tier 0 cross-check: 1,339 response greetings detected (M=945, F=394)</span>
-    77 resolved cases with no name, 74 resolved unisex names, 23 overrode dictionary classifications</div>
+    77 resolved cases with no name, 74 resolved unisex names, 23 overrode dictionary classifications
+    <span style="font-size:12px;color:#6b7280;">(Response text is cleaned of platform boilerplate before greeting detection; only the first line is scanned)</span></div>
 
       <div class="arrow-down arrow-sm"><div class="shaft"></div></div>
       <div class="arrow-label">302 remaining</div>
@@ -1010,10 +1011,33 @@
     <div class="review-box">
       <h3 style="margin-bottom:8px;color:#92400e;">Manual Review<sup>6</sup></h3>
       <div class="big-num">132 Tier 4 M/F + 23 Tier 0 disagreements = 155 cases</div>
-      <p style="font-size:14px;color:#475467;margin-top:6px;">9 requester + 123 respondent (Tier 4) + 23 Tier 0 disagreements -all undergo exhaustive manual verification</p>
-      <div style="margin-top:12px;padding:12px 16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:13px;color:#166534;">
-        <strong>259 UNKNOWN cases validated (Llama run):</strong> All 259 Tier 4 UNKNOWN cases from the initial Llama 3.2 run were manually reviewed by reading the original FOI texts. Result: <strong>250 (96.5%)</strong> confirmed as genuinely unclassifiable. Only 9 cases (3.5%, 8 unique individuals) contained a missed name due to non-standard formatting -representing 0.2% of the full dataset.<br><br>
-        <strong>Qwen 2.5 UNKNOWN validation (200-sample):</strong> A random sample of 200 Tier 4 UNKNOWN cases from the final Qwen 2.5 run was manually reviewed. Result: <strong>200/200 (100%)</strong> confirmed as genuinely unclassifiable -the improved model produces no false UNKNOWNs in the sample.
+      <p style="font-size:14px;color:#475467;margin-top:6px;">9 requester + 123 respondent (Tier 4) + 23 Tier 0 disagreements &mdash; all undergo exhaustive manual verification</p>
+
+      <div style="margin-top:12px;padding:12px 16px;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;font-size:13px;color:#92400e;">
+        <strong>Tier 4 review outcome: 17 of 132 corrected (13% error rate)</strong><br><br>
+        <strong>Requester corrections (4 of 9):</strong><br>
+        &bull; 3 cases: Qwen guessed M from surname/initials only &rarr; corrected to UNKNOWN<br>
+        &bull; 1 case: wrong gender (&ldquo;Pira&rdquo; classified M, actually F)<br><br>
+        <strong>Respondent corrections (13 of 123):</strong><br>
+        &bull; 5 cases: LLM hallucinated a gender without detecting a name &rarr; UNKNOWN<br>
+        &bull; 4 cases: classified M but gendered context indicates F (e.g., text says &ldquo;Madame Sollami&rdquo;)<br>
+        &bull; 1 unisex name (&ldquo;Claude&rdquo; &rarr; M, corrected to UNKNOWN)<br>
+        &bull; 1 wrong gender (&ldquo;An&rdquo; &rarr; M, actually F)<br>
+        &bull; 2 encoding/format issues<br><br>
+        <em>Summary: 9 &ldquo;should have been UNKNOWN&rdquo; (hallucinations + initials + unisex), 6 wrong gender, 2 format issues.</em>
+      </div>
+
+      <div style="margin-top:10px;padding:12px 16px;background:#ede9fe;border:1px solid #c4b5fd;border-radius:8px;font-size:13px;color:#5b21b6;">
+        <strong>Tier 0 disagreement review: 23 cases, 0 adjustments needed</strong><br><br>
+        &bull; <strong>7 group requests:</strong> pipeline extracted one co-signer but the administration responded to a different one<br>
+        &bull; <strong>12 dictionary overrides:</strong> name classified differently from how the administration perceived the person (e.g., &ldquo;Yan&rdquo; = F in Larousse but admin writes &ldquo;Monsieur Roosens&rdquo;)<br>
+        &bull; <strong>4 cross-cultural cases:</strong> administration&rsquo;s perception diverged from name-based classification<br><br>
+        <em>In all 23 cases, Tier 0 (the greeting) correctly reflected the administration&rsquo;s perception.</em>
+      </div>
+
+      <div style="margin-top:10px;padding:12px 16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:13px;color:#166534;">
+        <strong>UNKNOWN validation (Llama run):</strong> All 259 Tier 4 UNKNOWN cases manually reviewed. Result: <strong>250 (96.5%)</strong> genuinely unclassifiable. Only 9 cases (3.5%, 8 unique individuals) contained a missed name &mdash; 0.2% of the full dataset.<br><br>
+        <strong>UNKNOWN validation (Qwen run):</strong> Random sample of 200 Tier 4 UNKNOWN cases. Result: <strong>200/200 (100%)</strong> genuinely unclassifiable.
       </div>
     </div>
   </div>
@@ -1135,7 +1159,7 @@ Signature zone:
         <sup>6</sup> Why only 155 cases need review
       </div>
       <div class="anno-body">
-        Tiers 1&ndash;3 are deterministic dictionary lookups -same input always gives same output, no review needed. Only Tier 4 (LLM) is probabilistic, so ALL 132 of its M/F outputs (9 requester + 123 respondent) are flagged for human verification. Additionally, 23 Tier 0 disagreements (where Larousse and Statbel assign different sexes to the same name) are manually reviewed, for a total of 155 cases. The UNKNOWN cases were validated separately: all 259 Tier 4 UNKNOWN cases from the initial Llama 3.2 run were manually reviewed by reading the original FOI texts from the export folder. Of these, 250 (96.5%) were confirmed as genuinely unclassifiable. A further 200-sample validation of Qwen 2.5 UNKNOWN cases found 100% genuinely unclassifiable.
+        Tiers 1&ndash;3 are deterministic dictionary lookups &mdash; same input always gives same output, no review needed. Only Tier 4 (LLM) is probabilistic, so ALL 132 of its M/F outputs (9 requester + 123 respondent) are flagged for human verification. Of these, <strong>17 were corrected (13% error rate)</strong>: 9 cases where the LLM should have returned UNKNOWN (hallucinations, initials-only, unisex names), 6 wrong gender assignments, and 2 encoding/format issues. Additionally, 23 Tier 0 disagreements (where the response greeting diverges from dictionary classification) were manually reviewed &mdash; breakdown: 7 group requests (wrong co-signer extracted), 12 dictionary overrides, 4 cross-cultural cases. In all 23, the greeting correctly reflected perceived gender; no adjustments needed. Total: 155 cases reviewed. UNKNOWN cases validated separately: 259 from Llama run (96.5% genuinely unclassifiable), 200-sample from Qwen run (100% genuinely unclassifiable).
       </div>
     </div>
 
