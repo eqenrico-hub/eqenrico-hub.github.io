@@ -1004,23 +1004,36 @@ secretariat@rebecq.be
   <div class="card anim" style="border-left:4px solid #16a34a;margin-top:12px;">
     <div style="font-size:14px;line-height:1.8;">
       <strong style="color:#16a34a;">What about the UNKNOWN cases?</strong><br>
-      Cases where Tier 4 returned UNKNOWN were not included in the M/F review because no gender claim was made. To verify this was justified, a 200-sample manual review of Qwen UNKNOWN outputs was conducted by reading the original FOI texts.
+      Cases where Tier 4 returned UNKNOWN were not included in the M/F review because no gender claim was made. Both pipeline runs were validated separately:
     </div>
-    <div class="stat-row" style="margin-top:12px;">
-      <div class="stat-item">
-        <div class="stat-num" style="color:#16a34a;">96.5%</div>
-        <div class="stat-label">Confirmed unclassifiable</div>
+    <div style="margin-top:10px;padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;font-size:13px;">
+      <strong>Llama run (259 UNKNOWN &mdash; ALL reviewed):</strong>
+      <div class="stat-row" style="margin-top:8px;">
+        <div class="stat-item">
+          <div class="stat-num" style="color:#16a34a;">96.5%</div>
+          <div class="stat-label">Confirmed unclassifiable (250/259)</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num" style="color:#dc2626;">9</div>
+          <div class="stat-label">Missed names (3.5%) &mdash; all corrected</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num" style="color:#7c3aed;">0.2%</div>
+          <div class="stat-label">Of full dataset (9/4,265)</div>
+        </div>
       </div>
-      <div class="stat-item">
-        <div class="stat-num" style="color:#dc2626;">9</div>
-        <div class="stat-label">Missed names (3.5%)</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-num" style="color:#7c3aed;">0.2%</div>
-        <div class="stat-label">Of full dataset (9/4,265)</div>
-      </div>
+      <div style="font-size:12px;color:#475467;margin-top:6px;">9 missed due to non-standard formatting (surname-first, ALL CAPS, username formats). All 39 respondent UNKNOWNs confirmed correct (0% error).</div>
     </div>
-    <div style="font-size:13px;color:#475467;margin-top:8px;">The 9 missed names were due to non-standard formatting: surname-first order, ALL CAPS, or username formats. All 39 respondent UNKNOWNs were confirmed correct (0% error).</div>
+    <div style="margin-top:8px;padding:10px 14px;background:#ede9fe;border:1px solid #c4b5fd;border-radius:6px;font-size:13px;">
+      <strong>Qwen run (1,406 UNKNOWN &mdash; 200 sampled):</strong>
+      <div class="stat-row" style="margin-top:8px;">
+        <div class="stat-item">
+          <div class="stat-num" style="color:#16a34a;">100%</div>
+          <div class="stat-label">Confirmed unclassifiable (200/200)</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:#475467;margin-top:6px;">Random sample of 100 requester + 100 respondent UNKNOWN cases from 1,406 total. No missed names &mdash; the upgraded model&rsquo;s UNKNOWN classifications are even more reliable.</div>
+    </div>
   </div>
 
   <div class="card anim" style="border-left:4px solid #f59e0b;margin-top:12px;">
