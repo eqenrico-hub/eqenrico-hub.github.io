@@ -615,7 +615,7 @@
     <h1>Gender Classification Pipeline — Transparencia.be FOI Dataset</h1>
     <div class="subtitle">5-Tier Cascade: Tier 0 Greeting &rarr; Larousse &rarr; Statbel &rarr; WGND 2.0 &rarr; Qwen 2.5 LLM (Tiers 0&ndash;3 deterministic, Tier 4 near-deterministic)</div>
     <div class="author">Enrico Quaglia -March 2026</div>
-    <p style="font-size:13.5px;color:#475467;margin-top:14px;max-width:860px;margin-left:auto;margin-right:auto;line-height:1.65;">This pipeline classifies requester and respondent gender using a five-tier cascade. Tier 0 (response greeting) provides direct evidence of perceived gender for requesters. Tiers 1&ndash;3 use deterministic dictionary lookups. Tier 4 (Qwen 2.5 LLM) is a probabilistic fallback for unresolved cases.</p>
+    <p style="font-size:13.5px;color:#475467;margin-top:14px;max-width:860px;margin-left:auto;margin-right:auto;line-height:1.65;">This pipeline classifies requester and respondent gender using a five-tier cascade. Tier 0 (response greeting) takes precedence for requesters because it reflects how the administration perceived the requester&rsquo;s gender &mdash; the signal that shapes their responsiveness, which is what this study examines. Tiers 1&ndash;3 use deterministic dictionary lookups as a proxy when no greeting is available. Tier 4 (Qwen 2.5 LLM) is a probabilistic fallback for unresolved cases.</p>
   </div>
 
   <!-- ════════════ SECTION A: SHARED INPUT ════════════ -->
