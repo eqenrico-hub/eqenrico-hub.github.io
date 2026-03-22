@@ -661,7 +661,7 @@ Jean Dupont</div></div>
       The pipeline scans the <strong>first line only</strong> of the administration&rsquo;s response for these patterns:<br>
       <strong style="color:#dc2626;">Female:</strong> &ldquo;Ch&egrave;re Madame/Mme/Mademoiselle&rdquo;, &ldquo;Madame [Name],&rdquo;, &ldquo;Madame,&rdquo;, &ldquo;Bonjour/Bonsoir Madame&rdquo;, &ldquo;Geachte Mevrouw&rdquo; (NL), &ldquo;Beste Mevrouw&rdquo; (NL)<br>
       <strong style="color:#2563eb;">Male:</strong> &ldquo;Cher Monsieur/Mr&rdquo;, &ldquo;Monsieur [Name],&rdquo;, &ldquo;Monsieur,&rdquo;, &ldquo;Bonjour/Bonsoir Monsieur&rdquo;, &ldquo;Geachte Heer&rdquo; (NL), &ldquo;Beste Heer&rdquo; (NL)<br>
-      <strong style="color:#94a3b8;">Skipped (neutral):</strong> &ldquo;Madame, Monsieur&rdquo;, &ldquo;Madame, Messieurs&rdquo;, &ldquo;Mesdames, Messieurs&rdquo;, &ldquo;Ch&egrave;re Madame, Cher Monsieur&rdquo; &mdash; these address both genders, so no single perceived gender can be inferred.
+      <strong style="color:#94a3b8;">Skipped (neutral):</strong> &ldquo;Madame, Monsieur&rdquo;, &ldquo;Madame, Messieurs&rdquo;, &ldquo;Mesdames, Messieurs&rdquo;, &ldquo;Ch&egrave;re Madame, Cher Monsieur&rdquo; &mdash; these address both genders, so no single perceived gender can be inferred. Tier 0 returns empty and the case falls through to the name-based tiers (1&ndash;3) for classification.
     </div>
   </div>
 
