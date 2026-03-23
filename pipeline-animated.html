@@ -715,7 +715,7 @@ Jean Dupont</div></div>
     <div class="cascade-row tier-4 hit"><span class="cascade-label">Tier 4: LLM</span> <span>Ollama analyzes text&hellip;</span> <span class="cascade-status" style="color:#854d0e;">&#x26A0; UNKNOWN</span></div>
   </div>
 
-  <div class="side-note anim">Tier 0 takes precedence because it reflects the administration&rsquo;s direct perception of the requester&rsquo;s gender &mdash; the signal that drives the bureaucratic behavior under study. The response text is first cleaned of platform boilerplate before greeting detection; only the first line is then scanned (precision over recall). Tiers 1&ndash;3 still run for audit purposes. Tier 0 resolved 1,339 requester cases (77 with no name, 74 unisex, 23 disagreements with dictionaries &mdash; breakdown: 7 group requests, 12 dictionary overrides, 4 same-individual perception divergence). Tier 4 (LLM) uses temperature=0 and seed=42 for near-deterministic results; all its M/F outputs are flagged for manual review.</div>
+  <div class="side-note anim">Tier 0 takes precedence because it reflects the administration&rsquo;s direct perception of the requester&rsquo;s gender &mdash; the signal that drives the bureaucratic behavior under study. The response text is first cleaned of platform boilerplate before greeting detection; only the first line is then scanned (precision over recall). Tiers 1&ndash;3 still run for audit purposes. Tier 0 resolved 1,305 requester cases (71 with no name, 73 unisex, 14 disagreements with dictionaries &mdash; breakdown: 3 group requests, 11 dictionary overrides). Multi-line neutral greetings (e.g., &ldquo;Madame,\nMonsieur,&rdquo; split across lines) are now correctly detected and skipped. Tier 4 (LLM) uses temperature=0 and seed=42 for near-deterministic results; all its M/F outputs are flagged for manual review.</div>
 </div>
 
 <!-- ══════════════ STEP 10: TIER 4 LLM ══════════════ -->
@@ -763,7 +763,7 @@ Reply EXACTLY: <span class="str">GENDER: &lt;M or F or UNKNOWN&gt; | NAME: &lt;f
 
   <div class="stat-row">
     <div class="stat-item anim">
-      <div class="stat-num" style="color:#854d0e;">302</div>
+      <div class="stat-num" style="color:#854d0e;">308</div>
       <div class="stat-label">Cases reached Tier 4</div>
     </div>
     <div class="stat-item anim">
@@ -771,7 +771,7 @@ Reply EXACTLY: <span class="str">GENDER: &lt;M or F or UNKNOWN&gt; | NAME: &lt;f
       <div class="stat-label">Classified M/F</div>
     </div>
     <div class="stat-item anim">
-      <div class="stat-num" style="color:#dc2626;">293</div>
+      <div class="stat-num" style="color:#dc2626;">299</div>
       <div class="stat-label">Confirmed UNKNOWN</div>
     </div>
   </div>
@@ -785,33 +785,33 @@ Reply EXACTLY: <span class="str">GENDER: &lt;M or F or UNKNOWN&gt; | NAME: &lt;f
 
   <div class="result-grid">
     <div class="result-box result-green anim-scale">
-      <div class="result-pct">90.0%</div>
+      <div class="result-pct">89.8%</div>
       <div class="result-label">M or F</div>
-      <div class="result-count">3,837 requesters</div>
+      <div class="result-count">3,830 requesters</div>
     </div>
     <div class="result-box result-amber anim-scale">
       <div class="result-pct">3.2%</div>
       <div class="result-label">BOTH (unisex)</div>
-      <div class="result-count">135 requesters</div>
+      <div class="result-count">136 requesters</div>
     </div>
     <div class="result-box result-red anim-scale">
-      <div class="result-pct">6.9%</div>
+      <div class="result-pct">7.0%</div>
       <div class="result-label">UNKNOWN</div>
-      <div class="result-count">293 requesters</div>
+      <div class="result-count">299 requesters</div>
     </div>
   </div>
 
   <div class="stacked-bar anim" id="req-bar">
-    <div class="bar-seg" style="background:#16a34a;--tw:90%;" data-width="90">90.0%</div>
+    <div class="bar-seg" style="background:#16a34a;--tw:89.8%;" data-width="89.8">89.8%</div>
     <div class="bar-seg" style="background:#eab308;--tw:3.2%;" data-width="3.2">3.2%</div>
-    <div class="bar-seg" style="background:#dc2626;--tw:6.9%;" data-width="6.9">6.9%</div>
+    <div class="bar-seg" style="background:#dc2626;--tw:7.0%;" data-width="7.0">7.0%</div>
   </div>
 
   <div class="anim" style="font-size:14px;color:#475467;margin-top:8px;">
-    <strong>Tier breakdown:</strong> Greeting resolved 1,339 &bull; Larousse resolved 3,529 &bull; Statbel added 51 &bull; WGND added 97 &bull; LLM added 9 &bull; 9 cases flagged TO REVIEW
+    <strong>Tier breakdown:</strong> Greeting resolved 1,305 &bull; Larousse resolved 3,529 &bull; Statbel added 51 &bull; WGND added 97 &bull; LLM added 9 &bull; 9 cases flagged TO REVIEW
   </div>
 
-  <div class="side-note anim">The high 90.0% classification rate is because most FOI requesters sign with their full name. The 6.9% UNKNOWN includes pseudonyms, initials-only, and collective/organizational signers.</div>
+  <div class="side-note anim">The high 89.8% classification rate is because most FOI requesters sign with their full name. The 7.0% UNKNOWN includes pseudonyms, initials-only, and collective/organizational signers.</div>
 </div>
 
 <!-- ══════════════ STEP 12: THE SPLIT ══════════════ -->
@@ -980,9 +980,9 @@ secretariat@rebecq.be
   <div class="step-title anim">Manual Review</div>
   <div class="step-subtitle anim">All classifications made by the LLM (Tier 4) are flagged for exhaustive human verification.</div>
 
-  <div class="big-counter anim-scale" style="color:#92400e;" data-count-to="155">0</div>
+  <div class="big-counter anim-scale" style="color:#92400e;" data-count-to="146">0</div>
   <div class="anim" style="text-align:center;font-size:16px;color:#475467;margin-top:-16px;">M/F cases flagged for manual review</div>
-  <div class="anim" style="text-align:center;font-size:13px;color:#64748b;margin-top:4px;">132 Tier 4 M/F + 23 Tier 0 disagreements = 155</div>
+  <div class="anim" style="text-align:center;font-size:13px;color:#64748b;margin-top:4px;">132 Tier 4 M/F + 14 Tier 0 disagreements = 146</div>
 
   <div class="stat-row" style="margin-top:28px;">
     <div class="stat-item anim">
@@ -997,7 +997,7 @@ secretariat@rebecq.be
 
   <div class="card anim" style="margin-top:20px;">
     <div style="font-size:14px;line-height:1.8;">
-      <strong>Why only Tier 4 M/F cases and Tier 0 disagreements?</strong> Tiers 1&ndash;3 are fully deterministic dictionary lookups with curated, published sources. The LLM (Tier 4) is probabilistic and can hallucinate -so every M/F classification it makes is verified by a human researcher. Tier 0 (greeting) disagreements with name-based tiers are also reviewed before inclusion in the final dataset.
+      <strong>Why only Tier 4 M/F cases and Tier 0 disagreements?</strong> Tiers 1&ndash;3 are fully deterministic dictionary lookups with curated, published sources. The LLM (Tier 4) is probabilistic and can hallucinate -so every M/F classification it makes is verified by a human researcher. Tier 0 (greeting) disagreements with name-based tiers (14 cases) are also reviewed before inclusion in the final dataset.
     </div>
   </div>
 
@@ -1025,14 +1025,14 @@ secretariat@rebecq.be
       <div style="font-size:12px;color:#475467;margin-top:6px;">9 missed due to non-standard formatting (surname-first, ALL CAPS, username formats). All 39 respondent UNKNOWNs confirmed correct (0% error).</div>
     </div>
     <div style="margin-top:8px;padding:10px 14px;background:#ede9fe;border:1px solid #c4b5fd;border-radius:6px;font-size:13px;">
-      <strong>Qwen run (1,406 UNKNOWN &mdash; 200 sampled):</strong>
+      <strong>Qwen run (1,412 UNKNOWN &mdash; 200 sampled):</strong>
       <div class="stat-row" style="margin-top:8px;">
         <div class="stat-item">
           <div class="stat-num" style="color:#16a34a;">100%</div>
           <div class="stat-label">Confirmed unclassifiable (200/200)</div>
         </div>
       </div>
-      <div style="font-size:12px;color:#475467;margin-top:6px;">Random sample of 100 requester + 100 respondent UNKNOWN cases from 1,406 total. No missed names &mdash; the upgraded model&rsquo;s UNKNOWN classifications are even more reliable.</div>
+      <div style="font-size:12px;color:#475467;margin-top:6px;">Random sample of 100 requester + 100 respondent UNKNOWN cases from 1,412 total. No missed names &mdash; the upgraded model&rsquo;s UNKNOWN classifications are even more reliable.</div>
     </div>
   </div>
 
@@ -1047,11 +1047,10 @@ secretariat@rebecq.be
 
   <div class="card anim" style="border-left:4px solid #7c3aed;margin-top:12px;">
     <div style="font-size:14px;line-height:1.8;">
-      <strong style="color:#5b21b6;">Tier 0 disagreement review: 23 cases, 0 adjustments</strong><br>
-      &bull; <strong>7</strong> group requests (first co-signer extracted but admin addressed a different one)<br>
-      &bull; <strong>12</strong> dictionary overrides (e.g., &ldquo;Yan&rdquo; = F in Larousse but admin writes &ldquo;Monsieur Roosens&rdquo;)<br>
-      &bull; <strong>4</strong> same individual (M in Larousse) consistently addressed as F by the administration<br>
-      <em style="font-size:13px;color:#475467;">In all 23 cases, the greeting correctly reflected the administration&rsquo;s perception.</em>
+      <strong style="color:#5b21b6;">Tier 0 disagreement review: 14 cases, 0 adjustments</strong><br>
+      &bull; <strong>3</strong> group requests (first co-signer extracted but admin addressed a different one)<br>
+      &bull; <strong>11</strong> dictionary overrides (e.g., &ldquo;Yan&rdquo; = F in Larousse but admin writes &ldquo;Monsieur Roosens&rdquo;)<br>
+      <em style="font-size:13px;color:#475467;">In all 14 cases, the greeting correctly reflected the administration&rsquo;s perception.</em>
     </div>
   </div>
 
@@ -1072,19 +1071,19 @@ secretariat@rebecq.be
     <div class="mini-step"><div class="ms-num ms-blue">3</div> Signature zone detected via 16 closing formulas (96.9% success)</div>
     <div class="mini-step"><div class="ms-num ms-blue">4</div> Name extracted: spaCy NER + heuristic fallback (96.5%)</div>
     <div class="mini-step"><div class="ms-num ms-blue">5</div> First name identified against 3.49M known names</div>
-    <div class="mini-step"><div class="ms-num ms-purple" style="background:#16a34a;">6</div> Tier 0: Response Greeting -1,339 requester resolved</div>
+    <div class="mini-step"><div class="ms-num ms-purple" style="background:#16a34a;">6</div> Tier 0: Response Greeting -1,305 requester resolved</div>
     <div class="mini-step"><div class="ms-num ms-purple">7</div> Tier 1: Larousse -3,529 requester + 995 respondent</div>
     <div class="mini-step"><div class="ms-num ms-purple">8</div> Tier 2: Statbel -+51 requester + 40 respondent</div>
     <div class="mini-step"><div class="ms-num ms-purple">9</div> Tier 3: WGND -+97 requester + 215 respondent</div>
     <div class="mini-step"><div class="ms-num ms-orange">10</div> Tier 4: Ollama LLM -+9 requester + 123 respondent</div>
-    <div class="mini-step"><div class="ms-num ms-orange">11</div> Hallucination filter &rarr; 155 cases flagged for manual review</div>
-    <div class="mini-step"><div class="ms-num ms-green">12</div> <strong>Requester:</strong> 90.0% M/F &bull; 3.2% BOTH &bull; 6.9% UNKNOWN</div>
+    <div class="mini-step"><div class="ms-num ms-orange">11</div> Hallucination filter &rarr; 146 cases flagged for manual review</div>
+    <div class="mini-step"><div class="ms-num ms-green">12</div> <strong>Requester:</strong> 89.8% M/F &bull; 3.2% BOTH &bull; 7.0% UNKNOWN</div>
     <div class="mini-step"><div class="ms-num ms-green">13</div> <strong>Respondent:</strong> 32.2% M/F &bull; 0.6% BOTH &bull; 67.2% UNKNOWN</div>
   </div>
 
   <div class="stat-row" style="margin-top:20px;">
     <div class="stat-item anim-scale">
-      <div class="stat-num" style="color:#16a34a;">3,837</div>
+      <div class="stat-num" style="color:#16a34a;">3,830</div>
       <div class="stat-label">Requesters classified M/F</div>
     </div>
     <div class="stat-item anim-scale">
