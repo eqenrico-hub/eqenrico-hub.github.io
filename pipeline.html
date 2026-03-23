@@ -798,24 +798,24 @@
 <span class="wf-green">&#9500;&#9472;&#9472;    97 Tier 3 (WGND)         &#9496;</span>
 <span class="wf-amber">&#9500;&#9472;&#9472;   136 BOTH (209 original, 73 resolved by Tier 0)</span>
 <span class="wf-amber">&#9500;&#9472;&#9472;     9 Tier 4 Qwen (M/F)          TO REVIEW</span>
-<span class="wf-red">&#9500;&#9472;&#9472;   299 Tier 4 Qwen (UNKNOWN)      = 299 unresolved</span>
+<span class="wf-red">&#9500;&#9472;&#9472;   299 Tier 4 Qwen (UNKNOWN)      = 301 unresolved</span>
 <span class="wf-line">    &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;</span>
-    Combined: 3,830 M/F + 136 BOTH + 299 UNKNOWN = 4,265 <span class="wf-check">&#10003;</span></div>
+    Combined: 3,828 M/F + 136 BOTH + 301 UNKNOWN = 4,265 <span class="wf-check">&#10003;</span></div>
 
       <!-- R7 -->
       <div class="step-tag">R7 -Final Classification (sex_final)</div>
       <div class="result-row">
         <div class="result-box result-green">
-          <span class="big-num">3,830</span>
-          M/F -89.8%
+          <span class="big-num">3,828</span>
+          M/F -89.7%
         </div>
         <div class="result-box result-amber">
           <span class="big-num">136</span>
           BOTH<sup>4</sup> -3.2%
         </div>
         <div class="result-box result-red">
-          <span class="big-num">299</span>
-          UNKNOWN -7.0%
+          <span class="big-num">301</span>
+          UNKNOWN -7.1%
         </div>
       </div>
       <div class="flag-note">9 Tier 4 cases + 14 Tier 0 disagreements flagged TO REVIEW</div>
@@ -949,19 +949,19 @@
       <div class="step-tag">S7 -Final Classification (sex_final)</div>
       <div class="result-row">
         <div class="result-box result-green">
-          <span class="big-num">1,373</span>
-          M/F -32.2%
+          <span class="big-num">1,368</span>
+          M/F -32.1%
         </div>
         <div class="result-box result-amber">
           <span class="big-num">24</span>
           BOTH<sup>4</sup> -0.6%
         </div>
         <div class="result-box result-red">
-          <span class="big-num">2,868</span>
-          UNKNOWN -67.2%
+          <span class="big-num">2,873</span>
+          UNKNOWN -67.4%
         </div>
       </div>
-      <div class="secondary-stat">Among 2,511 with reply: <span class="num">50.7%</span> classified by Tiers 1–3 (32.2% full pipeline incl. Tier 4)</div>
+      <div class="secondary-stat">Among 2,511 with reply: <span class="num">50.7%</span> classified by Tiers 1–3 (32.1% full pipeline incl. Tier 4)</div>
       <div class="flag-note">123 Tier 4 cases flagged TO REVIEW</div>
     </div>
   </div>
@@ -1014,17 +1014,18 @@
       <p style="font-size:14px;color:#475467;margin-top:6px;">9 requester + 123 respondent (Tier 4) + 14 Tier 0 disagreements &mdash; all undergo exhaustive manual verification</p>
 
       <div style="margin-top:12px;padding:12px 16px;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;font-size:13px;color:#92400e;">
-        <strong>Tier 4 review outcome: 17 of 132 corrected (13% pre-review error rate; all 17 fixed in the final dataset)</strong><br><br>
-        <strong>Requester corrections (4 of 9):</strong><br>
-        &bull; 3 cases: Qwen guessed M from surname/initials only &rarr; corrected to UNKNOWN<br>
+        <strong>Tier 4 review outcome: 24 of 132 corrected (18.2% pre-review error rate; all 24 fixed in the final dataset)</strong><br><br>
+        <strong>Requester corrections (6 of 9):</strong><br>
+        &bull; 5 cases: Qwen guessed M from surname/initials only &rarr; corrected to UNKNOWN<br>
         &bull; 1 case: wrong gender (&ldquo;Pira&rdquo; classified M, actually F)<br><br>
-        <strong>Respondent corrections (13 of 123):</strong><br>
+        <strong>Respondent corrections (18 of 123):</strong><br>
         &bull; 5 cases: LLM hallucinated a gender without detecting a name &rarr; UNKNOWN<br>
+        &bull; 5 cases: initial-only without verifiable context &rarr; UNKNOWN<br>
         &bull; 4 cases: classified M but gendered context indicates F (e.g., text says &ldquo;Madame Sollami&rdquo;)<br>
         &bull; 1 unisex name (&ldquo;Claude&rdquo; &rarr; M, corrected to UNKNOWN)<br>
         &bull; 1 wrong gender (&ldquo;An&rdquo; &rarr; M, actually F)<br>
         &bull; 2 encoding/format issues<br><br>
-        <em>Summary: 9 &ldquo;should have been UNKNOWN&rdquo; (hallucinations + initials + unisex), 6 wrong gender, 2 format issues.</em>
+        <em>Summary: 16 &ldquo;should have been UNKNOWN&rdquo; (5 hallucinations + 10 initials-only + 1 unisex), 6 wrong gender, 2 format issues.</em>
       </div>
 
       <div style="margin-top:10px;padding:12px 16px;background:#ede9fe;border:1px solid #c4b5fd;border-radius:8px;font-size:13px;color:#5b21b6;">
@@ -1159,7 +1160,7 @@ Signature zone:
         <sup>6</sup> Why only 146 cases need review
       </div>
       <div class="anno-body">
-        Tiers 1&ndash;3 are deterministic dictionary lookups &mdash; same input always gives same output, no review needed. Only Tier 4 (LLM) is probabilistic, so ALL 132 of its M/F outputs (9 requester + 123 respondent) are flagged for human verification. Of these, <strong>17 were corrected (13% error rate)</strong>: 9 cases where the LLM should have returned UNKNOWN (hallucinations, initials-only, unisex names), 6 wrong gender assignments, and 2 encoding/format issues. Additionally, 14 Tier 0 disagreements (where the response greeting diverges from dictionary classification) were manually reviewed &mdash; breakdown: 3 group requests (first co-signer extracted but admin addressed a different one), 11 dictionary overrides. In all 14, the greeting correctly reflected perceived gender; no adjustments needed. (9 former disagreements were eliminated by improved multi-line neutral greeting detection.) Total: 146 cases reviewed. UNKNOWN cases validated separately: 259 from Llama run (96.5% genuinely unclassifiable), 200-sample from Qwen run (100% genuinely unclassifiable).
+        Tiers 1&ndash;3 are deterministic dictionary lookups &mdash; same input always gives same output, no review needed. Only Tier 4 (LLM) is probabilistic, so ALL 132 of its M/F outputs (9 requester + 123 respondent) are flagged for human verification. Of these, <strong>24 were corrected (18.2% error rate)</strong>: 16 cases where the LLM should have returned UNKNOWN (5 hallucinations + 10 initials-only + 1 unisex), 6 wrong gender assignments, and 2 encoding/format issues. Additionally, 14 Tier 0 disagreements (where the response greeting diverges from dictionary classification) were manually reviewed &mdash; breakdown: 3 group requests (first co-signer extracted but admin addressed a different one), 11 dictionary overrides. In all 14, the greeting correctly reflected perceived gender; no adjustments needed. (9 former disagreements were eliminated by improved multi-line neutral greeting detection.) Total: 146 cases reviewed. UNKNOWN cases validated separately: 259 from Llama run (96.5% genuinely unclassifiable), 200-sample from Qwen run (100% genuinely unclassifiable).
       </div>
     </div>
 
