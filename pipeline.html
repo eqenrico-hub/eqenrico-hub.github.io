@@ -798,24 +798,24 @@
 <span class="wf-green">&#9500;&#9472;&#9472;    97 Tier 3 (WGND)         &#9496;</span>
 <span class="wf-amber">&#9500;&#9472;&#9472;   136 BOTH (209 original, 73 resolved by Tier 0)</span>
 <span class="wf-amber">&#9500;&#9472;&#9472;     9 Tier 4 Qwen (M/F)          TO REVIEW</span>
-<span class="wf-red">&#9500;&#9472;&#9472;   299 Tier 4 Qwen (UNKNOWN)      = 301 unresolved</span>
+<span class="wf-red">&#9500;&#9472;&#9472;   298 Tier 4 Qwen (UNKNOWN)      = 300 unresolved</span>
 <span class="wf-line">    &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;</span>
-    Combined: 3,828 M/F + 136 BOTH + 301 UNKNOWN = 4,265 <span class="wf-check">&#10003;</span></div>
+    Combined: 3,829 M/F + 136 BOTH + 300 UNKNOWN = 4,265 <span class="wf-check">&#10003;</span></div>
 
       <!-- R7 -->
       <div class="step-tag">R7 -Final Classification (sex_final)</div>
       <div class="result-row">
         <div class="result-box result-green">
-          <span class="big-num">3,828</span>
-          M/F -89.7%
+          <span class="big-num">3,829</span>
+          M/F -89.8%
         </div>
         <div class="result-box result-amber">
           <span class="big-num">136</span>
           BOTH<sup>4</sup> -3.2%
         </div>
         <div class="result-box result-red">
-          <span class="big-num">301</span>
-          UNKNOWN -7.1%
+          <span class="big-num">300</span>
+          UNKNOWN -7.0%
         </div>
       </div>
       <div class="flag-note">9 Tier 4 cases + 14 Tier 0 disagreements flagged TO REVIEW</div>
@@ -921,7 +921,7 @@
         <span class="tier-label-inline">TIER 4 -QWEN 2.5 (OLLAMA)</span><sup>3</sup><br>
         <span class="num">1,237</span> cases with reply text but no name extracted<br>
         <span style="font-size:12.5px;color:#92400e;">1,754 had no reply at all (skipped -nothing to analyze)</span><br>
-        Results: <span class="num">123</span> M/F &nbsp;|&nbsp; <span class="num">1,113</span> UNKNOWN &nbsp;|&nbsp; <span class="num">1</span> no result<br>
+        Results: <span class="num">71</span> M/F &nbsp;|&nbsp; <span class="num">1,163</span> UNKNOWN &nbsp;|&nbsp; <span class="num">1</span> no result<br>
         <span style="font-size:12px;color:#475467;line-height:1.5;display:block;margin-top:6px;text-align:left;">
           <strong>M/F</strong> = LLM found a clear personal first name + surname in the signature zone<br>
           <strong>UNKNOWN</strong> = LLM instructed to return this when no personal name is visible (department names, automated replies)<br>
@@ -930,7 +930,7 @@
         </span>
       </div>
 
-      <div class="filter-box">Hallucination filter<sup>5</sup> (applied to 123 M/F results only): verify name exists in input text &rarr; discard if absent. UNKNOWN/no-result cases unaffected.</div>
+      <div class="filter-box">Hallucination filter<sup>5</sup> (applied to 71 M/F results only): verify name exists in input text &rarr; discard if absent. UNKNOWN/no-result cases unaffected.</div>
 
       <div class="arrow-down arrow-sm"><div class="shaft"></div></div>
 
@@ -939,9 +939,9 @@
 <span class="wf-green">&#9500;&#9472;&#9472;    40 Tier 2 (Statbel)      &#9474; 1,250 M/F</span>
 <span class="wf-green">&#9500;&#9472;&#9472;   215 Tier 3 (WGND)         &#9496;</span>
 <span class="wf-amber">&#9500;&#9472;&#9472;    24 Tier 1 BOTH (Larousse)      = 24 BOTH</span>
-<span class="wf-amber">&#9500;&#9472;&#9472;   123 Tier 4 Qwen (M/F)            TO REVIEW</span>
-<span class="wf-red">&#9500;&#9472;&#9472; 1,113 Tier 4 Qwen (UNKNOWN)   &#9488;</span>
-<span class="wf-red">&#9492;&#9472;&#9472;     1 Tier 4 Qwen (no result) &#9496; = 1,114 no name in text</span>
+<span class="wf-amber">&#9500;&#9472;&#9472;    71 Tier 4 Qwen (M/F)            TO REVIEW</span>
+<span class="wf-red">&#9500;&#9472;&#9472; 1,163 Tier 4 Qwen (UNKNOWN)   &#9488;</span>
+<span class="wf-red">&#9492;&#9472;&#9472;     1 Tier 4 Qwen (no result) &#9496; = 1,164 no name in text</span>
 <span class="wf-line">    &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;</span>
     4,265 requests for which we checked the response <span class="wf-check">&#10003;</span></div>
 
@@ -949,20 +949,20 @@
       <div class="step-tag">S7 -Final Classification (sex_final)</div>
       <div class="result-row">
         <div class="result-box result-green">
-          <span class="big-num">1,368</span>
-          M/F -32.1%
+          <span class="big-num">1,315</span>
+          M/F -30.8%
         </div>
         <div class="result-box result-amber">
           <span class="big-num">24</span>
           BOTH<sup>4</sup> -0.6%
         </div>
         <div class="result-box result-red">
-          <span class="big-num">2,873</span>
-          UNKNOWN -67.4%
+          <span class="big-num">2,926</span>
+          UNKNOWN -68.6%
         </div>
       </div>
-      <div class="secondary-stat">Among 2,511 with reply: <span class="num">50.7%</span> classified by Tiers 1–3 (32.1% full pipeline incl. Tier 4)</div>
-      <div class="flag-note">123 Tier 4 cases flagged TO REVIEW</div>
+      <div class="secondary-stat">Among 2,511 with reply: <span class="num">50.7%</span> classified by Tiers 1–3 (30.8% full pipeline incl. Tier 4)</div>
+      <div class="flag-note">71 Tier 4 cases flagged TO REVIEW</div>
     </div>
   </div>
 
@@ -992,40 +992,35 @@
           </div>
         </div>
       </div>
-      <p style="font-size:12px;color:#64748b;margin-top:12px;font-style:italic;">Note: Earlier drafts reported agreement rates of 99.5% (requester) and 89.2% (respondent). Those figures were calculated by comparing only the subset of cases where both the old method (ChatGPT) and the new pipeline assigned M or F -ignoring all cases where either method classified someone as UNKNOWN. The rates above are more accurate because they show what happened to every case, including those reclassified as UNKNOWN by the new pipeline.</p>
+      <p style="font-size:12px;color:#64748b;margin-top:12px;font-style:italic;">Note: Earlier drafts reported agreement rates of 99.5% (requester) and 90.0% (respondent). Those figures were calculated by comparing only the subset of cases where both the old method (ChatGPT) and the new pipeline assigned M or F -ignoring all cases where either method classified someone as UNKNOWN. The rates above are more accurate because they show what happened to every case, including those reclassified as UNKNOWN by the new pipeline.</p>
     </div>
 
     <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:16px 20px;margin-bottom:16px;">
       <h3 style="font-size:15px;font-weight:700;color:#92400e;margin-bottom:8px;">Tier 4 Filter Activity (Combined)</h3>
       <table style="width:100%;border-collapse:collapse;font-size:14px;">
         <tr style="background:#fef3c7;"><th style="text-align:left;padding:6px 12px;">Stage</th><th style="padding:6px 12px;">Count</th></tr>
-        <tr><td style="padding:6px 12px;">LLM returned M/F with detected name</td><td style="text-align:center;padding:6px 12px;"><strong>140</strong></td></tr>
+        <tr><td style="padding:6px 12px;">LLM returned M/F with detected name</td><td style="text-align:center;padding:6px 12px;"><strong>89</strong></td></tr>
         <tr style="background:#fefce8;"><td style="padding:6px 12px;">False positive filter (function word as name)</td><td style="text-align:center;padding:6px 12px;">0 caught</td></tr>
         <tr><td style="padding:6px 12px;">Hallucination filter (name not in text)</td><td style="text-align:center;padding:6px 12px;"><strong>14</strong> caught</td></tr>
-        <tr style="background:#fefce8;"><td style="padding:6px 12px;">Passed both filters</td><td style="text-align:center;padding:6px 12px;"><strong>126</strong></td></tr>
-        <tr><td style="padding:6px 12px;">LLM returned M/F without name (bypassed filters)</td><td style="text-align:center;padding:6px 12px;"><strong>6</strong></td></tr>
-        <tr style="background:#fefce8;font-weight:700;"><td style="padding:6px 12px;">Total M/F in sex_final (Tier 4)</td><td style="text-align:center;padding:6px 12px;"><strong>132</strong> (9 req + 123 resp)</td></tr>
+        <tr style="background:#fefce8;"><td style="padding:6px 12px;">Passed both filters</td><td style="text-align:center;padding:6px 12px;"><strong>75</strong></td></tr>
+        <tr><td style="padding:6px 12px;">LLM returned M/F without name (bypassed filters)</td><td style="text-align:center;padding:6px 12px;"><strong>5</strong></td></tr>
+        <tr style="background:#fefce8;font-weight:700;"><td style="padding:6px 12px;">Total M/F in sex_final (Tier 4)</td><td style="text-align:center;padding:6px 12px;"><strong>80</strong> (9 req + 71 resp)</td></tr>
       </table>
     </div>
 
     <div class="review-box">
       <h3 style="margin-bottom:8px;color:#92400e;">Manual Review<sup>6</sup></h3>
-      <div class="big-num">132 Tier 4 M/F + 14 Tier 0 disagreements = 146 cases</div>
-      <p style="font-size:14px;color:#475467;margin-top:6px;">9 requester + 123 respondent (Tier 4) + 14 Tier 0 disagreements &mdash; all undergo exhaustive manual verification</p>
+      <div class="big-num">80 Tier 4 M/F + 14 Tier 0 disagreements = 94 cases</div>
+      <p style="font-size:14px;color:#475467;margin-top:6px;">9 requester + 71 respondent (Tier 4) + 14 Tier 0 disagreements &mdash; all undergo exhaustive manual verification</p>
 
       <div style="margin-top:12px;padding:12px 16px;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;font-size:13px;color:#92400e;">
-        <strong>Tier 4 review outcome: 24 of 132 corrected (18.2% pre-review error rate; all 24 fixed in the final dataset)</strong><br><br>
-        <strong>Requester corrections (6 of 9):</strong><br>
-        &bull; 5 cases: Qwen guessed M from surname/initials only &rarr; corrected to UNKNOWN<br>
-        &bull; 1 case: wrong gender (&ldquo;Pira&rdquo; classified M, actually F)<br><br>
-        <strong>Respondent corrections (18 of 123):</strong><br>
-        &bull; 5 cases: LLM hallucinated a gender without detecting a name &rarr; UNKNOWN<br>
-        &bull; 5 cases: initial-only without verifiable context &rarr; UNKNOWN<br>
-        &bull; 4 cases: classified M but gendered context indicates F (e.g., text says &ldquo;Madame Sollami&rdquo;)<br>
-        &bull; 1 unisex name (&ldquo;Claude&rdquo; &rarr; M, corrected to UNKNOWN)<br>
-        &bull; 1 wrong gender (&ldquo;An&rdquo; &rarr; M, actually F)<br>
-        &bull; 2 encoding/format issues<br><br>
-        <em>Summary: 16 &ldquo;should have been UNKNOWN&rdquo; (5 hallucinations + 10 initials-only + 1 unisex), 6 wrong gender, 2 format issues.</em>
+        <strong>Tier 4 review outcome: 7 of 80 corrected (8.75% pre-review error rate; all 7 fixed in the final dataset)</strong><br><br>
+        <strong>Requester corrections (1 of 9):</strong><br>
+        &bull; 1 case: initial-only (P. Derwael) &rarr; corrected to UNKNOWN<br><br>
+        <strong>Respondent corrections (6 of 71):</strong><br>
+        &bull; 3 cases: surname-only without first name &rarr; UNKNOWN<br>
+        &bull; 3 cases: initial-only without verifiable context &rarr; UNKNOWN<br><br>
+        <em>Summary: 7 &ldquo;should have been UNKNOWN&rdquo; (1 initial requester + 3 surname-only + 3 initial-only respondent).</em>
       </div>
 
       <div style="margin-top:10px;padding:12px 16px;background:#ede9fe;border:1px solid #c4b5fd;border-radius:8px;font-size:13px;color:#5b21b6;">
@@ -1109,10 +1104,10 @@ Signature zone:
     <div class="anno-card">
       <div class="anno-header" onclick="this.parentElement.classList.toggle('open')">
         <span class="chevron">&#9654;</span>
-        <sup>3</sup> Why respondent Ollama success is higher (9.9% vs 2.9%)
+        <sup>3</sup> Why respondent Ollama success is higher (5.7% vs 2.9%)
       </div>
       <div class="anno-body">
-        The 1,237 respondent cases sent to Ollama are those where the heuristic and spaCy found NO name at all in the reply text. These are predominantly institutional signatures (<em>"Le Secr&eacute;tariat communal"</em>, <em>"Service Urbanisme"</em>), automated acknowledgments, or email disclaimers -texts that genuinely contain no personal first name. With Qwen 2.5, the relationship inverts compared to the earlier Llama 3.2 run: the respondent M/F rate (9.9%) is now higher than the requester rate (2.9%), because the improved model is better at finding personal names in institutional reply texts that are longer and more varied than citizen request signatures.
+        The 1,237 respondent cases sent to Ollama are those where the heuristic and spaCy found NO name at all in the reply text. These are predominantly institutional signatures (<em>"Le Secr&eacute;tariat communal"</em>, <em>"Service Urbanisme"</em>), automated acknowledgments, or email disclaimers -texts that genuinely contain no personal first name. With Qwen 2.5, the relationship inverts compared to the earlier Llama 3.2 run: the respondent M/F rate (5.7%) is now higher than the requester rate (2.9%), because the improved model is better at finding personal names in institutional reply texts that are longer and more varied than citizen request signatures.
         <details style="margin-top: 10px; cursor: pointer;">
           <summary style="font-weight: 600; color: #3182CE; font-size: 0.9em;">View exact respondent prompt sent to Ollama &darr;</summary>
           <div style="margin-top: 8px; padding: 12px 16px; background: #F7FAFC; border-radius: 6px; border: 1px solid #E2E8F0; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.82em; line-height: 1.7; white-space: pre-wrap;">You are classifying the sex of the public official who signed a response to a FOI request.
@@ -1157,10 +1152,10 @@ Signature zone:
     <div class="anno-card">
       <div class="anno-header" onclick="this.parentElement.classList.toggle('open')">
         <span class="chevron">&#9654;</span>
-        <sup>6</sup> Why only 146 cases need review
+        <sup>6</sup> Why only 94 cases need review
       </div>
       <div class="anno-body">
-        Tiers 1&ndash;3 are deterministic dictionary lookups &mdash; same input always gives same output, no review needed. Only Tier 4 (LLM) is probabilistic, so ALL 132 of its M/F outputs (9 requester + 123 respondent) are flagged for human verification. Of these, <strong>24 were corrected (18.2% error rate)</strong>: 16 cases where the LLM should have returned UNKNOWN (5 hallucinations + 10 initials-only + 1 unisex), 6 wrong gender assignments, and 2 encoding/format issues. Additionally, 14 Tier 0 disagreements (where the response greeting diverges from dictionary classification) were manually reviewed &mdash; breakdown: 3 group requests (first co-signer extracted but admin addressed a different one), 11 dictionary overrides. In all 14, the greeting correctly reflected perceived gender; no adjustments needed. (9 former disagreements were eliminated by improved multi-line neutral greeting detection.) Total: 146 cases reviewed. UNKNOWN cases validated separately: 259 from Llama run (96.5% genuinely unclassifiable), 200-sample from Qwen run (100% genuinely unclassifiable).
+        Tiers 1&ndash;3 are deterministic dictionary lookups &mdash; same input always gives same output, no review needed. Only Tier 4 (LLM) is probabilistic, so ALL 80 of its M/F outputs (9 requester + 71 respondent) are flagged for human verification. Of these, <strong>7 were corrected (8.75% error rate)</strong>: 7 cases where the LLM should have returned UNKNOWN (1 initial requester + 3 surname-only + 3 initial-only respondent). Additionally, 14 Tier 0 disagreements (where the response greeting diverges from dictionary classification) were manually reviewed &mdash; breakdown: 3 group requests (first co-signer extracted but admin addressed a different one), 11 dictionary overrides. In all 14, the greeting correctly reflected perceived gender; no adjustments needed. (9 former disagreements were eliminated by improved multi-line neutral greeting detection.) Total: 94 cases reviewed. UNKNOWN cases validated separately: 259 from Llama run (96.5% genuinely unclassifiable), 200-sample from Qwen run (100% genuinely unclassifiable).
       </div>
     </div>
 
