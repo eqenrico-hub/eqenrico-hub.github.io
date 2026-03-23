@@ -757,7 +757,9 @@ Reply EXACTLY: <span class="str">GENDER: &lt;M or F or UNKNOWN&gt; | NAME: &lt;f
       Before filtering: <strong>140</strong> LLM M/F responses<br>
       False positive filter: <strong style="color:#16a34a;">0 caught</strong> <span style="color:#64748b;">(Qwen never returned function words as names)</span><br>
       Hallucination filter: <strong style="color:#dc2626;">14 caught</strong> <span style="color:#64748b;">(names not in text, e.g., fabricated names)</span><br>
-      After filtering: <strong style="color:#16a34a;">126 clean M/F accepted</strong> <span style="color:#64748b;">(10.0% rejection rate)</span>
+      After filtering: <strong style="color:#16a34a;">126 clean M/F accepted</strong> <span style="color:#64748b;">(10.0% rejection rate)</span><br>
+      LLM returned M/F without name (bypassed filters): <strong>6</strong> <span style="color:#64748b;">(no name to check &rarr; kept as-is)</span><br>
+      Total Tier 4 M/F: <strong>132</strong> (126 filtered + 6 bypassed = 9 req + 123 resp)
     </div>
   </div>
 
