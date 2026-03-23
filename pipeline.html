@@ -1029,9 +1029,9 @@
 
       <div style="margin-top:10px;padding:12px 16px;background:#ede9fe;border:1px solid #c4b5fd;border-radius:8px;font-size:13px;color:#5b21b6;">
         <strong>Tier 0 disagreement review: 23 cases, 0 adjustments needed</strong><br><br>
-        &bull; <strong>7 group requests:</strong> pipeline extracted one co-signer but the administration responded to a different one<br>
+        &bull; <strong>7 group requests:</strong> pipeline extracted the first co-signer but the administration addressed a different one<br>
         &bull; <strong>12 dictionary overrides:</strong> name classified differently from how the administration perceived the person (e.g., &ldquo;Yan&rdquo; = F in Larousse but admin writes &ldquo;Monsieur Roosens&rdquo;)<br>
-        &bull; <strong>4 cross-cultural cases:</strong> administration&rsquo;s perception diverged from name-based classification<br><br>
+        &bull; <strong>4 same individual:</strong> one requester (M in Larousse) consistently addressed as female by the administration across 4 requests<br><br>
         <em>In all 23 cases, Tier 0 (the greeting) correctly reflected the administration&rsquo;s perception.</em>
       </div>
 
@@ -1159,7 +1159,7 @@ Signature zone:
         <sup>6</sup> Why only 155 cases need review
       </div>
       <div class="anno-body">
-        Tiers 1&ndash;3 are deterministic dictionary lookups &mdash; same input always gives same output, no review needed. Only Tier 4 (LLM) is probabilistic, so ALL 132 of its M/F outputs (9 requester + 123 respondent) are flagged for human verification. Of these, <strong>17 were corrected (13% error rate)</strong>: 9 cases where the LLM should have returned UNKNOWN (hallucinations, initials-only, unisex names), 6 wrong gender assignments, and 2 encoding/format issues. Additionally, 23 Tier 0 disagreements (where the response greeting diverges from dictionary classification) were manually reviewed &mdash; breakdown: 7 group requests (wrong co-signer extracted), 12 dictionary overrides, 4 cross-cultural cases. In all 23, the greeting correctly reflected perceived gender; no adjustments needed. Total: 155 cases reviewed. UNKNOWN cases validated separately: 259 from Llama run (96.5% genuinely unclassifiable), 200-sample from Qwen run (100% genuinely unclassifiable).
+        Tiers 1&ndash;3 are deterministic dictionary lookups &mdash; same input always gives same output, no review needed. Only Tier 4 (LLM) is probabilistic, so ALL 132 of its M/F outputs (9 requester + 123 respondent) are flagged for human verification. Of these, <strong>17 were corrected (13% error rate)</strong>: 9 cases where the LLM should have returned UNKNOWN (hallucinations, initials-only, unisex names), 6 wrong gender assignments, and 2 encoding/format issues. Additionally, 23 Tier 0 disagreements (where the response greeting diverges from dictionary classification) were manually reviewed &mdash; breakdown: 7 group requests (first co-signer extracted but admin addressed a different one), 12 dictionary overrides, 4 same individual addressed as opposite gender. In all 23, the greeting correctly reflected perceived gender; no adjustments needed. Total: 155 cases reviewed. UNKNOWN cases validated separately: 259 from Llama run (96.5% genuinely unclassifiable), 200-sample from Qwen run (100% genuinely unclassifiable).
       </div>
     </div>
 
