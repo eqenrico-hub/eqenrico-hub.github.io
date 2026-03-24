@@ -2,6 +2,29 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script>
+/* PIPELINE NUMBERS — Update these after each run. All numbers below in the HTML should match. */
+const CONFIG = {
+  totalRequests: 4265,
+  tier0_mf: 1305, tier0_m: 940, tier0_f: 365,
+  tier1_req_mf: 3529, tier1_req_both: 208,
+  tier2_req_mf: 51, tier2_req_both: 1,
+  tier3_req_mf: 97,
+  tier4_req_mf: 9, tier4_req_unknown: 299, tier4_req_sent: 308,
+  final_req_mf: 3825, final_req_both: 136, final_req_unknown: 304,
+  tier1_resp_mf: 993, tier1_resp_both: 24,
+  tier2_resp_mf: 40, tier3_resp_mf: 217,
+  tier4_resp_mf: 70, tier4_resp_unknown: 1164, tier4_resp_sent: 2991,
+  final_resp_mf: 1290, final_resp_both: 24, final_resp_unknown: 2951,
+  noReply: 1754,
+  filter_before: 88, filter_falsePos: 0, filter_hallucination: 14,
+  filter_passed: 74, filter_bypassed: 5, filter_rejection: 15.9,
+  agree_req_pairs: 3568, agree_req_agree: 3551,
+  agree_resp_pairs: 945, agree_resp_agree: 851,
+  knownSexPairs: 1198,
+  tier0_disagreements: 14, totalFlagged: 93,
+};
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pipeline Walkthrough -Transparencia.be Gender Classification</title>
 <style>
@@ -754,12 +777,12 @@ Reply EXACTLY: <span class="str">GENDER: &lt;M or F or UNKNOWN&gt; | NAME: &lt;f
   <div class="anim" style="font-weight:700;margin:16px 0 8px;">Filter Results (All Tier 4 — Requester + Respondent Combined)</div>
   <div class="card anim" style="border-left:4px solid #7c3aed;background:#ede9fe;">
     <div style="font-size:14px;line-height:1.9;">
-      Before filtering: <strong>89</strong> LLM M/F responses<br>
+      Before filtering: <strong>88</strong> LLM M/F responses<br>
       False positive filter: <strong style="color:#16a34a;">0 caught</strong> <span style="color:#64748b;">(Qwen never returned function words as names)</span><br>
       Hallucination filter: <strong style="color:#dc2626;">14 caught</strong> <span style="color:#64748b;">(names not in text, e.g., fabricated names)</span><br>
-      After filtering: <strong style="color:#16a34a;">75 clean M/F accepted</strong> <span style="color:#64748b;">(15.7% rejection rate)</span><br>
+      After filtering: <strong style="color:#16a34a;">74 clean M/F accepted</strong> <span style="color:#64748b;">(15.9% rejection rate)</span><br>
       LLM returned M/F without name (bypassed filters): <strong>5</strong> <span style="color:#64748b;">(no name to check &rarr; kept as-is)</span><br>
-      Total Tier 4 M/F: <strong>80</strong> (75 filtered + 5 bypassed = 9 req + 71 resp)
+      Total Tier 4 M/F: <strong>79</strong> (74 filtered + 5 bypassed = 9 req + 70 resp)
     </div>
   </div>
 
@@ -773,7 +796,7 @@ Reply EXACTLY: <span class="str">GENDER: &lt;M or F or UNKNOWN&gt; | NAME: &lt;f
       <div class="stat-label">Classified M/F</div>
     </div>
     <div class="stat-item anim">
-      <div class="stat-num" style="color:#dc2626;">298</div>
+      <div class="stat-num" style="color:#dc2626;">299</div>
       <div class="stat-label">Confirmed UNKNOWN</div>
     </div>
   </div>
@@ -787,9 +810,9 @@ Reply EXACTLY: <span class="str">GENDER: &lt;M or F or UNKNOWN&gt; | NAME: &lt;f
 
   <div class="result-grid">
     <div class="result-box result-green anim-scale">
-      <div class="result-pct">89.8%</div>
+      <div class="result-pct">89.7%</div>
       <div class="result-label">M or F</div>
-      <div class="result-count">3,829 requesters</div>
+      <div class="result-count">3,825 requesters</div>
     </div>
     <div class="result-box result-amber anim-scale">
       <div class="result-pct">3.2%</div>
@@ -799,21 +822,21 @@ Reply EXACTLY: <span class="str">GENDER: &lt;M or F or UNKNOWN&gt; | NAME: &lt;f
     <div class="result-box result-red anim-scale">
       <div class="result-pct">7.1%</div>
       <div class="result-label">UNKNOWN</div>
-      <div class="result-count">300 requesters</div>
+      <div class="result-count">304 requesters</div>
     </div>
   </div>
 
   <div class="stacked-bar anim" id="req-bar">
-    <div class="bar-seg" style="background:#16a34a;--tw:89.8%;" data-width="89.8">89.8%</div>
+    <div class="bar-seg" style="background:#16a34a;--tw:89.7%;" data-width="89.7">89.7%</div>
     <div class="bar-seg" style="background:#eab308;--tw:3.2%;" data-width="3.2">3.2%</div>
-    <div class="bar-seg" style="background:#dc2626;--tw:7.0%;" data-width="7.0">7.0%</div>
+    <div class="bar-seg" style="background:#dc2626;--tw:7.1%;" data-width="7.1">7.1%</div>
   </div>
 
   <div class="anim" style="font-size:14px;color:#475467;margin-top:8px;">
     <strong>Tier breakdown:</strong> Greeting resolved 1,305 &bull; Larousse resolved 3,529 &bull; Statbel added 51 &bull; WGND added 97 &bull; LLM added 9 &bull; 9 cases flagged TO REVIEW
   </div>
 
-  <div class="side-note anim">The high 89.8% classification rate is because most FOI requesters sign with their full name. The 7.0% UNKNOWN includes pseudonyms, initials-only, and collective/organizational signers.</div>
+  <div class="side-note anim">The high 89.7% classification rate is because most FOI requesters sign with their full name. The 7.1% UNKNOWN includes pseudonyms, initials-only, and collective/organizational signers.</div>
 </div>
 
 <!-- ══════════════ STEP 12: THE SPLIT ══════════════ -->
@@ -880,9 +903,9 @@ secretariat@rebecq.be
 
   <div class="result-grid">
     <div class="result-box result-green anim-scale">
-      <div class="result-pct">30.8%</div>
+      <div class="result-pct">30.2%</div>
       <div class="result-label">M or F</div>
-      <div class="result-count">1,315 respondents</div>
+      <div class="result-count">1,290 respondents</div>
     </div>
     <div class="result-box result-amber anim-scale">
       <div class="result-pct">0.6%</div>
@@ -890,26 +913,26 @@ secretariat@rebecq.be
       <div class="result-count">24 respondents</div>
     </div>
     <div class="result-box result-red anim-scale">
-      <div class="result-pct">68.6%</div>
+      <div class="result-pct">69.2%</div>
       <div class="result-label">UNKNOWN</div>
-      <div class="result-count">2,926 respondents</div>
+      <div class="result-count">2,951 respondents</div>
     </div>
   </div>
 
   <div class="stacked-bar anim" id="resp-bar">
-    <div class="bar-seg" style="background:#16a34a;--tw:30.8%;" data-width="30.8">30.8%</div>
+    <div class="bar-seg" style="background:#16a34a;--tw:30.2%;" data-width="30.2">30.2%</div>
     <div class="bar-seg" style="background:#eab308;--tw:0.6%;" data-width="0.6"></div>
-    <div class="bar-seg" style="background:#dc2626;--tw:68.6%;" data-width="68.6">68.6%</div>
+    <div class="bar-seg" style="background:#dc2626;--tw:69.2%;" data-width="69.2">69.2%</div>
   </div>
 
   <div class="card anim" style="margin-top:12px;">
     <div style="font-size:14px;line-height:1.8;">
-      <strong>Among the 2,511 requests with a reply:</strong> 50.7% classified by Tiers 1&ndash;3 (30.8% full pipeline).<br>
-      <strong>71 cases</strong> flagged TO REVIEW from Tier 4.
+      <strong>Among the 2,511 requests with a reply:</strong> 49.8% classified by Tiers 1&ndash;3 (30.2% full pipeline).<br>
+      <strong>70 cases</strong> flagged TO REVIEW from Tier 4.
     </div>
   </div>
 
-  <div class="side-note anim">The 68.6% UNKNOWN rate is not a pipeline failure -it accurately reflects that most government responses are either missing (41.1%) or institutionally signed (no personal name to classify).</div>
+  <div class="side-note anim">The 69.2% UNKNOWN rate is not a pipeline failure -it accurately reflects that most government responses are either missing (41.1%) or institutionally signed (no personal name to classify).</div>
 </div>
 
 <!-- ══════════════ STEP 15: CONFUSION MATRIX ══════════════ -->
@@ -962,18 +985,19 @@ secretariat@rebecq.be
     <div class="stat-item anim">
       <div class="stat-num" style="color:#94a3b8;">1,215</div>
       <div class="stat-label">ChatGPT (28.5%)</div>
+
     </div>
     <div class="stat-item anim">
       <div class="stat-num" style="color:#2563eb;">1,131</div>
       <div class="stat-label">Llama (26.5%)</div>
     </div>
     <div class="stat-item anim">
-      <div class="stat-num" style="color:#16a34a;">1,278</div>
-      <div class="stat-label">Qwen+Tier&nbsp;0 (30.0%)</div>
+      <div class="stat-num" style="color:#16a34a;">1,198</div>
+      <div class="stat-label">Qwen+Tier&nbsp;0 (28.1%)</div>
     </div>
   </div>
 
-  <div class="side-note anim"><strong>Key finding:</strong> The final Qwen+Tier&nbsp;0 pipeline has <strong>higher agreement</strong> with ChatGPT than Llama did on requesters (95.9% vs 93.9% for males, both ~99% for females) and respondents (69.8% vs 67.8% for males, 56.0% vs 53.7% for females). It also produces <strong>more known-sex pairs</strong> (1,278 vs 1,131) -meaning more usable data for downstream analysis. The final pipeline improves on both the old method and the initial Llama attempt.</div>
+  <div class="side-note anim"><strong>Key finding:</strong> The final Qwen+Tier&nbsp;0 pipeline has <strong>higher agreement</strong> with ChatGPT than Llama did on requesters (95.9% vs 93.9% for males, both ~99% for females) and respondents (69.8% vs 67.8% for males, 56.0% vs 53.7% for females). After manual review corrections, it produces <strong>1,198 known-sex pairs</strong> (28.1%) -slightly below ChatGPT (1,215) but with verified accuracy. The final pipeline improves on the initial Llama attempt and provides fully human-verified Tier 4 classifications.</div>
 </div>
 
 <!-- ══════════════ STEP 16: MANUAL REVIEW ══════════════ -->
@@ -982,9 +1006,9 @@ secretariat@rebecq.be
   <div class="step-title anim">Manual Review</div>
   <div class="step-subtitle anim">All classifications made by the LLM (Tier 4) are flagged for exhaustive human verification.</div>
 
-  <div class="big-counter anim-scale" style="color:#92400e;" data-count-to="94">0</div>
+  <div class="big-counter anim-scale" style="color:#92400e;" data-count-to="93">0</div>
   <div class="anim" style="text-align:center;font-size:16px;color:#475467;margin-top:-16px;">M/F cases flagged for manual review</div>
-  <div class="anim" style="text-align:center;font-size:13px;color:#64748b;margin-top:4px;">80 Tier 4 M/F + 14 Tier 0 disagreements = 94</div>
+  <div class="anim" style="text-align:center;font-size:13px;color:#64748b;margin-top:4px;">79 Tier 4 M/F + 14 Tier 0 disagreements = 93</div>
 
   <div class="stat-row" style="margin-top:28px;">
     <div class="stat-item anim">
@@ -992,7 +1016,7 @@ secretariat@rebecq.be
       <div class="stat-label">Requester M/F cases</div>
     </div>
     <div class="stat-item anim">
-      <div class="stat-num" style="color:#ea580c;">71</div>
+      <div class="stat-num" style="color:#ea580c;">70</div>
       <div class="stat-label">Respondent M/F cases</div>
     </div>
   </div>
@@ -1040,10 +1064,9 @@ secretariat@rebecq.be
 
   <div class="card anim" style="border-left:4px solid #f59e0b;margin-top:12px;">
     <div style="font-size:14px;line-height:1.8;">
-      <strong style="color:#92400e;">Tier 4 review outcome: 7 of 80 corrected (8.75% pre-review error rate; all 7 fixed in the final dataset)</strong><br><br>
-      <strong>Requester (1 of 9):</strong> 1 initial-only (P. Derwael) &rarr; UNKNOWN<br>
-      <strong>Respondent (6 of 71):</strong> 3 surname-only without first name &rarr; UNKNOWN; 3 initial-only without verifiable context &rarr; UNKNOWN<br><br>
-      <em style="font-size:13px;color:#475467;">Summary: 7 should have been UNKNOWN (1 initial requester + 3 surname-only + 3 initial-only respondent)</em>
+      <strong style="color:#92400e;">Tier 4 review outcome: 42 of 79 corrected (47.5% pre-review accuracy &rarr; 100% post-review; all 42 fixed in the final dataset)</strong><br><br>
+      <strong>Corrections breakdown:</strong> 36 cases &rarr; reclassified as UNKNOWN; 5 cases &rarr; corrected to different gender; 1 case &rarr; corrected to M<br><br>
+      <em style="font-size:13px;color:#475467;">Summary: 42 corrections applied during manual review (pre-review Tier 4 accuracy was 47.5%)</em>
     </div>
   </div>
 
@@ -1074,27 +1097,27 @@ secretariat@rebecq.be
     <div class="mini-step"><div class="ms-num ms-blue">4</div> Name extracted: spaCy NER + heuristic fallback (96.5%)</div>
     <div class="mini-step"><div class="ms-num ms-blue">5</div> First name identified against 3.49M known names</div>
     <div class="mini-step"><div class="ms-num ms-purple" style="background:#16a34a;">6</div> Tier 0: Response Greeting -1,305 requester resolved</div>
-    <div class="mini-step"><div class="ms-num ms-purple">7</div> Tier 1: Larousse -3,529 requester + 995 respondent</div>
+    <div class="mini-step"><div class="ms-num ms-purple">7</div> Tier 1: Larousse -3,529 requester + 993 respondent</div>
     <div class="mini-step"><div class="ms-num ms-purple">8</div> Tier 2: Statbel -+51 requester + 40 respondent</div>
-    <div class="mini-step"><div class="ms-num ms-purple">9</div> Tier 3: WGND -+97 requester + 215 respondent</div>
-    <div class="mini-step"><div class="ms-num ms-orange">10</div> Tier 4: Ollama LLM -+9 requester + 71 respondent</div>
-    <div class="mini-step"><div class="ms-num ms-orange">11</div> Hallucination filter &rarr; 94 cases flagged for manual review</div>
-    <div class="mini-step"><div class="ms-num ms-green">12</div> <strong>Requester:</strong> 89.8% M/F &bull; 3.2% BOTH &bull; 7.0% UNKNOWN</div>
-    <div class="mini-step"><div class="ms-num ms-green">13</div> <strong>Respondent:</strong> 30.8% M/F &bull; 0.6% BOTH &bull; 68.6% UNKNOWN</div>
+    <div class="mini-step"><div class="ms-num ms-purple">9</div> Tier 3: WGND -+97 requester + 217 respondent</div>
+    <div class="mini-step"><div class="ms-num ms-orange">10</div> Tier 4: Ollama LLM -+9 requester + 70 respondent</div>
+    <div class="mini-step"><div class="ms-num ms-orange">11</div> Hallucination filter &rarr; 93 cases flagged for manual review</div>
+    <div class="mini-step"><div class="ms-num ms-green">12</div> <strong>Requester:</strong> 89.7% M/F &bull; 3.2% BOTH &bull; 7.1% UNKNOWN</div>
+    <div class="mini-step"><div class="ms-num ms-green">13</div> <strong>Respondent:</strong> 30.2% M/F &bull; 0.6% BOTH &bull; 69.2% UNKNOWN</div>
   </div>
 
   <div class="stat-row" style="margin-top:20px;">
     <div class="stat-item anim-scale">
-      <div class="stat-num" style="color:#16a34a;">3,829</div>
+      <div class="stat-num" style="color:#16a34a;">3,825</div>
       <div class="stat-label">Requesters classified M/F</div>
     </div>
     <div class="stat-item anim-scale">
-      <div class="stat-num" style="color:#16a34a;">1,315</div>
+      <div class="stat-num" style="color:#16a34a;">1,290</div>
       <div class="stat-label">Respondents classified M/F</div>
     </div>
     <div class="stat-item anim-scale">
-      <div class="stat-num" style="color:#7c3aed;">1,278</div>
-      <div class="stat-label">Known-sex pairs (30.0%)</div>
+      <div class="stat-num" style="color:#7c3aed;">1,198</div>
+      <div class="stat-label">Known-sex pairs (28.1%)</div>
     </div>
   </div>
 
