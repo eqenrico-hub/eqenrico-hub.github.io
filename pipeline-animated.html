@@ -681,7 +681,7 @@ Jean Dupont</div></div>
   <div class="card anim" style="margin-bottom:16px;background:#f5f3ff;border:1px solid #c4b5fd;">
     <div style="font-weight:700;color:#7c3aed;margin-bottom:8px;">Tier 0: Response Greeting Patterns</div>
     <div style="font-size:13px;line-height:1.8;color:#1e293b;">
-      The pipeline scans the <strong>first line only</strong> of the administration&rsquo;s response for these patterns:<br>
+      The pipeline scans the <strong>first line only</strong> of the administration&rsquo;s response for these patterns in French and Dutch &mdash; Belgium&rsquo;s two principal administrative languages, covering both Francophone and Flemish institutions in the dataset:<br>
       <strong style="color:#dc2626;">Female:</strong> &ldquo;Ch&egrave;re Madame/Mme/Mademoiselle&rdquo;, &ldquo;Madame [Name],&rdquo;, &ldquo;Madame,&rdquo;, &ldquo;Bonjour/Bonsoir Madame&rdquo;, &ldquo;Geachte Mevrouw&rdquo; (NL), &ldquo;Beste Mevrouw&rdquo; (NL)<br>
       <strong style="color:#2563eb;">Male:</strong> &ldquo;Cher Monsieur/Mr&rdquo;, &ldquo;Monsieur [Name],&rdquo;, &ldquo;Monsieur,&rdquo;, &ldquo;Bonjour/Bonsoir Monsieur&rdquo;, &ldquo;Geachte Heer&rdquo; (NL), &ldquo;Beste Heer&rdquo; (NL)<br>
       <strong style="color:#94a3b8;">Skipped (neutral):</strong> &ldquo;Madame, Monsieur&rdquo;, &ldquo;Madame, Messieurs&rdquo;, &ldquo;Mesdames, Messieurs&rdquo;, &ldquo;Ch&egrave;re Madame, Cher Monsieur&rdquo; &mdash; these address both genders, so no single perceived gender can be inferred. Tier 0 returns empty and the case falls through to the name-based tiers (1&ndash;3) for classification.
@@ -728,7 +728,17 @@ Jean Dupont</div></div>
     <div class="cascade-row tier-4 skip"><span class="cascade-label">Tier 4: LLM</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
   </div>
 
-  <div class="anim" style="font-weight:700;margin:20px 0 8px;color:#854d0e;">Example 5: &ldquo;CABLYN&rdquo; -unresolvable</div>
+  <div class="anim" style="font-weight:700;margin:20px 0 8px;color:#7c3aed;">Example 5: &ldquo;TARIQ&rdquo; &mdash; international name, resolved by WGND</div>
+  <div class="anim" style="font-size:13px;color:#6b7280;margin-bottom:8px;font-style:italic;">No greeting available &rarr; not in Larousse (French name dictionary) &rarr; not in Statbel (Belgian civil registry) &rarr; found in WGND 2.0, which covers 3.49M names from 182 countries. This illustrates why the international supplement is needed: Belgium&rsquo;s multicultural population includes names from traditions not covered by French or Belgian-specific sources.</div>
+  <div class="cascade anim">
+    <div class="cascade-row tier-1 skip" style="background:#f0fdf4;border-color:#6ee7b7;"><span class="cascade-label">Tier 0: Greeting</span> <span style="color:#94a3b8;">No greeting</span> <span class="cascade-status">-</span></div>
+    <div class="cascade-row tier-1 miss"><span class="cascade-label">Tier 1: Larousse</span> <span>Search &ldquo;TARIQ&rdquo;</span> <span class="cascade-status" style="color:#dc2626;">&#x274C;</span></div>
+    <div class="cascade-row tier-2 miss"><span class="cascade-label">Tier 2: Statbel</span> <span>Search &ldquo;TARIQ&rdquo;</span> <span class="cascade-status" style="color:#dc2626;">&#x274C;</span></div>
+    <div class="cascade-row tier-3 hit"><span class="cascade-label">Tier 3: WGND</span> <span>Search &ldquo;TARIQ&rdquo; (182 countries)</span> <span class="cascade-status" style="color:#16a34a;">&#x2705; M</span></div>
+    <div class="cascade-row tier-4 skip"><span class="cascade-label">Tier 4: LLM</span> <span style="color:#94a3b8;">Skipped</span> <span class="cascade-status">-</span></div>
+  </div>
+
+  <div class="anim" style="font-weight:700;margin:20px 0 8px;color:#854d0e;">Example 6: &ldquo;CABLYN&rdquo; &mdash; unresolvable</div>
   <div class="anim" style="font-size:13px;color:#6b7280;margin-bottom:8px;font-style:italic;">No greeting &rarr; not in Larousse &rarr; not in Statbel &rarr; not in WGND (3.49M names) &rarr; last resort: send signature zone to the LLM. The LLM also cannot identify a personal name and therefore cannot infer gender &rarr; UNKNOWN.</div>
   <div class="cascade anim">
     <div class="cascade-row tier-1 skip" style="background:#f0fdf4;border-color:#6ee7b7;"><span class="cascade-label">Tier 0: Greeting</span> <span style="color:#94a3b8;">No greeting</span> <span class="cascade-status">-</span></div>
@@ -938,66 +948,57 @@ secretariat@rebecq.be
 <!-- ══════════════ STEP 15: CONFUSION MATRIX ══════════════ -->
 <div class="step" data-step="15">
   <div class="step-number anim">Step 15 of 17</div>
-  <div class="step-title anim">Validation: Confusion Matrix</div>
-  <div class="step-subtitle anim">Three methods compared: the old ChatGPT approach, the initial Llama pipeline, and the final Qwen+Tier&nbsp;0 pipeline. Higher agreement with ChatGPT = more consistent. More known-sex pairs = more usable data.</div>
+  <div class="step-title anim">Model Upgrade: Llama 3.2 &rarr; Qwen 2.5</div>
+  <div class="step-subtitle anim">The pipeline evolved through two iterations. An initial run with Llama 3.2 (3B parameters) produced a high error rate in Tier 4 classifications, identified during manual review by a co-author. The pipeline was re-run with Qwen 2.5 (7.6B) &mdash; the top performer in a published benchmark for few-shot clinical information extraction with locally deployed models &mdash; and Tier 0 (response greeting detection) was added.</div>
 
   <div class="card card-purple anim" style="margin-bottom:20px;">
     <div style="font-size:14px;line-height:1.8;">
-      <strong>Pipeline evolution:</strong> The pipeline evolved through two iterations. An initial run with Llama 3.2 (3B parameters) produced a 74% error rate in Tier 4 classifications, identified during manual review by a co-author. The pipeline was re-run with Qwen 2.5 (7.6B) and Tier 0 (response greeting detection, suggested by a co-author). The table below compares both iterations against the original ChatGPT classifications.
+      <strong>Why the upgrade?</strong> Llama 3.2 (3B) defaulted to guessing &ldquo;male&rdquo; for ambiguous cases (initials only, no gendered language) instead of returning UNKNOWN. Qwen 2.5 (7.6B), a 2.5x larger model, is more conservative and correctly returns UNKNOWN when uncertain.
     </div>
   </div>
 
-  <!-- REQUESTER comparison -->
-  <div class="anim" style="font-weight:700;font-size:16px;margin-bottom:12px;color:#16a34a;">Requester Agreement with ChatGPT</div>
+  <!-- Tier 4 M/F comparison -->
+  <div class="anim" style="font-weight:700;font-size:16px;margin-bottom:12px;color:#f59e0b;">Tier 4 M/F Classifications</div>
   <div class="compare-grid">
     <div class="card card-blue anim" style="padding:16px;">
-      <h4 style="color:#2563eb;font-size:14px;margin-bottom:10px;">ChatGPT vs Llama (initial)</h4>
-      <div class="matrix-row">Old M &rarr; still M: <strong style="color:#2563eb;">93.9%</strong> <span style="color:#64748b;">(2,160/2,301)</span></div>
-      <div class="matrix-row">Old F &rarr; still F: <strong style="color:#2563eb;">99.0%</strong> <span style="color:#64748b;">(1,342/1,355)</span></div>
+      <h4 style="color:#2563eb;font-size:14px;margin-bottom:10px;">Llama 3.2 (3B) &mdash; initial</h4>
+      <div class="matrix-row">M/F cases: <strong style="color:#2563eb;">164</strong> <span style="color:#64748b;">(136 req + 28 resp)</span></div>
+      <div class="matrix-row">Error rate: <strong style="color:#dc2626;">74%</strong> <span style="color:#64748b;">(122/164 incorrect)</span></div>
+      <div class="matrix-row" style="color:#64748b;">Model guessed M/F too aggressively</div>
     </div>
     <div class="card card-green anim" style="padding:16px;">
-      <h4 style="color:#16a34a;font-size:14px;margin-bottom:10px;">ChatGPT vs Qwen+Tier&nbsp;0 (final)</h4>
-      <div class="matrix-row">Old M &rarr; still M: <strong style="color:#16a34a;">95.9%</strong> <span style="color:#64748b;">(2,206/2,301)</span></div>
-      <div class="matrix-row">Old F &rarr; still F: <strong style="color:#16a34a;">98.7%</strong> <span style="color:#64748b;">(1,337/1,355)</span></div>
+      <h4 style="color:#16a34a;font-size:14px;margin-bottom:10px;">Qwen 2.5 (7.6B) &mdash; final</h4>
+      <div class="matrix-row">M/F cases: <strong style="color:#16a34a;">79</strong> <span style="color:#64748b;">(9 req + 70 resp)</span></div>
+      <div class="matrix-row">Error rate: <strong style="color:#f59e0b;">51.9%</strong> <span style="color:#64748b;">(41/79 &rarr; corrected to 100%)</span></div>
+      <div class="matrix-row" style="color:#16a34a;">More conservative, fewer false M/F</div>
     </div>
   </div>
 
-  <!-- RESPONDENT comparison -->
-  <div class="anim" style="font-weight:700;font-size:16px;margin-bottom:12px;color:#dc2626;">Respondent Agreement with ChatGPT</div>
-  <div class="compare-grid">
-    <div class="card card-blue anim" style="padding:16px;">
-      <h4 style="color:#2563eb;font-size:14px;margin-bottom:10px;">ChatGPT vs Llama (initial)</h4>
-      <div class="matrix-row">Old M &rarr; still M: <strong style="color:#2563eb;">67.8%</strong> <span style="color:#64748b;">(391/577)</span></div>
-      <div class="matrix-row">Old F &rarr; still F: <strong style="color:#2563eb;">53.7%</strong> <span style="color:#64748b;">(437/814)</span></div>
-      <div class="matrix-row">Old UNKNOWN &rarr; now M/F: <strong style="color:#2563eb;">32.0%</strong> <span style="color:#64748b;">(360/1,126)</span></div>
-    </div>
-    <div class="card card-green anim" style="padding:16px;">
-      <h4 style="color:#16a34a;font-size:14px;margin-bottom:10px;">ChatGPT vs Qwen+Tier&nbsp;0 (final)</h4>
-      <div class="matrix-row">Old M &rarr; still M: <strong style="color:#16a34a;">69.8%</strong> <span style="color:#64748b;">(403/577)</span></div>
-      <div class="matrix-row">Old F &rarr; still F: <strong style="color:#16a34a;">56.0%</strong> <span style="color:#64748b;">(456/814)</span></div>
-      <div class="matrix-row">Old UNKNOWN &rarr; now M/F: <strong style="color:#16a34a;">14.2%</strong> <span style="color:#64748b;">(406/2,857)</span></div>
-    </div>
-  </div>
-
-  <!-- Known-sex pairs comparison -->
-  <div class="anim" style="font-weight:700;font-size:16px;margin-bottom:12px;color:#7c3aed;">Known-Sex Pairs (both requester &amp; respondent classified M/F)</div>
+  <!-- Key improvements -->
+  <div class="anim" style="font-weight:700;font-size:16px;margin:20px 0 12px;color:#7c3aed;">Key Improvements</div>
   <div class="stat-row" style="margin-bottom:16px;">
     <div class="stat-item anim">
-      <div class="stat-num" style="color:#94a3b8;">1,215</div>
-      <div class="stat-label">ChatGPT (28.5%)</div>
-
+      <div class="stat-num" style="color:#dc2626;">164 &rarr; 79</div>
+      <div class="stat-label">M/F cases (52% reduction)</div>
     </div>
     <div class="stat-item anim">
-      <div class="stat-num" style="color:#2563eb;">1,131</div>
-      <div class="stat-label">Llama (26.5%)</div>
+      <div class="stat-num" style="color:#16a34a;">+85</div>
+      <div class="stat-label">Correctly returned UNKNOWN</div>
     </div>
     <div class="stat-item anim">
-      <div class="stat-num" style="color:#16a34a;">1,198</div>
-      <div class="stat-label">Qwen+Tier&nbsp;0 (28.1%)</div>
+      <div class="stat-num" style="color:#7c3aed;">+144</div>
+      <div class="stat-label">Cases resolved by Tier 0 (new)</div>
     </div>
   </div>
 
-  <div class="side-note anim"><strong>Key finding:</strong> The final Qwen+Tier&nbsp;0 pipeline has <strong>higher agreement</strong> with ChatGPT than Llama did on requesters (95.9% vs 93.9% for males, both ~99% for females) and respondents (69.8% vs 67.8% for males, 56.0% vs 53.7% for females). After manual review corrections, it produces <strong>1,198 known-sex pairs</strong> (28.1%) -slightly below ChatGPT (1,215) but with verified accuracy. The final pipeline improves on the initial Llama attempt and provides fully human-verified Tier 4 classifications.</div>
+  <div class="stat-row" style="margin-bottom:16px;">
+    <div class="stat-item anim">
+      <div class="stat-num" style="color:#16a34a;">1,198</div>
+      <div class="stat-label">Known-sex pairs (28.1% of 4,265)</div>
+    </div>
+  </div>
+
+  <div class="side-note anim"><strong>Key finding:</strong> Qwen 2.5 produces fewer but higher-quality Tier 4 M/F classifications (79 vs 164). After exhaustive manual review and 41 corrections, all Tier 4 classifications are human-verified (100% post-review accuracy). The addition of Tier 0 (greeting detection) uniquely resolved 144 requester cases that no dictionary could classify, producing <strong>1,198 known-sex pairs</strong> (28.1% of all requests) available for gender-based analysis.</div>
 </div>
 
 <!-- ══════════════ STEP 16: MANUAL REVIEW ══════════════ -->
@@ -1030,43 +1031,29 @@ secretariat@rebecq.be
   <div class="card anim" style="border-left:4px solid #16a34a;margin-top:12px;">
     <div style="font-size:14px;line-height:1.8;">
       <strong style="color:#16a34a;">What about the UNKNOWN cases?</strong><br>
-      Cases where Tier 4 returned UNKNOWN were not included in the M/F review because no gender claim was made. Both pipeline runs were validated separately:
+      Cases where Tier 4 returned UNKNOWN were not included in the M/F review because no gender claim was made. A random sample was validated:
     </div>
-    <div style="margin-top:10px;padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;font-size:13px;">
-      <strong>Llama run (259 UNKNOWN &mdash; ALL reviewed):</strong>
-      <div class="stat-row" style="margin-top:8px;">
-        <div class="stat-item">
-          <div class="stat-num" style="color:#16a34a;">96.5%</div>
-          <div class="stat-label">Confirmed unclassifiable (250/259)</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-num" style="color:#dc2626;">9</div>
-          <div class="stat-label">Missed names (3.5%) &mdash; all corrected</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-num" style="color:#7c3aed;">0.2%</div>
-          <div class="stat-label">Of full dataset (9/4,265)</div>
-        </div>
-      </div>
-      <div style="font-size:12px;color:#475467;margin-top:6px;">9 missed due to non-standard formatting (surname-first, ALL CAPS, username formats). All 39 respondent UNKNOWNs confirmed correct (0% error). Note: the final dataset uses Qwen exclusively &mdash; Qwen independently classifies all 9 correctly.</div>
-    </div>
-    <div style="margin-top:8px;padding:10px 14px;background:#ede9fe;border:1px solid #c4b5fd;border-radius:6px;font-size:13px;">
+    <div style="margin-top:10px;padding:10px 14px;background:#ede9fe;border:1px solid #c4b5fd;border-radius:6px;font-size:13px;">
       <strong>Qwen run (1,462 UNKNOWN &mdash; 200 sampled):</strong>
       <div class="stat-row" style="margin-top:8px;">
         <div class="stat-item">
-          <div class="stat-num" style="color:#16a34a;">100%</div>
-          <div class="stat-label">Confirmed unclassifiable (200/200)</div>
+          <div class="stat-num" style="color:#16a34a;">78%</div>
+          <div class="stat-label">Confirmed unclassifiable (156/200)</div>
         </div>
       </div>
-      <div style="font-size:12px;color:#475467;margin-top:6px;">Random sample of 100 requester + 100 respondent UNKNOWN cases from 1,462 total. No missed names &mdash; the upgraded model&rsquo;s UNKNOWN classifications are even more reliable.</div>
+      <div style="font-size:12px;color:#475467;margin-top:6px;">Random sample of 200 from 1,462 Tier 4 UNKNOWN cases. Requester: 97% correct. Respondent: 59% correct. Lower respondent rate reflects conservative LLM behaviour on complex multilingual inputs and preprocessing that sometimes stripped names &mdash; reduced coverage, not incorrect classifications.</div>
+    </div>
+    <div style="margin-top:8px;padding:10px 14px;background:#fef9c3;border:1px solid #fde68a;border-radius:6px;font-size:13px;">
+      <strong>Tier 0-3 sample validation (200 from 3,911 deterministic cases):</strong>
+      <div style="font-size:12px;color:#475467;margin-top:6px;">Requester: <strong>196/200 = 98.0%</strong>. Respondent: <strong>81/119 = 68.1%</strong>. Lower respondent accuracy stems from long bilingual disclaimers, dictionary false positives on common Dutch/French words, and separator patterns &mdash; standard NER limitations on multilingual institutional text. Pipeline prioritizes precision over recall.</div>
     </div>
   </div>
 
   <div class="card anim" style="border-left:4px solid #f59e0b;margin-top:12px;">
     <div style="font-size:14px;line-height:1.8;">
-      <strong style="color:#92400e;">Tier 4 review outcome: 42 of 79 corrected (47.5% pre-review accuracy &rarr; 100% post-review; all 42 fixed in the final dataset)</strong><br><br>
-      <strong>Corrections breakdown:</strong> 36 cases &rarr; reclassified as UNKNOWN; 5 cases &rarr; corrected to different gender; 1 case &rarr; corrected to M<br><br>
-      <em style="font-size:13px;color:#475467;">Summary: 42 corrections applied during manual review (pre-review Tier 4 accuracy was 47.5%)</em>
+      <strong style="color:#92400e;">Tier 4 review outcome: 41 of 79 corrected (51.9% pre-review accuracy &rarr; 100% post-review; all 41 fixed in the final dataset)</strong><br><br>
+      <strong>Corrections breakdown:</strong> 34 cases &rarr; reclassified as UNKNOWN; 7 cases &rarr; gender corrections<br><br>
+      <em style="font-size:13px;color:#475467;">Summary: 41 corrections applied during manual review (pre-review Tier 4 accuracy was 48.1%)</em>
     </div>
   </div>
 

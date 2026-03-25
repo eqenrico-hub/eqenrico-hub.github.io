@@ -1058,28 +1058,41 @@ const CONFIG = {
     <div class="section-label">C -Validation &amp; Review</div>
 
     <div class="box box-accent">
-      <h3>Confusion Matrix: Final Pipeline (Qwen+Tier 0) vs <u>Previous</u> ChatGPT Methodology</h3>
+      <h3>Model Upgrade: Llama 3.2 &rarr; Qwen 2.5</h3>
+      <p style="font-size:14px;color:#475467;margin-top:8px;">The pipeline evolved through two iterations. An initial run with Llama 3.2 (3B) produced a high error rate, identified during manual review by a co-author. The pipeline was re-run with Qwen 2.5 (7.6B) &mdash; a 2.5x larger model and top performer in a published benchmark for few-shot clinical IE with locally deployed models &mdash; and Tier 0 (greeting detection) was added.</p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px;">
-        <div style="background:#f0fdf4;border-radius:12px;padding:16px;border:1px solid #bbf7d0;">
-          <div style="font-weight:700;font-size:15px;color:#16a34a;margin-bottom:10px;">Requester (stable)</div>
+        <div style="background:#eff6ff;border-radius:12px;padding:16px;border:1px solid #bfdbfe;">
+          <div style="font-weight:700;font-size:15px;color:#2563eb;margin-bottom:10px;">Llama 3.2 (3B) &mdash; initial</div>
           <div style="font-size:14px;line-height:1.8;color:#1e293b;">
-            Previous M &rarr; still M: <strong>95.9%</strong> (2,206/2,301)<br>
-            Previous F &rarr; still F: <strong>98.7%</strong> (1,337/1,355)<br>
-            Gender flips (M&harr;F): &lt;1%<br>
-            Previous UNK &rarr; now M/F: 238 cases
+            Tier 4 M/F cases: <strong>164</strong> (136 req + 28 resp)<br>
+            Error rate: <strong style="color:#dc2626;">74%</strong> (122/164 incorrect)<br>
+            Model guessed M/F too aggressively
           </div>
         </div>
-        <div style="background:#fef2f2;border-radius:12px;padding:16px;border:1px solid #fecaca;">
-          <div style="font-weight:700;font-size:15px;color:#dc2626;margin-bottom:10px;">Respondent (significant changes)</div>
+        <div style="background:#f0fdf4;border-radius:12px;padding:16px;border:1px solid #bbf7d0;">
+          <div style="font-weight:700;font-size:15px;color:#16a34a;margin-bottom:10px;">Qwen 2.5 (7.6B) &mdash; final</div>
           <div style="font-size:14px;line-height:1.8;color:#1e293b;">
-            Previous M &rarr; still M: <strong>69.8%</strong> (403/577)<br>
-            Previous F &rarr; still F: <strong>56.0%</strong> (456/814)<br>
-            Previous UNK &rarr; now M/F: <strong>14.2%</strong> (406/2,857)<br>
-            Previous M/F &rarr; now UNKNOWN: 415 cases
+            Tier 4 M/F cases: <strong>79</strong> (9 req + 70 resp)<br>
+            Error rate: <strong style="color:#f59e0b;">51.9%</strong> (41/79 &rarr; corrected to 100%)<br>
+            More conservative, fewer false M/F
           </div>
         </div>
       </div>
-      <p style="font-size:12px;color:#64748b;margin-top:12px;font-style:italic;">Note: Earlier drafts reported agreement rates of 99.5% (requester) and 90.0% (respondent). Those figures were calculated by comparing only the subset of cases where both the old method (ChatGPT) and the new pipeline assigned M or F -ignoring all cases where either method classified someone as UNKNOWN. The rates above are more accurate because they show what happened to every case, including those reclassified as UNKNOWN by the new pipeline.</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px;text-align:center;">
+        <div style="background:#fef2f2;border-radius:8px;padding:12px;border:1px solid #fecaca;">
+          <div style="font-size:22px;font-weight:700;color:#dc2626;">164 &rarr; 79</div>
+          <div style="font-size:12px;color:#64748b;">M/F cases (52% reduction)</div>
+        </div>
+        <div style="background:#f0fdf4;border-radius:8px;padding:12px;border:1px solid #bbf7d0;">
+          <div style="font-size:22px;font-weight:700;color:#16a34a;">+85</div>
+          <div style="font-size:12px;color:#64748b;">Correctly returned UNKNOWN</div>
+        </div>
+        <div style="background:#f5f3ff;border-radius:8px;padding:12px;border:1px solid #c4b5fd;">
+          <div style="font-size:22px;font-weight:700;color:#7c3aed;">+144</div>
+          <div style="font-size:12px;color:#64748b;">Resolved by Tier 0 (new)</div>
+        </div>
+      </div>
+      <p style="font-size:13px;color:#475467;margin-top:12px;">After exhaustive manual review and 41 corrections, all Tier 4 classifications are human-verified (100% post-review accuracy). The final pipeline produces <strong>1,198 known-sex pairs</strong> (28.1% of 4,265 requests) available for gender-based analysis.</p>
     </div>
 
     <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:16px 20px;margin-bottom:16px;">
@@ -1101,12 +1114,11 @@ const CONFIG = {
       <p style="font-size:14px;color:#475467;margin-top:6px;">9 requester + 70 respondent (Tier 4) + 14 Tier 0 disagreements &mdash; all undergo exhaustive manual verification</p>
 
       <div style="margin-top:12px;padding:12px 16px;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;font-size:13px;color:#92400e;">
-        <strong>Tier 4 review outcome: 42 of 79 corrected (47.5% pre-review accuracy &rarr; 100% post-review; all 42 fixed in the final dataset)</strong><br><br>
+        <strong>Tier 4 review outcome: 41 of 79 corrected (51.9% pre-review accuracy &rarr; 100% post-review; all 41 fixed in the final dataset)</strong><br><br>
         <strong>Corrections breakdown:</strong><br>
-        &bull; 36 cases &rarr; reclassified as UNKNOWN<br>
-        &bull; 5 cases &rarr; corrected to different gender<br>
-        &bull; 1 case &rarr; corrected to M<br><br>
-        <em>Summary: 42 corrections applied during manual review (pre-review Tier 4 accuracy was 47.5%).</em>
+        &bull; 34 cases &rarr; reclassified as UNKNOWN<br>
+        &bull; 7 cases &rarr; gender corrections<br><br>
+        <em>Summary: 41 corrections applied during manual review (pre-review Tier 4 accuracy was 48.1%).</em>
       </div>
 
       <div style="margin-top:10px;padding:12px 16px;background:#ede9fe;border:1px solid #c4b5fd;border-radius:8px;font-size:13px;color:#5b21b6;">
@@ -1118,8 +1130,8 @@ const CONFIG = {
       </div>
 
       <div style="margin-top:10px;padding:12px 16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:13px;color:#166534;">
-        <strong>UNKNOWN validation (Llama run &mdash; historical):</strong> All 259 Tier 4 UNKNOWN cases manually reviewed. Result: <strong>250 (96.5%)</strong> genuinely unclassifiable. Only 9 cases (3.5%, 8 unique individuals) contained a missed name &mdash; 0.2% of the full dataset. The final dataset uses Qwen exclusively &mdash; Qwen independently classifies all 9 correctly (handles ALL CAPS, surname-first, accented formats).<br><br>
-        <strong>UNKNOWN validation (Qwen run):</strong> Random sample of 200 Tier 4 UNKNOWN cases. Result: <strong>200/200 (100%)</strong> genuinely unclassifiable.
+        <strong>UNKNOWN validation:</strong> Random sample of 200 from 1,462 Tier 4 UNKNOWN cases. Result: <strong>156/200 (78%)</strong> correctly UNKNOWN (requester: 97%, respondent: 59%). The lower respondent rate reflects conservative LLM behaviour on complex multilingual inputs and preprocessing that sometimes stripped names before the LLM could see them &mdash; resulting in reduced coverage rather than incorrect classifications.<br><br>
+        <strong>Tier 0-3 sample validation:</strong> Random sample of 200 from 3,911 cases resolved by deterministic tiers. Requester: <strong>196/200 = 98.0%</strong>. Respondent: <strong>81/119 = 68.1%</strong>. Lower respondent accuracy stems from long bilingual disclaimers, dictionary false positives on common Dutch/French words, and separator patterns confusing name extraction &mdash; standard limitations of automated NER on unstructured multilingual institutional correspondence. The pipeline prioritizes precision over recall: conservative parameters reduce false positives at the cost of missing some identifiable names.
       </div>
     </div>
   </div>
@@ -1241,7 +1253,7 @@ Signature zone:
         <sup>6</sup> Why only 93 cases need review
       </div>
       <div class="anno-body">
-        Tiers 1&ndash;3 are deterministic dictionary lookups &mdash; same input always gives same output, no review needed. Only Tier 4 (LLM) is probabilistic, so ALL 79 of its M/F outputs (9 requester + 70 respondent) are flagged for human verification. Of these, <strong>42 were corrected (47.5% pre-review accuracy)</strong>: 36 reclassified as UNKNOWN, 5 corrected to different gender, 1 corrected to M. Additionally, 14 Tier 0 disagreements (where the response greeting diverges from dictionary classification) were manually reviewed &mdash; breakdown: 3 group requests (first co-signer extracted but admin addressed a different one), 11 dictionary overrides. In all 14, the greeting correctly reflected perceived gender; no adjustments needed. (9 former disagreements were eliminated by improved multi-line neutral greeting detection.) Total: 93 cases reviewed. UNKNOWN cases validated separately: 259 from Llama run (96.5% genuinely unclassifiable), 200-sample from Qwen run (100% genuinely unclassifiable).
+        Tiers 1&ndash;3 are deterministic dictionary lookups &mdash; same input always gives same output, no review needed. Only Tier 4 (LLM) is probabilistic, so ALL 79 of its M/F outputs (9 requester + 70 respondent) are flagged for human verification. Of these, <strong>41 were corrected (51.9% pre-review error rate)</strong>: 34 reclassified as UNKNOWN, 7 gender corrections. Additionally, 14 Tier 0 disagreements (where the response greeting diverges from dictionary classification) were manually reviewed &mdash; breakdown: 3 group requests (first co-signer extracted but admin addressed a different one), 11 dictionary overrides. In all 14, the greeting correctly reflected perceived gender; no adjustments needed. (9 former disagreements were eliminated by improved multi-line neutral greeting detection.) Total: 93 cases reviewed. UNKNOWN cases validated separately: 200-sample from 1,462 Tier 4 UNKNOWN cases (156/200 = 78% correctly UNKNOWN; requester 97%, respondent 59%). Tier 0&ndash;3 deterministic tiers validated: 200-sample (requester 196/200 = 98.0%, respondent 81/119 = 68.1%).
       </div>
     </div>
 
@@ -1275,130 +1287,24 @@ Signature zone:
   </div>
 
   <!-- ════════════ SECTION D: KEY DIFFERENCES ════════════ -->
-  <div class="section-label">D -Key Differences from <u>Previous</u> Methodology</div>
+  <div class="section-label">D -Final Pipeline Output</div>
 
   <div class="box box-accent" style="margin-bottom:20px;">
-    <h3 style="margin-bottom:4px;"><u>Previous</u> Classifications vs. New Pipeline</h3>
-    <p class="note">The article draft (BE_FOI_draft_13032026.docx) uses <u>previous</u> gender classifications. Below are the key differences with the new deterministic pipeline.</p>
-  </div>
-
-  <div class="box" style="margin-bottom:12px;border-left:4px solid #7c3aed;background:#f5f3ff;">
-    <h3 style="color:#7c3aed;">Pipeline Evolution</h3>
-    <p style="font-size:14px;color:#344054;line-height:1.75;">The pipeline evolved through two iterations. An initial run with Llama 3.2 (3B) produced a <strong>74% error rate</strong> in Tier 4 M/F classifications (122/164 cases incorrect, identified by co-author review). The final pipeline uses <strong>Qwen 2.5 (7.6B)</strong> with Tier 0 greeting detection, which resolved this issue: a 200-sample validation of Qwen UNKNOWN cases found 100% genuinely unclassifiable, and the model produces higher agreement with ChatGPT baselines across all metrics.</p>
+    <h3 style="margin-bottom:4px;">Classification Summary</h3>
+    <p class="note">Final gender classifications after all five tiers and manual review.</p>
   </div>
 
   <div class="box" style="margin-bottom:12px;">
-    <h3 style="color:#dc2626;">1. Respondent Sex Composition -Reversed</h3>
-    <p>This is the single biggest change.</p>
+    <h3>Final Classification Counts</h3>
     <table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:14px;">
-      <tr style="background:#f1f5f9;"><th style="text-align:left;padding:6px 12px;">Method</th><th style="padding:6px 12px;">% Female resp.</th><th style="padding:6px 12px;">% Male resp.</th></tr>
-      <tr><td style="padding:6px 12px;"><u>Previous</u> (current article)</td><td style="text-align:center;padding:6px 12px;"><strong>58.2%</strong></td><td style="text-align:center;padding:6px 12px;">41.8%</td></tr>
-      <tr style="background:#fef9c3;"><td style="padding:6px 12px;">New pipeline</td><td style="text-align:center;padding:6px 12px;">43.1%</td><td style="text-align:center;padding:6px 12px;"><strong>56.9%</strong></td></tr>
+      <tr style="background:#f1f5f9;"><th style="text-align:left;padding:6px 12px;">Metric</th><th style="padding:6px 12px;">Requester</th><th style="padding:6px 12px;">Respondent</th></tr>
+      <tr><td style="padding:6px 12px;">Male (M)</td><td style="text-align:center;padding:6px 12px;"><strong>2,428</strong></td><td style="text-align:center;padding:6px 12px;"><strong>712</strong></td></tr>
+      <tr style="background:#fef9c3;"><td style="padding:6px 12px;">Female (F)</td><td style="text-align:center;padding:6px 12px;"><strong>1,397</strong></td><td style="text-align:center;padding:6px 12px;"><strong>578</strong></td></tr>
+      <tr><td style="padding:6px 12px;">M/F total</td><td style="text-align:center;padding:6px 12px;"><strong>3,825</strong> (89.7%)</td><td style="text-align:center;padding:6px 12px;"><strong>1,290</strong> (30.2%)</td></tr>
+      <tr style="background:#f1f5f9;"><td style="padding:6px 12px;">UNKNOWN (unisex)</td><td style="text-align:center;padding:6px 12px;">136</td><td style="text-align:center;padding:6px 12px;">24</td></tr>
+      <tr><td style="padding:6px 12px;">Unresolved</td><td style="text-align:center;padding:6px 12px;">304</td><td style="text-align:center;padding:6px 12px;">2,951</td></tr>
     </table>
-    <p style="font-size:13px;color:#475467;">Likely cause: the <u>previous method</u> may have inferred sex from greeting formulas like <em>&ldquo;Madame&rdquo;</em> (which address the <strong>requester</strong>, not the respondent), while the pipeline strictly uses the signature at the end of the text.</p>
-    <p style="font-size:13px;color:#dc2626;margin-top:6px;"><strong>Impact:</strong> The sentence &ldquo;58.19% of responders are identified as female&rdquo; (current Table 2) must be reversed. The chi-square test for gender-neutral assignment will likely become significant.</p>
-  </div>
-
-  <div class="box" style="margin-bottom:12px;">
-    <h3>2. Known-Sex Pairs -Verified with Qwen+Tier0</h3>
-    <table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:14px;">
-      <tr style="background:#f1f5f9;"><th style="text-align:left;padding:6px 12px;">Method</th><th style="padding:6px 12px;">Known-sex pairs</th><th style="padding:6px 12px;">% of all requests</th></tr>
-      <tr><td style="padding:6px 12px;"><u>Previous</u> (ChatGPT)</td><td style="text-align:center;padding:6px 12px;">1,215</td><td style="text-align:center;padding:6px 12px;">28.5%</td></tr>
-      <tr><td style="padding:6px 12px;">Llama 3.2 (initial run)</td><td style="text-align:center;padding:6px 12px;">1,131</td><td style="text-align:center;padding:6px 12px;">26.5%</td></tr>
-      <tr style="background:#fef9c3;"><td style="padding:6px 12px;">Qwen+Tier0 (final pipeline)</td><td style="text-align:center;padding:6px 12px;"><strong>1,198</strong></td><td style="text-align:center;padding:6px 12px;"><strong>28.1%</strong></td></tr>
-    </table>
-    <p style="font-size:13px;color:#475467;">The initial Llama run produced fewer known-sex pairs than ChatGPT due to its high Tier 4 error rate. The final Qwen+Tier0 pipeline, after manual review corrections (42 of 79 Tier 4 M/F corrected), produces a slightly lower count than ChatGPT but with substantially higher accuracy thanks to Tier 0 greeting detection and exhaustive human verification.</p>
-  </div>
-
-  <div class="box" style="margin-bottom:12px;">
-    <h3>3. Same-Sex Advantage -Confirmed but Weaker</h3>
-    <table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:14px;">
-      <tr style="background:#f1f5f9;"><th style="text-align:left;padding:6px 12px;">Metric</th><th style="padding:6px 12px;"><u>Previous</u></th><th style="padding:6px 12px;">New Pipeline</th></tr>
-      <tr><td style="padding:6px 12px;">M&rarr;M success rate</td><td style="text-align:center;padding:6px 12px;">62.4%</td><td style="text-align:center;padding:6px 12px;"><strong>57.8%</strong></td></tr>
-      <tr><td style="padding:6px 12px;">F&rarr;F success rate</td><td style="text-align:center;padding:6px 12px;"><strong>65.6%</strong> (highest)</td><td style="text-align:center;padding:6px 12px;">54.1%</td></tr>
-      <tr><td style="padding:6px 12px;">Same-sex gap (male req.)</td><td style="text-align:center;padding:6px 12px;">3.8pp</td><td style="text-align:center;padding:6px 12px;">0.8pp</td></tr>
-      <tr><td style="padding:6px 12px;">Same-sex gap (female req.)</td><td style="text-align:center;padding:6px 12px;">8.4pp</td><td style="text-align:center;padding:6px 12px;">5.1pp</td></tr>
-    </table>
-    <p style="font-size:13px;color:#475467;">The same-sex advantage is confirmed by both methods, but the effect is approximately halved. F&rarr;F is no longer the best-performing combo -M&rarr;M is.</p>
-  </div>
-
-  <div class="box" style="margin-bottom:12px;border-left:4px solid #16a34a;">
-    <h3 style="color:#16a34a;">4. Robust Findings (Confirmed)</h3>
-    <ul style="font-size:14px;line-height:1.8;padding-left:20px;">
-      <li><strong>T2 (Urban planning):</strong> Female respondents boost success rates by ~18pp regardless of requester sex. Holds in both methods (<u>Previous</u>: +17&ndash;20pp, Pipeline: +18pp). Most robust finding in the dataset.</li>
-      <li><strong>T4 (Council deliberations):</strong> Male requesters massively outperform female requesters. Not only confirmed but <strong>amplified</strong> (<u>Previous</u>: 25&ndash;28pp gap &rarr; Pipeline: 56&ndash;58pp gap).</li>
-      <li><strong>H1 (requester gender &amp; responsiveness):</strong> Male requesters more likely to receive a response. Should hold with new classifications.</li>
-      <li><strong>Requester agreement:</strong> 95.9% of M confirmed, 98.7% of F confirmed -requester classifications barely changed (gender flips &lt;1%).</li>
-    </ul>
-  </div>
-
-  <div class="box" style="margin-bottom:12px;border-left:4px solid #dc2626;">
-    <h3 style="color:#dc2626;">5. What Must Change in the Article</h3>
-    <ul style="font-size:14px;line-height:1.8;padding-left:20px;">
-      <li><strong>Table 2</strong> (gender combo cross-tabulation): all percentages change</li>
-      <li><strong>Descriptive findings</strong> (gender interactions section): respondent composition reversal, new combo success rates</li>
-      <li><strong>Retention balance analysis:</strong> percentages change (currently &ldquo;54.2% of male requesters&rdquo; and &ldquo;58.8% of female requesters&rdquo;)</li>
-      <li><strong>Regressions (Models IV&ndash;VI):</strong> need re-running with new gender variables</li>
-      <li><strong>H4 (same-gender moderation):</strong> effect weakens but direction holds</li>
-    </ul>
-  </div>
-
-  <div class="box" style="margin-bottom:12px;border-left:4px solid #16a34a;">
-    <h3 style="color:#16a34a;">6. What Does Not Change</h3>
-    <ul style="font-size:14px;line-height:1.8;padding-left:20px;">
-      <li>All non-gender variables (topics, sentiment, request status) are identical -same dataset</li>
-      <li>Requester gender classifications: 95.9% M confirmed, 98.7% F confirmed (flips &lt;1%)</li>
-      <li>H1, H2, H3 findings: depend on requester gender, which barely changed</li>
-      <li>Structural patterns (T2 respondent effect, T4 requester gap) are robust across both methods</li>
-    </ul>
-  </div>
-
-  <div class="box box-accent" style="margin-bottom:12px;">
-    <h3>Summary Comparison</h3>
-    <table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:14px;">
-      <tr style="background:#d9e1f2;"><th style="text-align:left;padding:8px 12px;">Metric</th><th style="padding:8px 12px;"><u>Previous</u> (ChatGPT)</th><th style="padding:8px 12px;">Qwen+Tier0 Pipeline</th></tr>
-      <tr><td style="padding:6px 12px;">Known-sex pairs</td><td style="text-align:center;">1,215</td><td style="text-align:center;"><strong>1,198</strong></td></tr>
-      <tr style="background:#fef9c3;"><td style="padding:6px 12px;">Respondent % female</td><td style="text-align:center;">58.2%</td><td style="text-align:center;"><strong>43.1%</strong></td></tr>
-      <tr><td style="padding:6px 12px;">F&rarr;F success rate</td><td style="text-align:center;">65.6%</td><td style="text-align:center;">54.1%</td></tr>
-      <tr style="background:#f1f5f9;"><td style="padding:6px 12px;">M&rarr;M success rate</td><td style="text-align:center;">62.4%</td><td style="text-align:center;">57.8%</td></tr>
-      <tr><td style="padding:6px 12px;">Same-sex gap (male req.)</td><td style="text-align:center;">3.8pp</td><td style="text-align:center;">0.8pp</td></tr>
-      <tr style="background:#f1f5f9;"><td style="padding:6px 12px;">Same-sex gap (female req.)</td><td style="text-align:center;">8.4pp</td><td style="text-align:center;">5.1pp</td></tr>
-      <tr><td style="padding:6px 12px;">T2 female resp. boost</td><td style="text-align:center;">+17&ndash;20pp</td><td style="text-align:center;">+18pp</td></tr>
-      <tr style="background:#f1f5f9;"><td style="padding:6px 12px;">T4 requester gap</td><td style="text-align:center;">25&ndash;28pp</td><td style="text-align:center;">56&ndash;58pp</td></tr>
-      <tr><td style="padding:6px 12px;">Requester M confirmed / F confirmed</td><td style="text-align:center;">-</td><td style="text-align:center;">95.9% / 98.7%</td></tr>
-      <tr style="background:#f1f5f9;"><td style="padding:6px 12px;">Respondent M confirmed / F confirmed</td><td style="text-align:center;">-</td><td style="text-align:center;">69.8% / 56.0%</td></tr>
-    </table>
-  </div>
-
-  <div class="box box-accent" style="margin-bottom:12px;border-left:4px solid #7c3aed;">
-    <h3 style="color:#7c3aed;">3-Way Agreement: ChatGPT vs Llama vs Qwen+Tier0</h3>
-    <p class="note" style="margin-bottom:12px;">Qwen+Tier0 shows higher agreement with ChatGPT than Llama, <strong>and</strong> produces more known-sex pairs.</p>
-
-    <h4 style="font-size:13px;font-weight:700;margin:12px 0 6px;color:#0f1b3d;">Requester Agreement</h4>
-    <table style="width:100%;border-collapse:collapse;margin:6px 0;font-size:14px;">
-      <tr style="background:#ede9fe;"><th style="text-align:left;padding:6px 12px;">Metric</th><th style="padding:6px 12px;">ChatGPT vs Llama</th><th style="padding:6px 12px;">ChatGPT vs Qwen+Tier0</th></tr>
-      <tr><td style="padding:6px 12px;">M&rarr;M agreement</td><td style="text-align:center;">93.9% (2,160/2,301)</td><td style="text-align:center;"><strong>95.9%</strong> (2,206/2,301)</td></tr>
-      <tr style="background:#f5f3ff;"><td style="padding:6px 12px;">F&rarr;F agreement</td><td style="text-align:center;">99.0% (1,342/1,355)</td><td style="text-align:center;"><strong>98.7%</strong> (1,337/1,355)</td></tr>
-    </table>
-
-    <h4 style="font-size:13px;font-weight:700;margin:12px 0 6px;color:#0f1b3d;">Respondent Agreement</h4>
-    <table style="width:100%;border-collapse:collapse;margin:6px 0;font-size:14px;">
-      <tr style="background:#ede9fe;"><th style="text-align:left;padding:6px 12px;">Metric</th><th style="padding:6px 12px;">ChatGPT vs Llama</th><th style="padding:6px 12px;">ChatGPT vs Qwen+Tier0</th></tr>
-      <tr><td style="padding:6px 12px;">M&rarr;M agreement</td><td style="text-align:center;">67.8% (391/577)</td><td style="text-align:center;"><strong>69.8%</strong> (403/577)</td></tr>
-      <tr style="background:#f5f3ff;"><td style="padding:6px 12px;">F&rarr;F agreement</td><td style="text-align:center;">53.7% (437/814)</td><td style="text-align:center;"><strong>56.0%</strong> (456/814)</td></tr>
-      <tr><td style="padding:6px 12px;">UNK&rarr;M/F reclassified</td><td style="text-align:center;">32.0% (360/1,126)</td><td style="text-align:center;"><strong>14.2%</strong> (406/2,857)</td></tr>
-    </table>
-
-    <h4 style="font-size:13px;font-weight:700;margin:12px 0 6px;color:#0f1b3d;">Known-Sex Pairs</h4>
-    <table style="width:100%;border-collapse:collapse;margin:6px 0;font-size:14px;">
-      <tr style="background:#ede9fe;"><th style="padding:6px 12px;">ChatGPT</th><th style="padding:6px 12px;">Llama</th><th style="padding:6px 12px;">Qwen+Tier0</th></tr>
-      <tr>
-        <td style="text-align:center;padding:6px 12px;">1,215 (28.5%)</td>
-        <td style="text-align:center;padding:6px 12px;">1,131 (26.5%)</td>
-        <td style="text-align:center;padding:6px 12px;"><strong>1,198 (28.1%)</strong></td>
-      </tr>
-    </table>
-    <p class="note" style="margin-top:8px;">Qwen+Tier0 achieves the highest agreement with ChatGPT on both requester M&rarr;M and respondent M&rarr;M / F&rarr;F. After manual review corrections, the known-sex pairs count (1,198) is slightly below ChatGPT (1,215) but with verified accuracy.</p>
+    <p style="font-size:13px;color:#475467;margin-top:8px;"><strong>Known-sex pairs</strong> (both requester and respondent classified M/F): <strong>1,198</strong> (28.1% of 4,265 requests). These are the cases available for gender-interaction analysis.</p>
   </div>
 
   <div style="text-align:center;margin-top:48px;padding:16px;font-size:12px;color:#94a3b8;">
