@@ -48,9 +48,9 @@ const CONFIG = {
   tier4_resp_sent: 2991,
 
   // Respondent Final (POST-REVIEW)
-  final_resp_mf: 1290,
+  final_resp_mf: 1293,
   final_resp_both: 24,
-  final_resp_unknown: 2951,
+  final_resp_unknown: 2948,
 
   // No reply
   noReply: 1754,
@@ -66,11 +66,11 @@ const CONFIG = {
   // Agreement
   agree_req_pairs: 3568,
   agree_req_agree: 3551,
-  agree_resp_pairs: 945,
-  agree_resp_agree: 851,
+  agree_resp_pairs: 937,
+  agree_resp_agree: 847,
 
   // Known-sex pairs (POST-REVIEW)
-  knownSexPairs: 1198,
+  knownSexPairs: 1201,
 
   // Extraction
   extract_req_heuristic: 3955,
@@ -78,7 +78,7 @@ const CONFIG = {
   extract_req_single: 60,
   extract_req_none: 150,
   extract_resp_heuristic: 1065,
-  extract_resp_spacy: 188,
+  extract_resp_spacy: 187,
   extract_resp_single: 21,
   extract_resp_noIncoming: 1754,
   extract_resp_noName: 1237,
@@ -954,7 +954,7 @@ const CONFIG = {
       <div class="box">
         <h3>Multi-Method Name Extraction</h3>
         <ul class="sub-list">
-          <li>Heuristic: capitalized words &rarr; <span class="num">1,065</span></li>
+          <li>Heuristic: capitalized words &rarr; <span class="num">1,066</span></li>
           <li>spaCy NER: PER entities &rarr; <span class="num">188</span></li>
           <li>Single-name fallback &rarr; <span class="num">21</span></li>
         </ul>
@@ -1036,19 +1036,19 @@ const CONFIG = {
       <div class="step-tag">S7 -Final Classification (sex_final)</div>
       <div class="result-row">
         <div class="result-box result-green">
-          <span class="big-num">1,290</span>
-          M/F -30.2%
+          <span class="big-num">1,293</span>
+          M/F -30.3%
         </div>
         <div class="result-box result-amber">
           <span class="big-num">24</span>
           BOTH<sup>4</sup> -0.6%
         </div>
         <div class="result-box result-red">
-          <span class="big-num">2,951</span>
-          UNKNOWN -69.2%
+          <span class="big-num">2,948</span>
+          UNKNOWN -69.1%
         </div>
       </div>
-      <div class="secondary-stat">Among 2,511 with reply: <span class="num">49.8%</span> classified by Tiers 1–3 (30.2% full pipeline incl. Tier 4)</div>
+      <div class="secondary-stat">Among 2,511 with reply: <span class="num">49.8%</span> classified by Tiers 1–3 (30.3% full pipeline incl. Tier 4)</div>
       <div class="flag-note">70 Tier 4 cases flagged TO REVIEW</div>
     </div>
   </div>
@@ -1073,7 +1073,7 @@ const CONFIG = {
           <div style="font-weight:700;font-size:15px;color:#16a34a;margin-bottom:10px;">Qwen 2.5 (7.6B) &mdash; final</div>
           <div style="font-size:14px;line-height:1.8;color:#1e293b;">
             Tier 4 M/F cases: <strong>79</strong> (9 req + 70 resp)<br>
-            Error rate: <strong style="color:#f59e0b;">51.9%</strong> (41/79 &rarr; corrected to 100%)<br>
+            Error rate: <strong style="color:#f59e0b;">48.1%</strong> (38/79 &rarr; corrected to 100%)<br>
             More conservative, fewer false M/F
           </div>
         </div>
@@ -1092,7 +1092,7 @@ const CONFIG = {
           <div style="font-size:12px;color:#64748b;">Resolved by Tier 0 (new)</div>
         </div>
       </div>
-      <p style="font-size:13px;color:#475467;margin-top:12px;">After exhaustive manual review and 41 corrections, all Tier 4 classifications are human-verified (100% post-review accuracy). The final pipeline produces <strong>1,198 known-sex pairs</strong> (28.1% of 4,265 requests) available for gender-based analysis.</p>
+      <p style="font-size:13px;color:#475467;margin-top:12px;">After exhaustive manual review and 38 corrections, all Tier 4 classifications are human-verified (100% post-review accuracy). The final pipeline produces <strong>1,201 known-sex pairs</strong> (28.2% of 4,265 requests) available for gender-based analysis.</p>
     </div>
 
     <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:16px 20px;margin-bottom:16px;">
@@ -1114,11 +1114,11 @@ const CONFIG = {
       <p style="font-size:14px;color:#475467;margin-top:6px;">9 requester + 70 respondent (Tier 4) + 14 Tier 0 disagreements &mdash; all undergo exhaustive manual verification</p>
 
       <div style="margin-top:12px;padding:12px 16px;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;font-size:13px;color:#92400e;">
-        <strong>Tier 4 review outcome: 41 of 79 corrected (51.9% pre-review accuracy &rarr; 100% post-review; all 41 fixed in the final dataset)</strong><br><br>
+        <strong>Tier 4 review outcome: 38 of 79 corrected (48.1% pre-review error rate &rarr; 100% post-review; all 38 fixed in the final dataset)</strong><br><br>
         <strong>Corrections breakdown:</strong><br>
-        &bull; 34 cases &rarr; reclassified as UNKNOWN<br>
+        &bull; 31 cases &rarr; reclassified as UNKNOWN<br>
         &bull; 7 cases &rarr; gender corrections<br><br>
-        <em>Summary: 41 corrections applied during manual review (pre-review Tier 4 accuracy was 48.1%).</em>
+        <em>Summary: 38 corrections applied during manual review (pre-review Tier 4 accuracy was 51.9%).</em>
       </div>
 
       <div style="margin-top:10px;padding:12px 16px;background:#ede9fe;border:1px solid #c4b5fd;border-radius:8px;font-size:13px;color:#5b21b6;">
@@ -1130,7 +1130,7 @@ const CONFIG = {
       </div>
 
       <div style="margin-top:10px;padding:12px 16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:13px;color:#166534;">
-        <strong>UNKNOWN validation:</strong> Random sample of 200 from 1,462 Tier 4 UNKNOWN cases. Result: <strong>156/200 (78%)</strong> correctly UNKNOWN (requester: 97%, respondent: 59%). The lower respondent rate reflects conservative LLM behaviour on complex multilingual inputs and preprocessing that sometimes stripped names before the LLM could see them &mdash; resulting in reduced coverage rather than incorrect classifications.<br><br>
+        <strong>UNKNOWN validation:</strong> Random sample of 200 from 1,463 Tier 4 UNKNOWN cases. Result: <strong>156/200 (78%)</strong> correctly UNKNOWN (requester: 97%, respondent: 59%). The lower respondent rate reflects conservative LLM behaviour on complex multilingual inputs and preprocessing that sometimes stripped names before the LLM could see them &mdash; resulting in reduced coverage rather than incorrect classifications.<br><br>
         <strong>Tier 0-3 sample validation:</strong> Random sample of 200 from 3,911 cases resolved by deterministic tiers. Requester: <strong>196/200 = 98.0%</strong>. Respondent: <strong>81/119 = 68.1%</strong>. Lower respondent accuracy stems from long bilingual disclaimers, dictionary false positives on common Dutch/French words, and separator patterns confusing name extraction &mdash; standard limitations of automated NER on unstructured multilingual institutional correspondence. The pipeline prioritizes precision over recall: conservative parameters reduce false positives at the cost of missing some identifiable names.
       </div>
     </div>
@@ -1233,7 +1233,7 @@ Signature zone:
       <div class="anno-body">
         Names like Claude, Dominique, or Camille are used for both sexes in French. Larousse marks these as <em>"mixte"</em>. For Statbel, a conservative 90% threshold was applied when building the reference database: a name is classified M or F only when &ge;90% of bearers in Belgian civil registry data are of that sex, ensuring high confidence. Names below this threshold are classified as BOTH (unisex) rather than M/F -they are never counted among the gendered results.<br><br>
         <strong>Limitation:</strong> In theory, a small number of UNKNOWN cases from the pipeline could be names that a less conservative threshold might have resolved. However, this concerns at most a handful of cases: Tier 2 (Statbel) classifies only <strong>52 requester</strong> and <strong>40 respondent</strong> cases in total -a marginal share of the overall sample, where the vast majority are already identified by Tier 1 (Larousse) and Tier 3 (WGND). The practical impact of this threshold on the final UNKNOWN count is therefore negligible.<br><br>
-        <strong>Future integration:</strong> The 135 requester and 24 respondent BOTH cases could potentially be partially resolved through probabilistic gender assignment -a standard technique in gender studies (Blevins &amp; Mullen, 2015; Lax-Martinez et al., 2021). Rather than discarding unisex names, each case would be weighted by the actual male/female frequency ratio in population data (e.g., if Statbel shows 62% of &ldquo;Dominique&rdquo; bearers in Belgium are female, the case would count as 0.62 F + 0.38 M in the statistical analysis). This was not implemented in the current pipeline, which uses a conservative binary approach, but could be explored in future iterations to recover some of the BOTH cases without sacrificing confidence.
+        <strong>Future integration:</strong> The 136 requester and 24 respondent BOTH cases could potentially be partially resolved through probabilistic gender assignment -a standard technique in gender studies (Blevins &amp; Mullen, 2015; Lax-Martinez et al., 2021). Rather than discarding unisex names, each case would be weighted by the actual male/female frequency ratio in population data (e.g., if Statbel shows 62% of &ldquo;Dominique&rdquo; bearers in Belgium are female, the case would count as 0.62 F + 0.38 M in the statistical analysis). This was not implemented in the current pipeline, which uses a conservative binary approach, but could be explored in future iterations to recover some of the BOTH cases without sacrificing confidence.
       </div>
     </div>
 
@@ -1253,7 +1253,7 @@ Signature zone:
         <sup>6</sup> Why only 93 cases need review
       </div>
       <div class="anno-body">
-        Tiers 1&ndash;3 are deterministic dictionary lookups &mdash; same input always gives same output, no review needed. Only Tier 4 (LLM) is probabilistic, so ALL 79 of its M/F outputs (9 requester + 70 respondent) are flagged for human verification. Of these, <strong>41 were corrected (51.9% pre-review error rate)</strong>: 34 reclassified as UNKNOWN, 7 gender corrections. Additionally, 14 Tier 0 disagreements (where the response greeting diverges from dictionary classification) were manually reviewed &mdash; breakdown: 3 group requests (first co-signer extracted but admin addressed a different one), 11 dictionary overrides. In all 14, the greeting correctly reflected perceived gender; no adjustments needed. (9 former disagreements were eliminated by improved multi-line neutral greeting detection.) Total: 93 cases reviewed. UNKNOWN cases validated separately: 200-sample from 1,462 Tier 4 UNKNOWN cases (156/200 = 78% correctly UNKNOWN; requester 97%, respondent 59%). Tier 0&ndash;3 deterministic tiers validated: 200-sample (requester 196/200 = 98.0%, respondent 81/119 = 68.1%).
+        Tiers 1&ndash;3 are deterministic dictionary lookups &mdash; same input always gives same output, no review needed. Only Tier 4 (LLM) is probabilistic, so ALL 79 of its M/F outputs (9 requester + 70 respondent) are flagged for human verification. Of these, <strong>38 were corrected (48.1% pre-review error rate)</strong>: 31 reclassified as UNKNOWN, 7 gender corrections. Additionally, 14 Tier 0 disagreements (where the response greeting diverges from dictionary classification) were manually reviewed &mdash; breakdown: 3 group requests (first co-signer extracted but admin addressed a different one), 11 dictionary overrides. In all 14, the greeting correctly reflected perceived gender; no adjustments needed. (9 former disagreements were eliminated by improved multi-line neutral greeting detection.) Total: 93 cases reviewed. UNKNOWN cases validated separately: 200-sample from 1,463 Tier 4 UNKNOWN cases (156/200 = 78% correctly UNKNOWN; requester 97%, respondent 59%). Tier 0&ndash;3 deterministic tiers validated: 200-sample (requester 196/200 = 98.0%, respondent 81/119 = 68.1%).
       </div>
     </div>
 
@@ -1298,13 +1298,14 @@ Signature zone:
     <h3>Final Classification Counts</h3>
     <table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:14px;">
       <tr style="background:#f1f5f9;"><th style="text-align:left;padding:6px 12px;">Metric</th><th style="padding:6px 12px;">Requester</th><th style="padding:6px 12px;">Respondent</th></tr>
-      <tr><td style="padding:6px 12px;">Male (M)</td><td style="text-align:center;padding:6px 12px;"><strong>2,428</strong></td><td style="text-align:center;padding:6px 12px;"><strong>712</strong></td></tr>
+      <tr><td style="padding:6px 12px;">Male (M)</td><td style="text-align:center;padding:6px 12px;"><strong>2,428</strong></td><td style="text-align:center;padding:6px 12px;"><strong>715</strong></td></tr>
       <tr style="background:#fef9c3;"><td style="padding:6px 12px;">Female (F)</td><td style="text-align:center;padding:6px 12px;"><strong>1,397</strong></td><td style="text-align:center;padding:6px 12px;"><strong>578</strong></td></tr>
-      <tr><td style="padding:6px 12px;">M/F total</td><td style="text-align:center;padding:6px 12px;"><strong>3,825</strong> (89.7%)</td><td style="text-align:center;padding:6px 12px;"><strong>1,290</strong> (30.2%)</td></tr>
+      <tr><td style="padding:6px 12px;">M/F total</td><td style="text-align:center;padding:6px 12px;"><strong>3,825</strong> (89.7%)</td><td style="text-align:center;padding:6px 12px;"><strong>1,293</strong> (30.3%)</td></tr>
       <tr style="background:#f1f5f9;"><td style="padding:6px 12px;">UNKNOWN (unisex)</td><td style="text-align:center;padding:6px 12px;">136</td><td style="text-align:center;padding:6px 12px;">24</td></tr>
-      <tr><td style="padding:6px 12px;">Unresolved</td><td style="text-align:center;padding:6px 12px;">304</td><td style="text-align:center;padding:6px 12px;">2,951</td></tr>
+      <tr><td style="padding:6px 12px;">Unresolved</td><td style="text-align:center;padding:6px 12px;">304</td><td style="text-align:center;padding:6px 12px;">2,948</td></tr>
     </table>
-    <p style="font-size:13px;color:#475467;margin-top:8px;"><strong>Known-sex pairs</strong> (both requester and respondent classified M/F): <strong>1,198</strong> (28.1% of 4,265 requests). These are the cases available for gender-interaction analysis.</p>
+    <p style="font-size:13px;color:#475467;margin-top:8px;"><strong>Known-sex pairs</strong> (both requester and respondent classified M/F): <strong>1,201</strong> (28.2% of 4,265 requests). These are the cases available for gender-interaction analysis.</p>
+    <p style="font-size:12px;color:#64748b;margin-top:8px;font-style:italic;"><strong>Note on final dataset labels:</strong> In the final analysis dataset (Dataset_final.xlsx), BOTH (unisex) and UNKNOWN are merged into a single &ldquo;UNKNOWN&rdquo; label &mdash; three values only: MALE, FEMALE, UNKNOWN. The distinction is maintained in the enriched dataset (Dataset_enriched.xlsx) for audit purposes.</p>
   </div>
 
   <div style="text-align:center;margin-top:48px;padding:16px;font-size:12px;color:#94a3b8;">
