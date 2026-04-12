@@ -1,0 +1,75 @@
+---
+layout: app-detail
+title: SoundClaw
+tagline: AI-powered DAW assistant that controls Ableton + Serum via natural language
+category: Music & Audio
+status: development
+---
+
+<div class="section">
+  <h2>What It Does</h2>
+  <p>SoundClaw is a VST3 plugin that embeds an AI chat interface directly inside your DAW. You type natural language prompts like "make the bass darker" or "add reverb to track 3" and SoundClaw translates them into actual DAW actions — controlling Ableton Live parameters, Serum/Serum 2 synthesizer settings, and plugin chains in real time.</p>
+</div>
+
+<div class="section">
+  <h2>Problem It Solves</h2>
+  <p>Music producers spend hours tweaking knobs and navigating menus. SoundClaw turns sound design into a conversation: describe what you want and the AI figures out which parameters to change. It bridges the gap between creative intent and technical execution, especially for producers who know what they want to hear but not which knob to turn.</p>
+</div>
+
+<div class="section">
+  <h2>Key Features</h2>
+  <ul>
+    <li><strong>124 DAW commands</strong> — transport, mixing, routing, plugin control, loop expansion</li>
+    <li><strong>Claude API agent loop</strong> — multi-step reasoning with tool use for complex requests</li>
+    <li><strong>Ableton Live integration</strong> — via custom Remote Script (Python, installed in User Library)</li>
+    <li><strong>Serum / Serum 2 control</strong> — direct parameter manipulation via OSC or MIDI CC</li>
+    <li><strong>Chat UI inside the plugin</strong> — no browser, no external app, embedded in the DAW workflow</li>
+    <li><strong>Loop expansion</strong> — AI-assisted arrangement from loops to full sections</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>Tech Stack</h2>
+  <div class="tech-stack">
+    <span class="tech-tag">JUCE (C++)</span>
+    <span class="tech-tag">VST3 / AU</span>
+    <span class="tech-tag">Claude API</span>
+    <span class="tech-tag">Python (Remote Script)</span>
+    <span class="tech-tag">Ableton Live SDK</span>
+    <span class="tech-tag">OSC Protocol</span>
+  </div>
+</div>
+
+<div class="section">
+  <h2>System Architecture</h2>
+  <div class="architecture-box">
+┌─────────────────────────────┐
+│      SoundClaw VST3         │
+│  ┌───────────────────────┐  │
+│  │  Chat UI (JUCE GUI)   │  │
+│  └──────────┬────────────┘  │
+│             ▼               │
+│  ┌───────────────────────┐  │
+│  │  Claude API Agent     │  │
+│  │  (tool-use loop)      │  │
+│  └──────────┬────────────┘  │
+└─────────────┼───────────────┘
+              ▼
+┌─────────────────────────────┐
+│  Ableton Remote Script      │
+│  (Python, 124 commands)     │
+│  ~/Music/Ableton/User       │
+│  Library/Remote Scripts/    │
+└──────────┬──────────────────┘
+           ▼
+┌─────────────────────────────┐
+│  Ableton Live               │
+│  + Serum/Serum 2            │
+│  (parameter changes)        │
+└─────────────────────────────┘</div>
+</div>
+
+<div class="section">
+  <h2>Why I Built This</h2>
+  <p>I produce music daily and I got tired of the disconnect between knowing what a track needs and spending 20 minutes finding the right parameter. SoundClaw started as an experiment ("what if I could just tell my DAW what to do?") and evolved into a full agent system with 124 commands. The goal is to make the DAW feel like a collaborator, not a tool.</p>
+</div>

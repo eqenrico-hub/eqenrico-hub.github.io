@@ -1,0 +1,102 @@
+---
+layout: app-detail
+title: 100yours.com
+tagline: Branded websites for music producers — $49, no monthly fees
+category: Business
+status: deployed
+---
+
+<div class="section">
+  <h2>What It Does</h2>
+  <p>100yours.com is a platform that gives music producers their own branded website with a retro desktop OS interface. Each producer gets a fully customizable site with a beats store, merch shop, audio player, photo gallery, contact form, and more — all inside a draggable window manager that looks like Windows XP, Mac OS 9, Win98, or other classic operating systems.</p>
+  <p><strong>Live:</strong> <a href="https://100yours.com" target="_blank" style="color:#2563eb;">100yours.com</a></p>
+</div>
+
+<div class="section">
+  <h2>Problem It Solves</h2>
+  <p>Producers on BeatStars, Airbit, and Traktrain all look the same — template-locked, competing with other sellers on the same page, and paying monthly fees forever. 100yours gives producers a unique visual identity (retro OS themes), full ownership ($49 one-time, no subscriptions), and a page where only their beats appear.</p>
+</div>
+
+<div class="section">
+  <h2>Key Features</h2>
+  <ul>
+    <li><strong>7 OS themes</strong> — Windows XP, Win98, Mac OS 9, Leopard, Win7, System 1 (1984), BIOS Mode</li>
+    <li><strong>Beats Store</strong> — up to 120 beats, audio auto-compressed to 128kbps, cover images auto-compressed</li>
+    <li><strong>Merch Store</strong> — unlimited products with Stripe + PayPal checkout</li>
+    <li><strong>Loops Store</strong> — subscription section + loop items with audio preview</li>
+    <li><strong>Desktop MP3s</strong> — drag-and-drop MP3 icons on the desktop with player windows</li>
+    <li><strong>Video Player</strong> — 7 themed media player skins (Winamp, WMP12, QuickTime, HyperCard, etc.)</li>
+    <li><strong>Photo Dump</strong> — up to 50 photos, auto-compressed</li>
+    <li><strong>Draw Window</strong> — visitors submit drawings, producer approves/deletes</li>
+    <li><strong>Audio Tagline Watermark</strong> — voice tag plays over all audio at configurable intervals</li>
+    <li><strong>Per-window styling</strong> — 130+ Google Fonts, 20 colors, 12 gradients, zoom control</li>
+    <li><strong>Custom templates</strong> — save/load theme + icon + wallpaper snapshots</li>
+    <li><strong>Free-form icon positioning</strong> — drag desktop icons anywhere</li>
+    <li><strong>About window</strong> — 5 layouts: Classic, D&amp;D Character Sheet, Terminal, Trading Card, Business Card</li>
+    <li><strong>Visualizer</strong> — audio-reactive bars, wave, circular, mirror, particles</li>
+    <li><strong>Undo/Redo</strong> — 20-action DB snapshot-based undo system</li>
+    <li><strong>500MB storage quota</strong> per site with usage tracking</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>Tech Stack</h2>
+  <div class="tech-stack">
+    <span class="tech-tag">React</span>
+    <span class="tech-tag">Vite</span>
+    <span class="tech-tag">Tailwind CSS</span>
+    <span class="tech-tag">Supabase</span>
+    <span class="tech-tag">Cloudflare Pages</span>
+    <span class="tech-tag">Cloudflare Workers</span>
+    <span class="tech-tag">Stripe Connect</span>
+    <span class="tech-tag">PayPal</span>
+    <span class="tech-tag">GitHub Actions</span>
+    <span class="tech-tag">Resend (email)</span>
+    <span class="tech-tag">lamejs</span>
+    <span class="tech-tag">Web Audio API</span>
+  </div>
+</div>
+
+<div class="section">
+  <h2>System Architecture</h2>
+  <div class="architecture-box">
+Buyer pays ($49)
+    │
+    ▼
+┌──────────────────┐
+│ Stripe / PayPal  │
+│   Webhook        │
+└────────┬─────────┘
+         ▼
+┌──────────────────┐     ┌──────────────────┐
+│ Cloudflare Worker│────▶│    Supabase      │
+│ (auto-provision) │     │ (DB + Storage)   │
+└────────┬─────────┘     └──────────────────┘
+         ▼
+┌──────────────────┐     ┌──────────────────┐
+│  GitHub Action   │────▶│ Cloudflare Pages │
+│  (deploy site)   │     │ producer-{id}    │
+└──────────────────┘     └────────┬─────────┘
+                                  ▼
+                         ┌──────────────────┐
+                         │  Resend Email    │
+                         │ (login creds)    │
+                         └──────────────────┘
+
+Zero manual work: fully automated from payment to live site.</div>
+</div>
+
+<div class="section">
+  <h2>Business Model</h2>
+  <ul>
+    <li><strong>Price:</strong> $49 one-time (no monthly fees, ever)</li>
+    <li><strong>Hosting:</strong> included, on Cloudflare Pages (free tier, unlimited bandwidth)</li>
+    <li><strong>Revenue:</strong> producers keep 100% of their sales (Stripe/PayPal goes directly to them)</li>
+    <li><strong>Competitive edge:</strong> custom domain included at $49 — BeatStars charges &euro;209/year for this</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>Why I Built This</h2>
+  <p>As a music producer myself, I was frustrated by how every BeatStars page looks identical. I wanted to give producers a website that actually reflects their visual identity — something fun, memorable, and entirely theirs. The retro OS concept came from the idea that a producer's website should feel like entering their world, not browsing a template catalog.</p>
+</div>
