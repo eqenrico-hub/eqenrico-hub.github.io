@@ -1,0 +1,130 @@
+---
+layout: app-detail
+title: "Everyone is equal before the law"
+tagline: Assessing gendered information needs and administrative responsiveness
+category: Research
+status: submitted
+---
+
+<div class="section">
+  <h2>Paper</h2>
+  <p><strong>"Everyone is equal before the law": Assessing gendered information needs and administrative responsiveness</strong></p>
+  <p style="color:#666; font-size:14px;">
+    Julia Trautendorfer (JKU Linz), <strong>Enrico Quaglia</strong> (University of Genoa / ULB Brussels), Giovanni Esposito (ULB Brussels), Maximilien Mabillard (ULB Brussels)
+  </p>
+  <p style="color:#888; font-size:13px; margin-top:4px;">
+    Submitted to <strong>ENPA Inaugural Conference 2026</strong> &mdash; "Shaping the Future of Public Administration in Europe Together"<br>
+    Bucharest University of Economic Studies, Romania &mdash; 22&ndash;25 April 2026
+  </p>
+</div>
+
+<div class="section">
+  <h2>What This Paper Does</h2>
+  <p>This paper investigates whether gender &mdash; of both the requester and the responding official &mdash; shapes how public administrations handle Freedom of Information (FOI) requests. Using 4,265 real FOI requests submitted via Belgium's Transparencia.be platform (2016&ndash;2025), it tests whether the democratic promise of equal treatment holds in practice.</p>
+</div>
+
+<div class="section">
+  <h2>Research Questions</h2>
+  <ul>
+    <li>Do public administrations respond differently to FOI requests depending on the requester's gender?</li>
+    <li>Does the respondent's gender influence how requests are handled?</li>
+    <li>Do interactions between requester and respondent gender create systematic patterns of bias?</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>Key Findings</h2>
+  <ul>
+    <li><strong>1,215 FOI requests</strong> with known requester AND respondent gender analyzed via multinomial logistic regression</li>
+    <li>Three outcome variables: response likelihood, response time, and information completeness</li>
+    <li>Evidence of discretionary patterns in how bureaucrats process requests based on gender signals</li>
+    <li>Contributes to street-level bureaucracy theory (Lipsky, 2010; Chang &amp; Brewer, 2023) and feminist institutionalism (Durose &amp; Lowndes, 2024)</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>My Contribution</h2>
+  <p>As second author, I was responsible for:</p>
+  <ul>
+    <li><strong>Methodology design</strong> &mdash; built the entire 5-tier gender classification pipeline (see below)</li>
+    <li><strong>Data preparation</strong> &mdash; scraped, cleaned, and structured 4,265 FOI request folders (10,002 outgoing + 7,088 incoming documents)</li>
+    <li><strong>Quantitative analysis</strong> &mdash; topic modeling, sentiment analysis, statistical models</li>
+    <li><strong>3 interactive dashboards</strong> &mdash; prototypes for citizens, researchers, and public administrations</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>Gender Classification Pipeline</h2>
+  <p>The core methodological contribution is a 5-tier deterministic + LLM cascade that classifies requester and respondent gender from unstructured FOI text:</p>
+  <ul>
+    <li><strong>Tier 0</strong> &mdash; Response greeting detection ("Monsieur"/"Madame") &rarr; perceived gender (takes precedence)</li>
+    <li><strong>Tier 1</strong> &mdash; Larousse dictionary lookup (8,712 French names)</li>
+    <li><strong>Tier 2</strong> &mdash; Statbel Belgian registry (8,146 additional names)</li>
+    <li><strong>Tier 3</strong> &mdash; Combined Larousse + Statbel with gender agreement</li>
+    <li><strong>Tier 4</strong> &mdash; Qwen 2.5 LLM fallback (7.6B, locally deployed via Ollama)</li>
+  </ul>
+  <p style="margin-top:12px;">
+    <strong>Results:</strong> 3,825 requesters classified M/F (89.7%) &bull; 1,293 respondents classified M/F &bull; 1,201 known-sex pairs for regression analysis
+  </p>
+  <p style="margin-top:8px;">
+    <a href="/pipeline.html" style="color:#2563eb; text-decoration:underline;">View interactive pipeline visualization &rarr;</a><br>
+    <a href="/pipeline-animated.html" style="color:#2563eb; text-decoration:underline;">View animated pipeline walkthrough &rarr;</a>
+  </p>
+</div>
+
+<div class="section">
+  <h2>Tech Stack</h2>
+  <div class="tech-stack">
+    <span class="tech-tag">Python</span>
+    <span class="tech-tag">Qwen 2.5 (Ollama)</span>
+    <span class="tech-tag">spaCy NER</span>
+    <span class="tech-tag">NLTK</span>
+    <span class="tech-tag">scikit-learn</span>
+    <span class="tech-tag">Pandas</span>
+    <span class="tech-tag">Streamlit</span>
+    <span class="tech-tag">Plotly</span>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Downloads</h2>
+  <table class="competitors-table">
+    <tr>
+      <th>Resource</th>
+      <th>Description</th>
+    </tr>
+    <tr>
+      <td><a href="/assets/research/ENPA_final_submission_paper.docx">Paper (ENPA submission)</a></td>
+      <td>Full paper as submitted to ENPA 2026 &mdash; preliminary draft</td>
+    </tr>
+    <tr>
+      <td><a href="/assets/research/Dataset_final.xlsx">Dataset</a></td>
+      <td>4,265 FOI requests with classified requester and respondent gender</td>
+    </tr>
+    <tr>
+      <td><a href="/assets/research/methodology-QWEN.docx">Full Methodology</a></td>
+      <td>Detailed description of the 5-tier gender classification pipeline</td>
+    </tr>
+    <tr>
+      <td><a href="/pipeline.html">Pipeline Visualization</a></td>
+      <td>Interactive diagram of the classification cascade with all numbers</td>
+    </tr>
+  </table>
+</div>
+
+<div class="section">
+  <h2>Conference</h2>
+  <p>
+    <strong>ENPA Inaugural Conference 2026</strong><br>
+    <em>"Shaping the Future of Public Administration in Europe Together"</em><br>
+    Bucharest University of Economic Studies, Romania<br>
+    22&ndash;25 April 2026 (Doctoral Seminar: 22 April)<br>
+    Organized by the European Network for Public Administration (ENPA)
+  </p>
+</div>
+
+<div class="section">
+  <h2>Academic Context</h2>
+  <p>This research was conducted during a visiting research period at the <strong>Centre d'&Eacute;tude des Politiques et de l'Administration Publique (CEPAP)</strong>, Universit&eacute; libre de Bruxelles, under the supervision of Prof. Giovanni Esposito. It is part of the broader <a href="https://eqenrico-hub.github.io/notes#transact-transparency-in-action" style="color:#2563eb;">TRANSACT</a> research programme on FOI implementation.</p>
+  <p style="margin-top:8px;">The gender classification pipeline and the FOI responsiveness analysis are also components of my PhD dissertation at the University of Genoa (XXXIX Cycle, SECS-P/07, curriculum Management and Security).</p>
+</div>
