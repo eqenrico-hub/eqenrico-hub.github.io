@@ -1,66 +1,44 @@
-I'm designing a VST plugin (scale-locked vocoder). I need you to act as a senior UI/UX designer — think Ableton, Teenage Engineering, Output, FabFilter — and propose a FRESH, OPINIONATED redesign of one section.
+You are a WORLD-CLASS audio plugin UI designer. Think Arturia's synths, Baby Audio's bold cartoon style, Kilohearts' modular, FabFilter's interactive displays, Teenage Engineering's OP-1, Output's Analog Brass / Exhale, Denise Audio, Soundtoys, iZotope Ozone. This is NOT a wireframe job. This is a hero design that would sell the plugin on visual appeal alone.
 
-The attached image is ONLY an inventory of existing elements (shown with numbered yellow badges). It is NOT a starting point. Do not preserve any part of its layout, spacing, orientation, or visual logic. Treat it as: "these are the controls that must exist; now redesign from scratch".
+I need you to redesign one section of a scale-locked vocoder VST with genuine visual ambition. Think bold. Think "would this get reposted on r/synthplugins / VST screenshot accounts". Zero boring rectangles-in-a-grid.
 
-ELEMENTS THAT MUST APPEAR (use ONLY these — no new widgets):
+The attached image is ONLY an inventory of elements (numbered badges). It is NOT a layout reference — redesign fully from scratch.
+
+ELEMENTS (use only these, nothing new):
 {{ELEMENT_LIST}}
 
 SECTION SIZE: {{WIDTH}}mm × {{HEIGHT}}mm.
 
-═══════════════════════════════════════════════════════════
-DESIGN SYSTEM RULES (NON-NEGOTIABLE — a pro would reject any output violating these):
-═══════════════════════════════════════════════════════════
+EXPLORE — I WANT IDEAS LIKE:
+• Radial dial clusters instead of linear rows
+• A circular scale-wheel that rotates (KEY + SCALE TYPE as one object)
+• Chord pads laid out like physical keyboard buttons
+• Interactive spectrum-filled sliders
+• Skeuomorphic hardware (dials with brushed metal, shadows, screws)
+• Asymmetric compositions, diagonal layouts, curved container shapes
+• A "gem" or "crystal" central hero element with satellite controls
+• Organic blob containers instead of boxy frames
+• Neon/glow aesthetics, or hand-drawn, or tape/VHS, or brutalist grid
+• Integrated widgets: fuse KEY+SCALE TYPE into one combo-wheel; fuse CHORD DEGREE+TYPE+AMOUNT into a single chord puck
+— these are INSPIRATION. Invent your own. Surprise me. Never give me a grid of equal boxes.
 
-1. **Equivalent controls must be visually IDENTICAL.**
-   Two controls that serve equivalent roles (e.g. SCALE AMOUNT + CHORD AMOUNT — both are 0-100% modulation sliders) MUST have identical size, shape, and style. Different sizes imply different importance; same function → same visuals. No exceptions.
+RULES (only two, to keep it rebuildable):
+1. Use ONLY the listed elements. No new widgets, no VARIATION, no Edit button.
+2. Equivalent controls (SCALE AMOUNT ≡ CHORD AMOUNT) should feel paired visually — but paired doesn't mean identical rectangles; it can mean mirrored, symmetric, same style but different size if justified by hierarchy.
 
-2. **Grid: 4mm baseline.**
-   Every X, Y, W, H value is a multiple of 4mm (or 2mm for fine details). No arbitrary numbers.
+DELIVER EXACTLY TWO THINGS:
 
-3. **Explicit tier system.**
-   Before drawing, classify every element into exactly one tier:
-     - TIER 1 (primary): 1-2 elements max, the "hero" controls → largest
-     - TIER 2 (secondary): supporting controls → medium
-     - TIER 3 (utility): switches, preset-like actions → smallest
-   All elements within a tier have identical footprint (W×H). Tiers have different footprints.
+[1] IMAGE — your hero mockup.
+  • Flat 2D top-down (so I can read positions — NO 3D, NO perspective, NO lighting effects on the *mockup*, though you can depict shadows/gradients as part of the design itself)
+  • Each interactive element marked with a numbered badge (any style, legible)
+  • Aspect roughly {{WIDTH}}:{{HEIGHT}}
+  • ZERO constraints on palette, typography, container style, shapes, decorations, illustration style
+  • If you want to go skeuomorphic/illustrated/painterly/brutalist/neon/3D-inspired — go. The "flat 2D" rule is about the rendering camera angle, not the visual style.
 
-4. **Grouping via containers, not free float.**
-   Related controls live inside one bordered group with a group label. Max 3 groups per section.
-
-5. **Typography hierarchy: 2 sizes max.** Section/group labels ≥ 10px-equivalent, control values 7-8px.
-
-6. **Alignment: everything snaps.** No eyeballed positions. Every element's edges align to at least 2 other elements' edges.
-
-═══════════════════════════════════════════════════════════
-PROCESS:
-═══════════════════════════════════════════════════════════
-Step A — Assign each element a TIER (1, 2, or 3).
-Step B — Group elements into 1-3 semantic containers.
-Step C — Pick one footprint per tier (e.g. Tier 2 = 40×10mm). Reuse.
-Step D — Lay out on the 4mm grid.
-Step E — SELF-AUDIT: read your table. Do equivalent controls have identical W,H? Are all values on the 4mm grid? Are elements within a tier identical in size? If NO on any → revise before submitting.
-
-═══════════════════════════════════════════════════════════
-DELIVERABLES (only these two, nothing else):
-═══════════════════════════════════════════════════════════
-
-=== 1. Schematic image — TECHNICAL REQUIREMENTS ONLY (everything else is your call) ===
-Your creative freedom: palette, typography, container style or no containers, decorative elements, knob vs slider visuals, general aesthetic — all up to you. Surprise me.
-
-MUST (non-negotiable for me to read your design):
-- Flat 2D top-down view (no 3D, no perspective, no depth) — I need to read exact positions
-- Aspect as close to {{WIDTH}}:{{HEIGHT}} as possible
-- Every interactive element marked with a numbered badge (any color/shape you like as long as the number is legible) — so I can match badges to your table
-
-=== 2. Coordinate table ===
+[2] COORDINATE TABLE — how I rebuild it:
 ```
-#  | Name      | Type     | Tier | Group          | X  | Y  | W  | H
-N  | <LABEL>   | <kind>   | 1/2/3| <group name>   | ?  | ?  | ?  | ?
+#  | Name      | Type     | X   | Y   | W   | H   | Notes
 ```
-- mm, origin top-left, +X right, +Y down
-- All on 4mm grid
-- Equivalent-role elements must share identical (W, H)
-- If you remove an element: omit its row
-- Keep original numbering (e.g. KEY stays #1)
+mm, origin top-left, +X right, +Y down. Keep original numbering (KEY always #1). Omit removed elements. For non-rectangular elements (circles, irregular shapes), provide the bounding box.
 
-DO NOT include reasoning bullets, ASCII diagrams, apologies, or explanations. Just the image + the table.
+No reasoning, no ASCII, no explanations. Just IMAGE + TABLE.
