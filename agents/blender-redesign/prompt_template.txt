@@ -1,34 +1,65 @@
 I'm designing a VST plugin (scale-locked vocoder). I need you to act as a senior UI/UX designer — think Ableton, Teenage Engineering, Output, FabFilter — and propose a FRESH, OPINIONATED redesign of one section.
 
-The attached image is ONLY an inventory of existing elements (shown with numbered yellow badges). It is NOT a starting point. Do not preserve any part of its layout, spacing, orientation, or visual logic unless you have a specific reason. Treat it as: "these are the controls that must exist; now redesign from scratch".
+The attached image is ONLY an inventory of existing elements (shown with numbered yellow badges). It is NOT a starting point. Do not preserve any part of its layout, spacing, orientation, or visual logic. Treat it as: "these are the controls that must exist; now redesign from scratch".
 
 ELEMENTS THAT MUST APPEAR (use ONLY these — no new widgets):
 {{ELEMENT_LIST}}
 
 SECTION SIZE: {{WIDTH}}mm × {{HEIGHT}}mm.
 
-DESIGN BRIEF:
-Push for a layout a pro designer at Ableton or FabFilter would ship. Bold typography choices, unexpected groupings, novel control combinations (e.g. fuse dropdown+slider into one widget, use dials instead of sliders, replace buttons with toggles, stack vertically instead of horizontally, use a radial cluster, integrate TUNING as a pop-out drawer instead of a bar — invent). The current layout is mediocre; your job is to make it feel premium and original while staying intuitive.
+═══════════════════════════════════════════════════════════
+DESIGN SYSTEM RULES (NON-NEGOTIABLE — a pro would reject any output violating these):
+═══════════════════════════════════════════════════════════
 
-Aesthetic reference: dark chassis (#0a0a0a) + thin brass accents (#c9a86b). Minimal text. You may change the aesthetic if you have a strong reason.
+1. **Equivalent controls must be visually IDENTICAL.**
+   Two controls that serve equivalent roles (e.g. SCALE AMOUNT + CHORD AMOUNT — both are 0-100% modulation sliders) MUST have identical size, shape, and style. Different sizes imply different importance; same function → same visuals. No exceptions.
 
+2. **Grid: 4mm baseline.**
+   Every X, Y, W, H value is a multiple of 4mm (or 2mm for fine details). No arbitrary numbers.
+
+3. **Explicit tier system.**
+   Before drawing, classify every element into exactly one tier:
+     - TIER 1 (primary): 1-2 elements max, the "hero" controls → largest
+     - TIER 2 (secondary): supporting controls → medium
+     - TIER 3 (utility): switches, preset-like actions → smallest
+   All elements within a tier have identical footprint (W×H). Tiers have different footprints.
+
+4. **Grouping via containers, not free float.**
+   Related controls live inside one bordered group with a group label. Max 3 groups per section.
+
+5. **Typography hierarchy: 2 sizes max.** Section/group labels ≥ 10px-equivalent, control values 7-8px.
+
+6. **Alignment: everything snaps.** No eyeballed positions. Every element's edges align to at least 2 other elements' edges.
+
+═══════════════════════════════════════════════════════════
+PROCESS:
+═══════════════════════════════════════════════════════════
+Step A — Assign each element a TIER (1, 2, or 3).
+Step B — Group elements into 1-3 semantic containers.
+Step C — Pick one footprint per tier (e.g. Tier 2 = 40×10mm). Reuse.
+Step D — Lay out on the 4mm grid.
+Step E — SELF-AUDIT: read your table. Do equivalent controls have identical W,H? Are all values on the 4mm grid? Are elements within a tier identical in size? If NO on any → revise before submitting.
+
+═══════════════════════════════════════════════════════════
 DELIVERABLES (only these two, nothing else):
+═══════════════════════════════════════════════════════════
 
 === 1. Schematic image ===
-Generate a flat 2D top-down mockup of YOUR redesign.
-- Aspect ratio as close to {{WIDTH}}:{{HEIGHT}} as your model allows
-- Each interactive element marked with a numbered yellow circular badge, # matching the table below
-- No 3D, no perspective, no lighting
+Flat 2D top-down mockup of your redesign.
+- Aspect as close to {{WIDTH}}:{{HEIGHT}} as possible
+- Group containers drawn with thin brass borders (#c9a86b) + group label
+- Every interactive element marked with a numbered yellow circular badge, # matching the table
+- Dark chassis (#0a0a0a), no 3D, no perspective, no lighting
 
 === 2. Coordinate table ===
 ```
-#  | Name      | Type     | X  | Y  | W  | H
-N  | <LABEL>   | <kind>   | ?  | ?  | ?  | ?
+#  | Name      | Type     | Tier | Group          | X  | Y  | W  | H
+N  | <LABEL>   | <kind>   | 1/2/3| <group name>   | ?  | ?  | ?  | ?
 ```
-- All values in millimeters
-- Origin (0,0) = top-left, +X right, +Y down
-- Design the numbers based on YOUR mockup — don't copy any reference values
+- mm, origin top-left, +X right, +Y down
+- All on 4mm grid
+- Equivalent-role elements must share identical (W, H)
 - If you remove an element: omit its row
-- Keep the original numbering (e.g. KEY is always #1)
+- Keep original numbering (e.g. KEY stays #1)
 
-DO NOT include reasoning, ASCII diagrams, or apologies. Just the image + the table.
+DO NOT include reasoning bullets, ASCII diagrams, apologies, or explanations. Just the image + the table.
