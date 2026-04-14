@@ -44,12 +44,13 @@ Step E — SELF-AUDIT: read your table. Do equivalent controls have identical W,
 DELIVERABLES (only these two, nothing else):
 ═══════════════════════════════════════════════════════════
 
-=== 1. Schematic image ===
-Flat 2D top-down mockup of your redesign.
+=== 1. Schematic image — TECHNICAL REQUIREMENTS ONLY (everything else is your call) ===
+Your creative freedom: palette, typography, container style or no containers, decorative elements, knob vs slider visuals, general aesthetic — all up to you. Surprise me.
+
+MUST (non-negotiable for me to read your design):
+- Flat 2D top-down view (no 3D, no perspective, no depth) — I need to read exact positions
 - Aspect as close to {{WIDTH}}:{{HEIGHT}} as possible
-- Group containers drawn with thin brass borders (#c9a86b) + group label
-- Every interactive element marked with a numbered yellow circular badge, # matching the table
-- Dark chassis (#0a0a0a), no 3D, no perspective, no lighting
+- Every interactive element marked with a numbered badge (any color/shape you like as long as the number is legible) — so I can match badges to your table
 
 === 2. Coordinate table ===
 ```
