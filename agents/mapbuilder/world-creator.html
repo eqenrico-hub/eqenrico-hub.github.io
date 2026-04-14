@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8">
+<title>World Creator — Village Map Generator</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#0d0d1a; color:#e0e0e0; font-family:'Segoe UI',system-ui,sans-serif; min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:60px 20px; }
+h1 { font-size:32px; margin-bottom:8px; background:linear-gradient(90deg,#6c5ce7,#00ff88); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+p.sub { color:#888; margin-bottom:40px; }
+.form { width:100%; max-width:640px; background:#1a1a2e; padding:24px; border-radius:12px; border:1px solid #333; }
+label { display:block; font-size:12px; color:#888; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; margin-top:16px; }
+label:first-of-type { margin-top:0; }
+input[type=text] { width:100%; padding:12px 14px; background:#2a2a4e; border:1px solid #444; color:#e0e0e0; border-radius:8px; font-size:15px; }
+input[type=text]:focus { outline:none; border-color:#6c5ce7; }
+button { margin-top:20px; padding:14px 28px; width:100%; background:linear-gradient(90deg,#6c5ce7,#00ff88); border:none; border-radius:8px; color:#fff; font-size:15px; font-weight:700; cursor:pointer; letter-spacing:1px; }
+button:hover { opacity:0.9; }
+button:disabled { opacity:0.5; cursor:not-allowed; }
+.log { margin-top:24px; background:#0a0a18; border-radius:8px; padding:16px; font-family:'SF Mono',Menlo,monospace; font-size:12px; max-height:400px; overflow-y:auto; border:1px solid #222; }
+.log-line { padding:4px 0; color:#9cf; border-bottom:1px solid #1a1a2e; }
+.log-line.error { color:#ff6b6b; }
+.log-line.success { color:#00ff88; font-weight:700; }
+.examples { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+.example { padding:6px 10px; background:#2a2a4e; border:1px solid #444; border-radius:16px; font-size:12px; cursor:pointer; color:#aaa; }
+.example:hover { border-color:#6c5ce7; color:#fff; }
+.radio-group { display:flex; flex-direction:column; gap:8px; margin-top:4px; }
+.radio-label { display:flex; align-items:flex-start; gap:8px; padding:10px 12px; background:#2a2a4e; border:1px solid #444; border-radius:6px; cursor:pointer; font-size:13px; }
+.radio-label:hover { border-color:#6c5ce7; }
+.radio-label input { margin-top:2px; }
+.radio-label span { flex:1; color:#ccc; line-height:1.4; }
+.radio-label input:checked + span { color:#fff; }
+</style>
+</head><body>
+<h1>World Creator</h1>
+<p class="sub">Describe a world — an agent will generate tiles, validate, and open the map editor.</p>
+
+<div class="form">
+  <label for="prompt">Describe your world</label>
+  <input type="text" id="prompt" placeholder="e.g. dark forest, cyberpunk alley, volcanic wasteland..." autofocus />
+  <div class="examples">
+    <div class="example" data-prompt="dark forest">🌲 Dark Forest</div>
+    <div class="example" data-prompt="glowing mushroom grove">🍄 Mushroom</div>
+    <div class="example" data-prompt="desert ruins">🏜 Desert Ruins</div>
+    <div class="example" data-prompt="ice crystals">❄️ Ice Crystals</div>
+    <div class="example" data-prompt="volcanic wasteland">🌋 Volcanic</div>
+    <div class="example" data-prompt="haunted cemetery">💀 Cemetery</div>
+    <div class="example" data-prompt="neon cyberpunk city">🌆 Cyberpunk</div>
+    <div class="example" data-prompt="underwater coral reef">🐚 Coral Reef</div>
+  </div>
+
+  <label>Buildings</label>
+  <div class="radio-group">
+    <label class="radio-label">
+      <input type="radio" name="buildings" value="standard" checked />
+      <span>Standard 10 buildings (tavern, library, windmill, palace, forge, temple, market, tower, observatory, stables)</span>
+    </label>
+    <label class="radio-label">
+      <input type="radio" name="buildings" value="custom" />
+      <span>Generate 10 custom buildings (slower, ~5 min extra)</span>
+    </label>
+    <label class="radio-label">
+      <input type="radio" name="buildings" value="none" />
+      <span>No buildings (just terrain map)</span>
+    </label>
+  </div>
+
+  <div id="customBuildingsPanel" style="display:none; margin-top:10px;">
+    <label for="buildingsContext" style="font-size:11px;">Building context / description (optional)</label>
+    <input type="text" id="buildingsContext" placeholder="e.g. ancient temples with crumbling stone, or list 10 buildings" />
+    <div style="font-size:11px; color:#888; margin-top:4px;">
+      Leave empty = agent picks 10 thematic buildings. Or type context, OR explicitly list 10 buildings separated by commas.
+    </div>
+  </div>
+
+  <button id="createBtn">Create World</button>
+
+  <div class="log" id="log" style="display:none"></div>
+</div>
+
+<script>
+const AGENT_URL = 'http://localhost:8766/create-world';
+const CACHE_VER = 'v7_';
+
+document.querySelectorAll('.example').forEach(el => {
+  el.onclick = () => { document.getElementById('prompt').value = el.dataset.prompt; };
+});
+
+// Show/hide custom buildings panel
+document.querySelectorAll('input[name="buildings"]').forEach(r => {
+  r.onchange = () => {
+    const show = document.querySelector('input[name="buildings"]:checked').value === 'custom';
+    document.getElementById('customBuildingsPanel').style.display = show ? 'block' : 'none';
+  };
+});
+
+const logEl = document.getElementById('log');
+function logLine(text, cls='') {
+  logEl.style.display = 'block';
+  const d = document.createElement('div');
+  d.className = 'log-line' + (cls ? ' ' + cls : '');
+  d.textContent = text;
+  logEl.appendChild(d);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+document.getElementById('createBtn').onclick = async () => {
+  const prompt = document.getElementById('prompt').value.trim();
+  if (!prompt) { alert('Enter a world theme'); return; }
+
+  const btn = document.getElementById('createBtn');
+  btn.disabled = true; btn.textContent = 'Generating...';
+  logEl.innerHTML = '';
+  logLine('Starting world creation...');
+
+  const buildingsMode = document.querySelector('input[name="buildings"]:checked').value;
+  const buildingsContext = document.getElementById('buildingsContext').value.trim();
+
+  try {
+    const resp = await fetch(AGENT_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ prompt, buildingsMode, buildingsContext }),
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    let result = null;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const obj = JSON.parse(line);
+          const msg = obj.msg || '';
+          if (msg.startsWith('ERROR')) logLine(msg, 'error');
+          else if (msg === 'Done!') {
+            logLine('SUCCESS! Opening map generator...', 'success');
+            result = obj;
+          }
+          else logLine(msg);
+        } catch(e) { logLine(line); }
+      }
+    }
+
+    if (result && result.tileset_keys && result.wang_maps) {
+      // Register the primary (middle/tier-1) tileset
+      const agentList = JSON.parse(localStorage.getItem('agent_tilesets') || '[]');
+      if (!agentList.includes(result.tileset_key)) {
+        agentList.push(result.tileset_key);
+        localStorage.setItem('agent_tilesets', JSON.stringify(agentList));
+      }
+      // Save all 3 WANG_MAPs
+      for (let i = 0; i < result.tileset_keys.length; i++) {
+        localStorage.setItem('wang_map_' + CACHE_VER + result.tileset_keys[i], JSON.stringify(result.wang_maps[i]));
+      }
+      // Save the tier chain metadata for the primary key
+      localStorage.setItem('agent_chain_' + result.tileset_key, JSON.stringify({
+        keys: result.tileset_keys,
+        tiers: result.tiers,
+      }));
+      // Save the buildings set (if any)
+      if (result.buildings_dir && result.buildings && result.buildings.length) {
+        localStorage.setItem('agent_buildings_' + result.tileset_key, JSON.stringify({
+          dir: result.buildings_dir,
+          list: result.buildings,
+        }));
+      }
+      // Open map generator with all 3 tileset keys
+      setTimeout(() => {
+        const qs = new URLSearchParams({
+          tileset: result.tileset_key,
+          tileset1: result.tileset_keys[0],
+          tileset2: result.tileset_keys[1],
+          tileset3: result.tileset_keys[2],
+          autogen: '1',
+        });
+        window.location.href = 'v2.html?' + qs.toString();
+      }, 1000);
+    }
+  } catch(e) {
+    logLine('FAILED: ' + e.message, 'error');
+    btn.disabled = false; btn.textContent = 'Create World';
+  }
+};
+</script>
+</body></html>

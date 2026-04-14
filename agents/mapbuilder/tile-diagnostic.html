@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8">
+<title>Tile Detection Diagnostic</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#1a1a2e; color:#fff; font-family:monospace; padding:20px; }
+h1 { color:#ffd700; margin-bottom:10px; }
+.controls { margin-bottom:15px; display:flex; gap:10px; align-items:center; }
+select, button { padding:6px 10px; background:#2a2a4e; border:1px solid #555; color:#fff; border-radius:4px; font-size:13px; }
+button { background:#6c5ce7; border-color:#6c5ce7; cursor:pointer; }
+.grid { display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; max-width:900px; }
+.tile-box { background:#222; border:1px solid #444; border-radius:6px; padding:8px; text-align:center; }
+.tile-box canvas { image-rendering:pixelated; border:1px solid #555; }
+.corner-grid { display:grid; grid-template:1fr 1fr / 1fr 1fr; gap:2px; width:60px; height:60px; margin:6px auto; }
+.corner-grid div { border-radius:2px; font-size:9px; display:flex; align-items:center; justify-content:center; }
+.cG { background:#5a8c3f; } .cW { background:#8b5a2b; }
+.pos { color:#888; font-size:11px; }
+.idx { color:#ffd700; font-size:14px; font-weight:bold; }
+.role { color:#aaa; font-size:10px; }
+.swatch { width:20px; height:20px; display:inline-block; border:1px solid #555; vertical-align:middle; border-radius:2px; }
+.cluster-info { margin:15px 0; padding:10px; background:#222; border-radius:6px; display:flex; gap:20px; align-items:center; }
+.preview-section { margin-top:20px; }
+#previewCanvas { image-rendering:pixelated; border:2px solid #ffd700; }
+.warn { color:#ff6b6b; font-weight:bold; }
+.ok { color:#00ff88; }
+</style>
+</head><body>
+
+<h1>Wang Tile Detection Diagnostic</h1>
+<div class="controls">
+  <select id="tilesetSelect"></select>
+  <button onclick="analyze()">Re-analyze</button>
+  <button onclick="batchAnalyze()" style="background:#27ae60">Batch Save ALL for Map Generator</button>
+  <button onclick="Object.keys(localStorage).filter(k=>k.startsWith('wang_map_')).forEach(k=>localStorage.removeItem(k)); alert('Cleared all wang_map caches');" style="background:#c0392b">Clear All Caches</button>
+  <span id="status"></span>
+</div>
+<div class="cluster-info" id="clusterInfo"></div>
+<div class="grid" id="grid"></div>
+
+<div class="preview-section">
+  <h2 style="color:#ffd700; margin:10px 0;">Preview Map (using detected WANG_MAP)</h2>
+  <canvas id="previewCanvas" width="320" height="320"></canvas>
+</div>
+
+<script>
+const ROLE_NAMES = {
+  0:  'SOLID WOOD (all wood)',
+  1:  'GRASS corner SE',
+  2:  'GRASS corner SW',
+  3:  'TOP EDGE (wood top, grass bottom)',
+  4:  'GRASS corner NE',
+  5:  'LEFT EDGE (wood left, grass right)',
+  6:  'DIAGONAL /',
+  7:  'WOOD corner NW (wood peeks NW)',
+  8:  'GRASS corner NW',
+  9:  'DIAGONAL \\',
+  10: 'RIGHT EDGE (grass left, wood right)',
+  11: 'WOOD corner NE (wood peeks NE)',
+  12: 'BOTTOM EDGE (grass top, wood bottom)',
+  13: 'WOOD corner SW (wood peeks SW)',
+  14: 'WOOD corner SE (wood peeks SE)',
+  15: 'SOLID GRASS (all grass)',
+};
+
+const TS = 32;
+const tilesetImg = new Image();
+let allTilesets = [];
+
+// Discover all tilesets
+function discoverTilesets() {
+  const select = document.getElementById('tilesetSelect');
+  const base = '../village-templates';
+  const files = [
+    { label: 'Enchanted Grove (default)', path: `${base}/enchanted-grove/tileset.png` },
+    { label: 'Shadow Keep (default)', path: `${base}/shadow-keep/tileset.png` },
+    { label: 'Desert Bazaar (default)', path: `${base}/desert-bazaar/tileset.png` },
+    { label: 'Frost Haven (default)', path: `${base}/frost-haven/tileset.png` },
+    { label: 'Jungle (default)', path: `${base}/jungle/tileset.png` },
+    // Variants
+    { label: 'Grove - Brook Willow', path: `${base}/variants/grove-4.png` },
+    { label: 'Grove - Spring Apple', path: `${base}/variants/grove-6.png` },
+    { label: 'Shadow - Eldritch Void', path: `${base}/variants/void-a.png` },
+    { label: 'Shadow - Dungeon', path: `${base}/variants/shadow-2v2.png` },
+    { label: 'Shadow - Toxic Swamp', path: `${base}/variants/shadow-3v2.png` },
+    { label: 'Shadow - Battlefield', path: `${base}/variants/shadow-6v2.png` },
+    { label: 'Shadow - Cemetery', path: `${base}/variants/shadow-7v2.png` },
+    { label: 'Shadow - Lava A', path: `${base}/variants/lava-a.png` },
+    { label: 'Shadow - Lava B', path: `${base}/variants/lava-b.png` },
+    { label: 'Shadow - Frozen A', path: `${base}/variants/frozen-a.png` },
+    { label: 'Shadow - Frozen B', path: `${base}/variants/frozen-b.png` },
+    { label: 'Shadow - Frozen C', path: `${base}/variants/frozen-c.png` },
+    { label: 'Desert - Red Canyon', path: `${base}/variants/desert-1.png` },
+    { label: 'Desert - Stargazer', path: `${base}/variants/desert-6.png` },
+    { label: 'Frost - Ice Palace', path: `${base}/variants/frost-7.png` },
+    { label: 'Frost - Ice Age', path: `${base}/variants/frost-6.png` },
+    { label: 'Frost - Candy Land', path: `${base}/variants/frost-5.png` },
+    { label: 'Frost - Lake A', path: `${base}/variants/lake-a.png` },
+    { label: 'Frost - Lake B', path: `${base}/variants/lake-b.png` },
+    { label: 'Frost - Lake C', path: `${base}/variants/lake-c.png` },
+    { label: 'Jungle 1', path: `${base}/variants/jungle-1.png` },
+  ];
+  allTilesets = files;
+  for (const f of files) {
+    const opt = document.createElement('option');
+    opt.value = f.path;
+    opt.textContent = f.label;
+    select.appendChild(opt);
+  }
+  select.onchange = () => loadTileset(select.value);
+}
+
+function loadTileset(path) {
+  tilesetImg.src = path + '?' + Date.now();
+}
+
+tilesetImg.onload = () => analyze();
+
+function analyze() {
+  const offscreen = document.createElement('canvas');
+  offscreen.width = 128; offscreen.height = 128;
+  const octx = offscreen.getContext('2d');
+  octx.drawImage(tilesetImg, 0, 0);
+
+  // Sample corners for each tile (6x6 region near each actual corner)
+  const tiles = [];
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 4; col++) {
+      const ox = col * TS, oy = row * TS;
+      const sampleCorner = (cx, cy) => {
+        const data = octx.getImageData(cx, cy, 6, 6).data;
+        let r = 0, g = 0, b = 0, count = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          if (data[i + 3] < 128) continue;
+          r += data[i]; g += data[i+1]; b += data[i+2]; count++;
+        }
+        if (count === 0) return { r: 128, g: 128, b: 128 };
+        return { r: r/count, g: g/count, b: b/count };
+      };
+      tiles.push({
+        col, row,
+        corners: {
+          nw: sampleCorner(ox + 1, oy + 1),
+          ne: sampleCorner(ox + 25, oy + 1),
+          sw: sampleCorner(ox + 1, oy + 25),
+          se: sampleCorner(ox + 25, oy + 25),
+        }
+      });
+    }
+  }
+
+  const dist = (a, b) => Math.sqrt((a.r-b.r)**2 + (a.g-b.g)**2 + (a.b-b.b)**2);
+  const lum = c => 0.299 * c.r + 0.587 * c.g + 0.114 * c.b;
+  const toRgb = c => `rgb(${Math.round(c.r)},${Math.round(c.g)},${Math.round(c.b)})`;
+  const avg = arr => {
+    let r=0,g=0,b=0;
+    for (const c of arr) { r+=c.r; g+=c.g; b+=c.b; }
+    return { r:r/arr.length, g:g/arr.length, b:b/arr.length };
+  };
+
+  // Find the two SOLID tiles (lowest internal corner variance)
+  const tileVariances = tiles.map(t => {
+    const corners = [t.corners.nw, t.corners.ne, t.corners.sw, t.corners.se];
+    const mean = avg(corners);
+    let variance = 0;
+    for (const c of corners) variance += dist(c, mean) ** 2;
+    return { tile: t, variance, mean };
+  });
+  tileVariances.sort((a, b) => a.variance - b.variance);
+
+  const solidA = tileVariances[0];
+  let solidB = tileVariances[1];
+  for (const tv of tileVariances.slice(1)) {
+    if (dist(tv.mean, solidA.mean) > dist(solidB.mean, solidA.mean)) {
+      solidB = tv; break;
+    }
+  }
+
+  const lumA = lum(solidA.mean);
+  const lumB = lum(solidB.mean);
+  const grassCenter = lumA >= lumB ? solidA.mean : solidB.mean;
+  const woodCenter = lumA >= lumB ? solidB.mean : solidA.mean;
+  const grassTile = lumA >= lumB ? solidA.tile : solidB.tile;
+  const woodTile = lumA >= lumB ? solidB.tile : solidA.tile;
+
+  // Score every corner by grassiness, use 32/32 split
+  const allCorners = [];
+  for (let ti = 0; ti < tiles.length; ti++) {
+    for (const key of ['nw','ne','sw','se']) {
+      const c = tiles[ti].corners[key];
+      const dg = dist(c, grassCenter);
+      const dw = dist(c, woodCenter);
+      allCorners.push({ ti, key, color: c, grassiness: dw / (dg + dw + 0.001) });
+    }
+  }
+  const sorted = [...allCorners].sort((a, b) => b.grassiness - a.grassiness);
+
+  // Best-effort classification: allow duplicates, pick best split
+  function classifySplit(topN, invert) {
+    const order = invert ? [...allCorners].sort((a, b) => a.grassiness - b.grassiness) : sorted;
+    const gs = new Set();
+    for (let i = 0; i < topN; i++) gs.add(order[i].ti + '_' + order[i].key);
+    return gs;
+  }
+
+  let bestGrassSet = null, bestSplit = 32, bestCount = 0;
+  for (const split of [32, 31, 33, 30, 34]) {
+    for (const inv of [false, true]) {
+      const gs = classifySplit(split, inv);
+      const seen = new Set();
+      for (let ti = 0; ti < tiles.length; ti++) {
+        const cv = {};
+        for (const key of ['nw','ne','sw','se']) cv[key] = gs.has(ti + '_' + key) ? 1 : 0;
+        seen.add(cv.nw * 8 + cv.ne * 4 + cv.sw * 2 + cv.se);
+      }
+      if (seen.size > bestCount) { bestCount = seen.size; bestGrassSet = gs; bestSplit = split; }
+      if (seen.size === 16) break;
+    }
+    if (bestCount === 16) break;
+  }
+  if (!bestGrassSet) {
+    bestGrassSet = new Set();
+    for (let i = 0; i < 32; i++) bestGrassSet.add(sorted[i].ti + '_' + sorted[i].key);
+  }
+
+  // Flip derivation table
+  function flipIdx(idx, fh, fv) {
+    let nw=(idx>>3)&1, ne=(idx>>2)&1, sw=(idx>>1)&1, se=idx&1;
+    if (fh) { [nw,ne]=[ne,nw]; [sw,se]=[se,sw]; }
+    if (fv) { [nw,sw]=[sw,nw]; [ne,se]=[se,ne]; }
+    return nw*8+ne*4+sw*2+se;
+  }
+
+  // Show cluster info
+  const ciEl = document.getElementById('clusterInfo');
+  ciEl.innerHTML = `
+    <div>GRASS anchor: <span class="swatch" style="background:${toRgb(grassCenter)}"></span>
+    lum=${lum(grassCenter).toFixed(1)} — tile (${grassTile.col},${grassTile.row})</div>
+    <div>WOOD anchor: <span class="swatch" style="background:${toRgb(woodCenter)}"></span>
+    lum=${lum(woodCenter).toFixed(1)} — tile (${woodTile.col},${woodTile.row})</div>
+    <div>Color distance: ${dist(grassCenter, woodCenter).toFixed(1)} | Split: ${bestSplit}/64</div>
+  `;
+
+  // Build map and show each tile
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+
+  const wangMap = {};
+  const indexCounts = {};
+
+  for (let ti = 0; ti < tiles.length; ti++) {
+    const t = tiles[ti];
+    const cornerValues = {};
+    const cornerColors = {};
+    for (const key of ['nw','ne','sw','se']) {
+      cornerColors[key] = t.corners[key];
+      cornerValues[key] = bestGrassSet.has(ti + '_' + key) ? 1 : 0;
+    }
+
+    const idx = cornerValues.nw * 8 + cornerValues.ne * 4 + cornerValues.sw * 2 + cornerValues.se;
+    indexCounts[idx] = (indexCounts[idx] || 0) + 1;
+    wangMap[idx] = { x: t.col, y: t.row };
+
+    // Build tile box
+    const box = document.createElement('div');
+    box.className = 'tile-box';
+
+    // Tile image
+    const tileCanvas = document.createElement('canvas');
+    tileCanvas.width = 64; tileCanvas.height = 64;
+    tileCanvas.style.imageRendering = 'pixelated';
+    const tctx = tileCanvas.getContext('2d');
+    tctx.imageSmoothingEnabled = false;
+    tctx.drawImage(tilesetImg, t.col * TS, t.row * TS, TS, TS, 0, 0, 64, 64);
+    box.appendChild(tileCanvas);
+
+    // Position
+    const pos = document.createElement('div');
+    pos.className = 'pos';
+    pos.textContent = `Grid pos: (${t.col}, ${t.row})`;
+    box.appendChild(pos);
+
+    // Corner diagram with actual sampled colors
+    const diagram = document.createElement('div');
+    diagram.className = 'corner-grid';
+    for (const key of ['nw','ne','sw','se']) {
+      const d = document.createElement('div');
+      const c = cornerColors[key];
+      d.style.background = toRgb(c);
+      d.textContent = cornerValues[key] ? 'G' : 'W';
+      d.style.color = cornerValues[key] ? '#0f0' : '#f80';
+      d.style.fontWeight = 'bold';
+      diagram.appendChild(d);
+    }
+    box.appendChild(diagram);
+
+    // Wang index
+    const idxEl = document.createElement('div');
+    const isDuplicate = indexCounts[idx] > 1;
+    idxEl.className = isDuplicate ? 'idx warn' : 'idx ok';
+    idxEl.textContent = `idx ${idx}` + (isDuplicate ? ' DUPLICATE!' : '');
+    box.appendChild(idxEl);
+
+    // Role name
+    const role = document.createElement('div');
+    role.className = 'role';
+    role.textContent = ROLE_NAMES[idx] || '???';
+    box.appendChild(role);
+
+    grid.appendChild(box);
+  }
+
+  // Fill missing indices by flipping existing tiles
+  const derived = [];
+  for (let idx = 0; idx < 16; idx++) {
+    if (wangMap[idx]) continue;
+    for (const [fh, fv] of [[true,false],[false,true],[true,true]]) {
+      const srcIdx = flipIdx(idx, fh, fv);
+      if (wangMap[srcIdx] && !wangMap[srcIdx].flipH && !wangMap[srcIdx].flipV) {
+        wangMap[idx] = { ...wangMap[srcIdx], flipH: fh, flipV: fv };
+        derived.push(idx);
+        break;
+      }
+    }
+  }
+
+  // Check validity
+  const status = document.getElementById('status');
+  const missing = [];
+  for (let i = 0; i < 16; i++) {
+    if (!wangMap[i]) missing.push(i);
+  }
+  const dupes = Object.entries(indexCounts).filter(([k,v]) => v > 1).map(([k]) => k);
+
+  let msg = '';
+  if (dupes.length) msg += `<span class="warn">DUPLICATES: idx ${dupes.join(', ')}</span> `;
+  if (derived.length) msg += `<span style="color:#ffd700">DERIVED (flipped): idx ${derived.join(', ')}</span> `;
+  if (missing.length) msg += `<span class="warn">STILL MISSING: idx ${missing.join(', ')}</span> `;
+  if (!dupes.length && !missing.length && !derived.length) {
+    msg = '<span class="ok">ALL 16 INDICES FOUND - VALID MAP</span>';
+  } else if (!missing.length) {
+    msg += '<span class="ok"> — ALL 16 COVERED</span>';
+  }
+  status.innerHTML = msg;
+
+  // Draw preview map
+  drawPreview(wangMap);
+}
+
+function drawPreview(wangMap) {
+  const canvas = document.getElementById('previewCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  const W = 10, H = 10;
+  const grid = [];
+  for (let y = 0; y <= H; y++) {
+    grid[y] = [];
+    for (let x = 0; x <= W; x++) grid[y][x] = 1; // wood
+  }
+  // Grass rectangle in center
+  for (let y = 3; y <= 7; y++)
+    for (let x = 3; x <= 7; x++) grid[y][x] = 0;
+
+  canvas.width = W * TS;
+  canvas.height = H * TS;
+
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const nw = grid[y][x] === 0 ? 1 : 0;
+      const ne = grid[y][x+1] === 0 ? 1 : 0;
+      const sw = grid[y+1][x] === 0 ? 1 : 0;
+      const se = grid[y+1][x+1] === 0 ? 1 : 0;
+      const idx = nw * 8 + ne * 4 + sw * 2 + se;
+      const wt = wangMap[idx];
+      if (wt && (wt.flipH || wt.flipV)) {
+        ctx.save();
+        const dx = x * TS, dy = y * TS;
+        ctx.translate(dx + TS/2, dy + TS/2);
+        ctx.scale(wt.flipH ? -1 : 1, wt.flipV ? -1 : 1);
+        ctx.drawImage(tilesetImg, wt.x * TS, wt.y * TS, TS, TS, -TS/2, -TS/2, TS, TS);
+        ctx.restore();
+      } else if (wt) {
+        ctx.drawImage(tilesetImg, wt.x * TS, wt.y * TS, TS, TS, x * TS, y * TS, TS, TS);
+      } else {
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(x * TS, y * TS, TS, TS);
+      }
+    }
+  }
+}
+
+// Map from tileset path to the cache key the map generator uses
+const TILESET_CACHE_KEYS = {
+  'enchanted-grove/tileset.png': 'enchanted-grove-default',
+  'shadow-keep/tileset.png': 'shadow-keep-default',
+  'desert-bazaar/tileset.png': 'desert-bazaar-default',
+  'frost-haven/tileset.png': 'frost-haven-default',
+  'jungle/tileset.png': 'jungle-default',
+  'variants/grove-4.png': 'grove-4',
+  'variants/grove-6.png': 'grove-6',
+  'variants/void-a.png': 'void-a',
+  'variants/shadow-2v2.png': 'shadow-2v2',
+  'variants/shadow-3v2.png': 'shadow-3v2',
+  'variants/shadow-6v2.png': 'shadow-6v2',
+  'variants/shadow-7v2.png': 'shadow-7v2',
+  'variants/lava-a.png': 'lava-a',
+  'variants/lava-b.png': 'lava-b',
+  'variants/frozen-a.png': 'frozen-a',
+  'variants/frozen-b.png': 'frozen-b',
+  'variants/frozen-c.png': 'frozen-c',
+  'variants/desert-1.png': 'desert-1',
+  'variants/desert-6.png': 'desert-6',
+  'variants/frost-7.png': 'frost-7',
+  'variants/frost-6.png': 'frost-6',
+  'variants/frost-5.png': 'frost-5',
+  'variants/lake-a.png': 'lake-a',
+  'variants/lake-b.png': 'lake-b',
+  'variants/lake-c.png': 'lake-c',
+  'variants/jungle-1.png': 'jungle-1',
+};
+
+async function batchAnalyze() {
+  const CACHE_VER = 'v7_'; // MUST match v2.html's WANG_CACHE_VER
+  const statusEl = document.getElementById('status');
+  let done = 0, total = allTilesets.length;
+
+  for (const ts of allTilesets) {
+    statusEl.innerHTML = `<span style="color:#ffd700">Analyzing ${done+1}/${total}: ${ts.label}...</span>`;
+
+    // Load image
+    const img = await new Promise(resolve => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = () => resolve(null);
+      i.src = ts.path + '?' + Date.now();
+    });
+    if (!img) { done++; continue; }
+
+    // Run the same analysis as the diagnostic
+    const wangMap = analyzeImage(img);
+    if (!wangMap) { done++; continue; }
+
+    // Find cache key
+    const pathPart = ts.path.replace('../village-templates/', '');
+    const cacheKey = TILESET_CACHE_KEYS[pathPart];
+    if (cacheKey) {
+      localStorage.setItem('wang_map_' + CACHE_VER + cacheKey, JSON.stringify(wangMap));
+    }
+    done++;
+  }
+  statusEl.innerHTML = `<span class="ok">DONE! Saved ${done} tileset maps to localStorage. Now reload the map generator.</span>`;
+}
+
+// Extract the analysis logic into a reusable function
+function analyzeImage(img) {
+  const offscreen = document.createElement('canvas');
+  offscreen.width = 128; offscreen.height = 128;
+  const octx = offscreen.getContext('2d');
+  octx.drawImage(img, 0, 0);
+
+  const tiles = [];
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 4; col++) {
+      const ox = col * TS, oy = row * TS;
+      const sampleCorner = (cx, cy) => {
+        const data = octx.getImageData(cx, cy, 6, 6).data;
+        let r = 0, g = 0, b = 0, count = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          if (data[i + 3] < 128) continue;
+          r += data[i]; g += data[i+1]; b += data[i+2]; count++;
+        }
+        if (count === 0) return { r: 128, g: 128, b: 128 };
+        return { r: r/count, g: g/count, b: b/count };
+      };
+      tiles.push({
+        col, row,
+        corners: {
+          nw: sampleCorner(ox + 1, oy + 1),
+          ne: sampleCorner(ox + 25, oy + 1),
+          sw: sampleCorner(ox + 1, oy + 25),
+          se: sampleCorner(ox + 25, oy + 25),
+        }
+      });
+    }
+  }
+
+  const dist = (a, b) => Math.sqrt((a.r-b.r)**2 + (a.g-b.g)**2 + (a.b-b.b)**2);
+  const lum = c => 0.299 * c.r + 0.587 * c.g + 0.114 * c.b;
+  const avg = arr => {
+    let r=0,g=0,b=0;
+    for (const c of arr) { r+=c.r; g+=c.g; b+=c.b; }
+    return { r:r/arr.length, g:g/arr.length, b:b/arr.length };
+  };
+
+  const tileVariances = tiles.map(t => {
+    const corners = [t.corners.nw, t.corners.ne, t.corners.sw, t.corners.se];
+    const mean = avg(corners);
+    let variance = 0;
+    for (const c of corners) variance += dist(c, mean) ** 2;
+    return { tile: t, variance, mean };
+  });
+  tileVariances.sort((a, b) => a.variance - b.variance);
+  const solidA = tileVariances[0];
+  let solidB = tileVariances[1];
+  for (const tv of tileVariances.slice(1)) {
+    if (dist(tv.mean, solidA.mean) > dist(solidB.mean, solidA.mean)) {
+      solidB = tv; break;
+    }
+  }
+
+  const lumA = lum(solidA.mean), lumB = lum(solidB.mean);
+  const grassCenter = lumA >= lumB ? solidA.mean : solidB.mean;
+  const woodCenter = lumA >= lumB ? solidB.mean : solidA.mean;
+
+  const allCorners = [];
+  for (let ti = 0; ti < tiles.length; ti++) {
+    for (const key of ['nw','ne','sw','se']) {
+      const c = tiles[ti].corners[key];
+      const dg = dist(c, grassCenter);
+      const dw = dist(c, woodCenter);
+      allCorners.push({ ti, key, color: c, grassiness: dw / (dg + dw + 0.001) });
+    }
+  }
+  const sorted = [...allCorners].sort((a, b) => b.grassiness - a.grassiness);
+
+  function classifySplit(topN, invert) {
+    const order = invert ? [...allCorners].sort((a, b) => a.grassiness - b.grassiness) : sorted;
+    const gs = new Set();
+    for (let i = 0; i < topN; i++) gs.add(order[i].ti + '_' + order[i].key);
+    return gs;
+  }
+
+  let bestGrassSet = null, bestCount = 0;
+  for (const split of [32, 31, 33, 30, 34]) {
+    for (const inv of [false, true]) {
+      const gs = classifySplit(split, inv);
+      const seen = new Set();
+      for (let ti = 0; ti < tiles.length; ti++) {
+        const cv = {};
+        for (const key of ['nw','ne','sw','se']) cv[key] = gs.has(ti + '_' + key) ? 1 : 0;
+        seen.add(cv.nw * 8 + cv.ne * 4 + cv.sw * 2 + cv.se);
+      }
+      if (seen.size > bestCount) { bestCount = seen.size; bestGrassSet = gs; }
+      if (seen.size === 16) break;
+    }
+    if (bestCount === 16) break;
+  }
+  if (!bestGrassSet) {
+    bestGrassSet = new Set();
+    for (let i = 0; i < 32; i++) bestGrassSet.add(sorted[i].ti + '_' + sorted[i].key);
+  }
+
+  function flipIdx(idx, fh, fv) {
+    let nw=(idx>>3)&1, ne=(idx>>2)&1, sw=(idx>>1)&1, se=idx&1;
+    if (fh) { [nw,ne]=[ne,nw]; [sw,se]=[se,sw]; }
+    if (fv) { [nw,sw]=[sw,nw]; [ne,se]=[se,ne]; }
+    return nw*8+ne*4+sw*2+se;
+  }
+
+  const wangMap = {};
+  for (let ti = 0; ti < tiles.length; ti++) {
+    const cv = {};
+    for (const key of ['nw','ne','sw','se']) cv[key] = bestGrassSet.has(ti + '_' + key) ? 1 : 0;
+    const idx = cv.nw * 8 + cv.ne * 4 + cv.sw * 2 + cv.se;
+    if (!wangMap[idx]) wangMap[idx] = { x: tiles[ti].col, y: tiles[ti].row };
+  }
+
+  // Fill missing with flips
+  for (let idx = 0; idx < 16; idx++) {
+    if (wangMap[idx]) continue;
+    for (const [fh, fv] of [[true,false],[false,true],[true,true]]) {
+      const srcIdx = flipIdx(idx, fh, fv);
+      if (wangMap[srcIdx] && !wangMap[srcIdx].flipH && !wangMap[srcIdx].flipV) {
+        wangMap[idx] = { ...wangMap[srcIdx], flipH: fh, flipV: fv };
+        break;
+      }
+    }
+  }
+
+  // POLARITY CHECK: idx 15 must be brighter than idx 0
+  if (wangMap[0] && wangMap[15]) {
+    const t15 = tiles.find(t => t.col === wangMap[15].x && t.row === wangMap[15].y);
+    const t0 = tiles.find(t => t.col === wangMap[0].x && t.row === wangMap[0].y);
+    if (t15 && t0) {
+      const lum15 = lum(avg([t15.corners.nw, t15.corners.ne, t15.corners.sw, t15.corners.se]));
+      const lum0 = lum(avg([t0.corners.nw, t0.corners.ne, t0.corners.sw, t0.corners.se]));
+      if (lum0 > lum15) {
+        const fixed = {};
+        for (let idx = 0; idx < 16; idx++) {
+          if (wangMap[idx]) fixed[15 - idx] = wangMap[idx];
+        }
+        // Re-fill gaps
+        for (let idx = 0; idx < 16; idx++) {
+          if (fixed[idx]) continue;
+          for (const [fh, fv] of [[true,false],[false,true],[true,true]]) {
+            const srcIdx = flipIdx(idx, fh, fv);
+            if (fixed[srcIdx] && !fixed[srcIdx].flipH && !fixed[srcIdx].flipV) {
+              fixed[idx] = { ...fixed[srcIdx], flipH: fh, flipV: fv };
+              break;
+            }
+          }
+        }
+        return Object.keys(fixed).length >= 14 ? fixed : null;
+      }
+    }
+  }
+
+  return Object.keys(wangMap).length >= 14 ? wangMap : null;
+}
+
+discoverTilesets();
+loadTileset(document.getElementById('tilesetSelect').value);
+</script>
+</body></html>

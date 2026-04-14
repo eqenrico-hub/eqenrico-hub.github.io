@@ -1,0 +1,50 @@
+{
+  "enchanted-grove": {
+    "tavern": "bb5b8469-553d-4a49-bc6c-50858c088d55",
+    "library": "cf429ede-b4f4-4cdc-a9f4-873a0f6e25ad",
+    "windmill": "3f06c959-2ede-479e-9a18-34e461304e56",
+    "palace": "86aade80-6ac7-45d6-95d1-632556e79a7f",
+    "forge": "4c4cc9ad-6836-49dc-8546-45031eba1b62",
+    "temple": "f55122c7-0064-4d80-9173-c9cfb478cf2d",
+    "market": "6ba78e1f-8cc0-4bb0-a2ae-a8381ba0ebd7",
+    "tower": "486e552a-30a4-4884-90f2-ef504a4a5046",
+    "observatory": "05514f17-76cd-4194-8811-f0fad99fcfbe",
+    "stables": "93544fcc-8cb9-4695-a246-25b31855b982"
+  },
+  "shadow-keep": {
+    "tavern": "38d77026-9a33-48cf-afd0-41100d5b6642",
+    "library": "9761f71d-6689-46bd-867e-bec67415b3f9",
+    "windmill": "a44cfa3b-2a2a-4927-a249-3dbc3f60342e",
+    "palace": "9d3d7166-5b48-4caa-9a43-ae042e01458f",
+    "forge": "80e552f6-f4b1-4b5f-aa65-948f0f74e8e3",
+    "temple": "16626ea2-8502-41fa-8c9c-f870f6b9ce9c",
+    "market": "06f1b177-caf1-4694-b946-8887ffee0c50",
+    "tower": "70860953-423b-4203-81b0-76f9c28b730c",
+    "observatory": "e0978904-a1a5-4bf3-8411-dbb875afe86c",
+    "stables": "4c59411b-38c5-497f-8170-2a2f5030c3f5"
+  },
+  "desert-bazaar": {
+    "tavern": "d9eb7ec1-3cb5-45ad-848b-2007942f3117",
+    "library": "95b83705-d133-44b8-aee6-1064058ad1d7",
+    "windmill": "474d3c90-e0f7-4991-af58-872299d0846d",
+    "palace": "6f431e9e-04e2-42a5-9a24-3dec52aa9249",
+    "forge": "56d6c5a2-baa5-46d2-adc9-393eb5a677ce",
+    "temple": "ca17db8e-6df1-4386-9a73-c226495deba4",
+    "market": "aba6ef5e-93ed-4a94-9310-8c668180bc3f",
+    "tower": "ab0a6d10-8b17-432c-95a7-3bdad18e7d7c",
+    "observatory": "a1d1bfbb-7f15-4401-add7-a8e4732f9bae",
+    "stables": "60c5a3a6-7277-4042-b014-6d59588459c3"
+  },
+  "frost-haven": {
+    "tavern": "bbcf980d-8c7e-4584-9190-20468ef7c8b3",
+    "library": "ffad9ecb-86a2-4bc8-b40c-76110fcf2887",
+    "windmill": "ac984f04-90ad-4833-a281-789eb53edf01",
+    "palace": "5b404ed2-7409-489e-9e69-7d093c09096d",
+    "forge": "07495990-af4d-405b-816e-a33f7043ee89",
+    "temple": "c18cf359-89f3-48d4-9d19-7448980e66c1",
+    "market": "8eb7f199-7e30-42d5-a629-5dc769e3e887",
+    "tower": "54a44066-b714-46b8-9504-aa54a83ac5ce",
+    "observatory": "8a97c949-0e64-4011-978a-65fda44aa2d3",
+    "stables": "ec3d4681-da16-4107-930c-b1bb95a6fd20"
+  }
+}

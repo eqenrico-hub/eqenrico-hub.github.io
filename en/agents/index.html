@@ -1,0 +1,63 @@
+---
+layout: default
+title: Agents
+lang: en
+---
+
+<h1>Agents</h1>
+
+<p class="intro">Autonomous tools that orchestrate multi-step workflows — calling APIs, analyzing results, retrying on failure, delivering finished outputs.</p>
+
+<style>
+  .agent-grid { display: grid; gap: 1.5rem; margin-top: 2rem; }
+  .agent-card {
+    background: #1a1a1a; border: 1px solid #333; border-radius: 10px;
+    padding: 1.5rem; transition: border-color 0.2s;
+  }
+  .agent-card:hover { border-color: #00d4ff; }
+  .agent-card h2 {
+    margin: 0 0 0.5rem 0; color: #00d4ff; font-size: 1.4rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .agent-card .desc { color: #ccc; line-height: 1.6; }
+  .agent-card .stack {
+    display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 1rem;
+  }
+  .agent-card .tag {
+    font-size: 0.75rem; padding: 0.2rem 0.6rem; background: #2a2a2a;
+    border-radius: 10px; color: #888;
+  }
+  .agent-card .links { margin-top: 1rem; display: flex; gap: 1rem; }
+  .agent-card .links a {
+    color: #00d4ff; text-decoration: none; font-size: 0.9rem;
+  }
+  .agent-card .links a:hover { text-decoration: underline; }
+</style>
+
+<div class="agent-grid">
+
+  <div class="agent-card">
+    <h2>🤖 MapBuilder</h2>
+    <p class="desc">
+      Autonomous fantasy world generator. Takes a single text prompt
+      ("dark forest", "cyberpunk alley") and orchestrates the full pipeline:
+      generates a Wang tileset via PixelLab API, auto-detects tile corner patterns,
+      validates completeness (retries up to 2x on missing tiles),
+      fills gaps by flipping existing tiles, optionally generates 10 matching buildings,
+      then opens a map editor pre-loaded with the new world.
+    </p>
+    <div class="stack">
+      <span class="tag">Python</span>
+      <span class="tag">Pillow</span>
+      <span class="tag">PixelLab MCP</span>
+      <span class="tag">JSON-RPC SSE</span>
+      <span class="tag">Wang tiles</span>
+      <span class="tag">JavaScript</span>
+      <span class="tag">Canvas API</span>
+    </div>
+    <div class="links">
+      <a href="{{ '/agents/mapbuilder/' | relative_url }}">Details &amp; run instructions →</a>
+    </div>
+  </div>
+
+</div>

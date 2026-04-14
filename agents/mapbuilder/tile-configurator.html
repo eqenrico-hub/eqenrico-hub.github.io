@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8">
+<title>Tile Configurator</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#1a1a2e; color:#fff; font-family:monospace; display:flex; height:100vh; }
+.left { width:500px; overflow-y:auto; padding:10px; border-right:2px solid #333; }
+.right { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
+h2 { text-align:center; margin-bottom:10px; color:#ffd700; }
+.role-row { display:flex; align-items:center; gap:8px; padding:6px; margin:4px 0; background:#222; border-radius:6px; border:1px solid #333; }
+.role-row:hover { border-color:#ffd700; }
+.role-label { width:180px; font-size:11px; }
+.role-label .idx { color:#888; }
+.role-label .desc { color:#aaa; }
+.corner-diagram { width:50px; height:50px; display:grid; grid-template:1fr 1fr / 1fr 1fr; gap:1px; }
+.corner-diagram div { border-radius:2px; }
+.cg { background:#5a8c3f; } /* grass */
+.cw { background:#8b5a2b; } /* wood */
+.tile-pick { display:flex; align-items:center; gap:4px; }
+.tile-pick canvas { border:2px solid #555; cursor:pointer; image-rendering:pixelated; }
+.tile-pick canvas:hover { border-color:#ffd700; }
+.arrow-btn { background:#333; color:#fff; border:none; cursor:pointer; padding:4px 8px; font-size:18px; border-radius:4px; }
+.arrow-btn:hover { background:#555; }
+.pos-label { color:#888; font-size:10px; text-align:center; width:64px; }
+#preview { image-rendering:pixelated; border:2px solid #ffd700; }
+#exportBtn { margin-top:15px; padding:10px 30px; background:#ffd700; color:#000; border:none; font-size:16px; font-weight:bold; cursor:pointer; border-radius:6px; }
+#exportBtn:hover { background:#ffed4a; }
+#exportResult { margin-top:10px; background:#222; padding:10px; border-radius:6px; font-size:12px; max-width:500px; word-break:break-all; display:none; }
+.info { text-align:center; color:#aaa; font-size:12px; margin-bottom:10px; }
+</style>
+</head><body>
+
+<div class="left">
+  <h2>Tile Configurator</h2>
+  <div style="padding:0 0 8px; display:flex; flex-direction:column; gap:4px;">
+    <select id="tilesetSelect" style="padding:6px; background:#333; color:#fff; border:1px solid #555; border-radius:4px; font-size:12px;"></select>
+  </div>
+  <p class="info">For each role, click arrows to pick the correct tile.<br>Green = grass/plot, Brown = wood/sidewalk.</p>
+  <div id="roles"></div>
+</div>
+
+<div class="right">
+  <h2>Live Preview</h2>
+  <canvas id="preview" width="320" height="320"></canvas>
+  <button id="exportBtn" onclick="exportMap()">Copy WANG_MAP JSON</button>
+  <div id="exportResult"></div>
+</div>
+
+<script>
+// Wang tile roles: idx = NW*8 + NE*4 + SW*2 + SE
+// In our system: 1=grass, 0=wood (because we invert grid values)
+const ROLES = [
+  { idx:15, nw:1,ne:1,sw:1,se:1, name:'SOLID GRASS', desc:'All grass (building plot)' },
+  { idx:0,  nw:0,ne:0,sw:0,se:0, name:'SOLID WOOD',  desc:'All wood (sidewalk)' },
+  { idx:3,  nw:0,ne:0,sw:1,se:1, name:'TOP EDGE',    desc:'Wood on top, grass bottom' },
+  { idx:12, nw:1,ne:1,sw:0,se:0, name:'BOTTOM EDGE',  desc:'Grass on top, wood bottom' },
+  { idx:5,  nw:0,ne:1,sw:0,se:1, name:'LEFT EDGE',   desc:'Wood on left, grass right' },
+  { idx:10, nw:1,ne:0,sw:1,se:0, name:'RIGHT EDGE',  desc:'Grass on left, wood right' },
+  { idx:7,  nw:0,ne:1,sw:1,se:1, name:'WOOD CORNER TL', desc:'Wood peeks in from top-left' },
+  { idx:11, nw:1,ne:0,sw:1,se:1, name:'WOOD CORNER TR', desc:'Wood peeks in from top-right' },
+  { idx:13, nw:1,ne:1,sw:0,se:1, name:'WOOD CORNER BL', desc:'Wood peeks in from bottom-left' },
+  { idx:14, nw:1,ne:1,sw:1,se:0, name:'WOOD CORNER BR', desc:'Wood peeks in from bottom-right' },
+  { idx:1,  nw:0,ne:0,sw:0,se:1, name:'GRASS CORNER BR', desc:'Grass peeks in from bottom-right' },
+  { idx:2,  nw:0,ne:0,sw:1,se:0, name:'GRASS CORNER BL', desc:'Grass peeks in from bottom-left' },
+  { idx:4,  nw:0,ne:1,sw:0,se:0, name:'GRASS CORNER TR', desc:'Grass peeks in from top-right' },
+  { idx:8,  nw:1,ne:0,sw:0,se:0, name:'GRASS CORNER TL', desc:'Grass peeks in from top-left' },
+  { idx:6,  nw:0,ne:1,sw:1,se:0, name:'DIAGONAL (rare)',  desc:'Checkerboard - almost never used' },
+  { idx:9,  nw:1,ne:0,sw:0,se:1, name:'DIAGONAL (rare)',  desc:'Checkerboard - almost never used' },
+];
+
+const TS = 32; // tile size in the PNG
+const tilesetImg = new Image();
+tilesetImg.crossOrigin = 'anonymous';
+
+// Current assignment: idx → {col, row} in the tileset PNG
+const assignment = {};
+const excluded = new Set(); // tiles marked as "no matching tile"
+
+// FROM PIXELLAB API METADATA — upper=grass(green), lower=wood(brown)
+const INITIAL = {
+  0:  {x:2,y:1}, 1:  {x:3,y:1}, 2:  {x:2,y:2}, 3:  {x:1,y:2},
+  4:  {x:2,y:0}, 5:  {x:3,y:2}, 6:  {x:0,y:1}, 7:  {x:3,y:3},
+  8:  {x:1,y:1}, 9:  {x:2,y:3}, 10: {x:1,y:0}, 11: {x:0,y:2},
+  12: {x:3,y:0}, 13: {x:0,y:0}, 14: {x:1,y:3}, 15: {x:0,y:3},
+};
+for (let i = 0; i < 16; i++) {
+  assignment[i] = { col: INITIAL[i].x, row: INITIAL[i].y };
+}
+
+// All 16 tile positions in the 4x4 grid
+const ALL_POSITIONS = [];
+for (let r = 0; r < 4; r++)
+  for (let c = 0; c < 4; c++)
+    ALL_POSITIONS.push({ col: c, row: r });
+
+function posIndex(col, row) {
+  return row * 4 + col;
+}
+
+function buildUI() {
+  const container = document.getElementById('roles');
+  container.innerHTML = '';
+
+  for (const role of ROLES) {
+    const row = document.createElement('div');
+    row.className = 'role-row';
+
+    // Corner diagram
+    const diagram = document.createElement('div');
+    diagram.className = 'corner-diagram';
+    const corners = [role.nw, role.ne, role.sw, role.se];
+    corners.forEach(c => {
+      const d = document.createElement('div');
+      d.className = c ? 'cg' : 'cw';
+      diagram.appendChild(d);
+    });
+
+    // Label
+    const label = document.createElement('div');
+    label.className = 'role-label';
+    label.innerHTML = `<span class="idx">idx ${role.idx}</span> <b>${role.name}</b><br><span class="desc">${role.desc}</span>`;
+
+    // Tile picker
+    const picker = document.createElement('div');
+    picker.className = 'tile-pick';
+
+    const leftBtn = document.createElement('button');
+    leftBtn.className = 'arrow-btn';
+    leftBtn.textContent = '◀';
+    leftBtn.onclick = () => cycleTile(role.idx, -1);
+
+    const tileCanvas = document.createElement('canvas');
+    tileCanvas.width = 64;
+    tileCanvas.height = 64;
+    tileCanvas.id = `tile-${role.idx}`;
+    tileCanvas.style.imageRendering = 'pixelated';
+
+    const rightBtn = document.createElement('button');
+    rightBtn.className = 'arrow-btn';
+    rightBtn.textContent = '▶';
+    rightBtn.onclick = () => cycleTile(role.idx, 1);
+
+    const posLabel = document.createElement('div');
+    posLabel.className = 'pos-label';
+    posLabel.id = `pos-${role.idx}`;
+
+    // "No tile" button — marks as needing flip-derivation
+    const noBtn = document.createElement('button');
+    noBtn.className = 'arrow-btn';
+    noBtn.id = `no-${role.idx}`;
+    noBtn.textContent = '✕';
+    noBtn.title = 'Mark as "no matching tile" (will be auto-derived from flip)';
+    noBtn.style.color = '#f55';
+    noBtn.onclick = () => {
+      if (excluded.has(role.idx)) {
+        // Toggle off
+        excluded.delete(role.idx);
+        noBtn.style.background = '#333';
+        noBtn.style.color = '#f55';
+        drawTile(role.idx);
+      } else {
+        excluded.add(role.idx);
+        noBtn.style.background = '#a00';
+        noBtn.style.color = '#fff';
+        // Find a source tile to flip from
+        let flipped = null;
+        for (const [fh, fv] of [[true,false],[false,true],[true,true]]) {
+          const srcIdx = flipWangIdx(role.idx, fh, fv);
+          if (!excluded.has(srcIdx) && assignment[srcIdx]) {
+            flipped = { src: assignment[srcIdx], fh, fv, srcIdx };
+            break;
+          }
+        }
+        const cv = document.getElementById(`tile-${role.idx}`);
+        const c2 = cv.getContext('2d');
+        c2.imageSmoothingEnabled = false;
+        c2.clearRect(0, 0, 64, 64);
+        if (flipped) {
+          c2.save();
+          c2.translate(32, 32);
+          c2.scale(flipped.fh ? -1 : 1, flipped.fv ? -1 : 1);
+          c2.drawImage(tilesetImg, flipped.src.col * TS, flipped.src.row * TS, TS, TS, -32, -32, 64, 64);
+          c2.restore();
+          // Red border to show it's auto-derived
+          c2.strokeStyle = '#f55';
+          c2.lineWidth = 3;
+          c2.strokeRect(1.5, 1.5, 61, 61);
+        } else {
+          c2.fillStyle = '#330000';
+          c2.fillRect(0, 0, 64, 64);
+          c2.fillStyle = '#f55';
+          c2.font = 'bold 14px sans-serif';
+          c2.textAlign = 'center';
+          c2.fillText('NO TILE', 32, 36);
+        }
+        const pl = document.getElementById(`pos-${role.idx}`);
+        if (pl) pl.textContent = flipped ? `flip idx${flipped.srcIdx}` : 'no src';
+      }
+      drawPreview();
+    };
+
+    picker.appendChild(leftBtn);
+    picker.appendChild(tileCanvas);
+    picker.appendChild(rightBtn);
+    picker.appendChild(noBtn);
+    picker.appendChild(posLabel);
+
+    row.appendChild(diagram);
+    row.appendChild(label);
+    row.appendChild(picker);
+    container.appendChild(row);
+  }
+}
+
+function cycleTile(idx, dir) {
+  const cur = assignment[idx];
+  let pi = posIndex(cur.col, cur.row);
+  pi = (pi + dir + 16) % 16;
+  const np = ALL_POSITIONS[pi];
+  assignment[idx] = { col: np.col, row: np.row };
+  drawTile(idx);
+  drawPreview();
+}
+
+function drawTile(idx) {
+  const canvas = document.getElementById(`tile-${idx}`);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  const a = assignment[idx];
+  ctx.clearRect(0, 0, 64, 64);
+  ctx.drawImage(tilesetImg, a.col * TS, a.row * TS, TS, TS, 0, 0, 64, 64);
+
+  const posLabel = document.getElementById(`pos-${idx}`);
+  if (posLabel) posLabel.textContent = `(${a.col},${a.row})`;
+}
+
+function drawAllTiles() {
+  for (let i = 0; i < 16; i++) drawTile(i);
+}
+
+function drawPreview() {
+  const canvas = document.getElementById('preview');
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  // Make a simple test map: 10x10, grass rectangle (3x3) inside wood
+  const W = 10, H = 10;
+  // Corner grid is (W+1) x (H+1)
+  const grid = [];
+  for (let y = 0; y <= H; y++) {
+    grid[y] = [];
+    for (let x = 0; x <= W; x++) {
+      grid[y][x] = 1; // wood by default
+    }
+  }
+  // Carve grass rectangle in center (corners 3..7, 3..7)
+  for (let y = 3; y <= 7; y++)
+    for (let x = 3; x <= 7; x++)
+      grid[y][x] = 0; // grass
+
+  const tileSize = 32;
+  canvas.width = W * tileSize;
+  canvas.height = H * tileSize;
+
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      // Invert: grid 0 (grass) → corner 1, grid 1 (wood) → corner 0
+      const nw = grid[y][x] === 0 ? 1 : 0;
+      const ne = grid[y][x+1] === 0 ? 1 : 0;
+      const sw = grid[y+1][x] === 0 ? 1 : 0;
+      const se = grid[y+1][x+1] === 0 ? 1 : 0;
+      const idx = nw * 8 + ne * 4 + sw * 2 + se;
+      // If excluded, use flipped version of another tile
+      if (excluded.has(idx)) {
+        let flipped = null;
+        for (const [fh, fv] of [[true,false],[false,true],[true,true]]) {
+          const srcIdx = flipWangIdx(idx, fh, fv);
+          if (!excluded.has(srcIdx) && assignment[srcIdx]) {
+            flipped = { src: assignment[srcIdx], fh, fv }; break;
+          }
+        }
+        if (flipped) {
+          ctx.save();
+          ctx.translate(x * tileSize + tileSize/2, y * tileSize + tileSize/2);
+          ctx.scale(flipped.fh ? -1 : 1, flipped.fv ? -1 : 1);
+          ctx.drawImage(tilesetImg, flipped.src.col * TS, flipped.src.row * TS, TS, TS, -tileSize/2, -tileSize/2, tileSize, tileSize);
+          ctx.restore();
+          continue;
+        }
+      }
+      const a = assignment[idx];
+      ctx.drawImage(tilesetImg, a.col * TS, a.row * TS, TS, TS, x * tileSize, y * tileSize, tileSize, tileSize);
+    }
+  }
+}
+
+const CACHE_VER = 'v7_'; // MUST match v2.html
+
+// Tileset registry: label, path, cacheKey (matches v2.html's discoverAssets)
+const TILESETS = [
+  { label: 'Enchanted Grove (default)', path: '../village-templates/enchanted-grove/tileset.png', key: 'enchanted-grove-default' },
+  { label: 'Shadow Keep (default)', path: '../village-templates/shadow-keep/tileset.png', key: 'shadow-keep-default' },
+  { label: 'Desert Bazaar (default)', path: '../village-templates/desert-bazaar/tileset.png', key: 'desert-bazaar-default' },
+  { label: 'Frost Haven (default)', path: '../village-templates/frost-haven/tileset.png', key: 'frost-haven-default' },
+  { label: 'Jungle (default)', path: '../village-templates/jungle/tileset.png', key: 'jungle-default' },
+  { label: 'Grove - Brook Willow', path: '../village-templates/variants/grove-4.png', key: 'grove-4' },
+  { label: 'Grove - Spring Apple', path: '../village-templates/variants/grove-6.png', key: 'grove-6' },
+  { label: 'Shadow - Eldritch Void', path: '../village-templates/variants/void-a.png', key: 'void-a' },
+  { label: 'Shadow - Dungeon', path: '../village-templates/variants/shadow-2v2.png', key: 'shadow-2v2' },
+  { label: 'Shadow - Toxic Swamp', path: '../village-templates/variants/shadow-3v2.png', key: 'shadow-3v2' },
+  { label: 'Shadow - Battlefield', path: '../village-templates/variants/shadow-6v2.png', key: 'shadow-6v2' },
+  { label: 'Shadow - Cemetery', path: '../village-templates/variants/shadow-7v2.png', key: 'shadow-7v2' },
+  { label: 'Shadow - Lava A', path: '../village-templates/variants/lava-a.png', key: 'lava-a' },
+  { label: 'Shadow - Lava B', path: '../village-templates/variants/lava-b.png', key: 'lava-b' },
+  { label: 'Shadow - Frozen A', path: '../village-templates/variants/frozen-a.png', key: 'frozen-a' },
+  { label: 'Shadow - Frozen B', path: '../village-templates/variants/frozen-b.png', key: 'frozen-b' },
+  { label: 'Shadow - Frozen C', path: '../village-templates/variants/frozen-c.png', key: 'frozen-c' },
+  { label: 'Desert - Red Canyon', path: '../village-templates/variants/desert-1.png', key: 'desert-1' },
+  { label: 'Desert - Stargazer', path: '../village-templates/variants/desert-6.png', key: 'desert-6' },
+  { label: 'Frost - Ice Palace', path: '../village-templates/variants/frost-7.png', key: 'frost-7' },
+  { label: 'Frost - Ice Age', path: '../village-templates/variants/frost-6.png', key: 'frost-6' },
+  { label: 'Frost - Candy Land', path: '../village-templates/variants/frost-5.png', key: 'frost-5' },
+  { label: 'Frost - Lake A', path: '../village-templates/variants/lake-a.png', key: 'lake-a' },
+  { label: 'Frost - Lake B', path: '../village-templates/variants/lake-b.png', key: 'lake-b' },
+  { label: 'Frost - Lake C', path: '../village-templates/variants/lake-c.png', key: 'lake-c' },
+  { label: 'Jungle 1', path: '../village-templates/variants/jungle-1.png', key: 'jungle-1' },
+];
+
+let currentTilesetKey = '';
+let tilesetPath = '';
+
+function setupTilesetSelect() {
+  const select = document.getElementById('tilesetSelect');
+  for (const ts of TILESETS) {
+    const opt = document.createElement('option');
+    opt.value = ts.key;
+    opt.textContent = ts.label;
+    select.appendChild(opt);
+  }
+  // Default to URL param or first shadow keep
+  const params = new URLSearchParams(window.location.search);
+  const urlTileset = params.get('tileset');
+  if (urlTileset) {
+    const match = TILESETS.find(t => t.path.includes(urlTileset) || t.key === urlTileset);
+    if (match) select.value = match.key;
+  }
+  select.onchange = () => loadSelectedTileset();
+  loadSelectedTileset();
+}
+
+function loadSelectedTileset() {
+  const select = document.getElementById('tilesetSelect');
+  const ts = TILESETS.find(t => t.key === select.value);
+  if (!ts) return;
+  currentTilesetKey = ts.key;
+  tilesetPath = ts.path;
+  document.title = 'Tile Configurator — ' + ts.label;
+
+  // Load existing assignment from localStorage if available
+  const cached = localStorage.getItem('wang_map_' + CACHE_VER + currentTilesetKey);
+  if (cached) {
+    try {
+      const obj = JSON.parse(cached);
+      for (let i = 0; i < 16; i++) {
+        if (obj[i]) assignment[i] = { col: obj[i].x, row: obj[i].y };
+      }
+    } catch(e) {}
+  } else {
+    // Reset to default INITIAL
+    for (let i = 0; i < 16; i++) {
+      assignment[i] = { col: INITIAL[i].x, row: INITIAL[i].y };
+    }
+  }
+
+  tilesetImg.src = ts.path + '?' + Date.now();
+}
+
+// Flip a Wang index
+function flipWangIdx(idx, fh, fv) {
+  let nw=(idx>>3)&1, ne=(idx>>2)&1, sw=(idx>>1)&1, se=idx&1;
+  if (fh) { [nw,ne]=[ne,nw]; [sw,se]=[se,sw]; }
+  if (fv) { [nw,sw]=[sw,nw]; [ne,se]=[se,ne]; }
+  return nw*8+ne*4+sw*2+se;
+}
+
+function exportMap() {
+  const obj = {};
+
+  // First, add all non-excluded tiles
+  for (let i = 0; i < 16; i++) {
+    if (!excluded.has(i)) {
+      obj[i] = { x: assignment[i].col, y: assignment[i].row };
+    }
+  }
+
+  // Derive excluded tiles from flips of existing ones
+  for (const idx of excluded) {
+    for (const [fh, fv] of [[true,false],[false,true],[true,true]]) {
+      const srcIdx = flipWangIdx(idx, fh, fv);
+      if (!excluded.has(srcIdx) && obj[srcIdx]) {
+        obj[idx] = { x: obj[srcIdx].x, y: obj[srcIdx].y, flipH: fh, flipV: fv };
+        break;
+      }
+    }
+    // If still no match, use solid tile as fallback
+    if (!obj[idx]) {
+      obj[idx] = obj[0] || { x: 0, y: 0 };
+    }
+  }
+
+  const json = JSON.stringify(obj, null, 2);
+  const fullKey = 'wang_map_' + CACHE_VER + currentTilesetKey;
+
+  localStorage.setItem(fullKey, json);
+
+  const derivedList = [...excluded].filter(i => obj[i]?.flipH || obj[i]?.flipV).map(i => `idx${i}`).join(', ');
+  navigator.clipboard.writeText(json).then(() => {
+    const el = document.getElementById('exportResult');
+    el.style.display = 'block';
+    el.textContent = 'SAVED (' + fullKey + ')!\n'
+      + (derivedList ? 'Auto-flipped: ' + derivedList + '\n' : '')
+      + 'Reload map generator to use.\n\n' + json;
+  });
+}
+
+// Load tileset
+tilesetImg.onload = () => {
+  buildUI();
+  drawAllTiles();
+  drawPreview();
+};
+
+setupTilesetSelect();
+</script>
+</body></html>

@@ -1,0 +1,1474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Village Map Generator</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0d0d1a; color: #e0e0e0; font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; display: flex; overflow: hidden; }
+
+/* LEFT PANEL - Controls */
+.panel-left {
+  width: 280px; min-width: 280px; background: #1a1a2e; border-right: 1px solid #333;
+  display: flex; flex-direction: column; overflow-y: auto; padding: 12px;
+}
+.panel-left h2 { font-size: 14px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin: 12px 0 8px; }
+.panel-left h2:first-child { margin-top: 0; }
+
+select, input[type=range], button {
+  width: 100%; padding: 6px 8px; background: #2a2a4e; border: 1px solid #444;
+  color: #e0e0e0; border-radius: 4px; font-size: 13px; margin-bottom: 6px;
+}
+select:focus, button:focus { outline: none; border-color: #6c5ce7; }
+button { cursor: pointer; background: #6c5ce7; border-color: #6c5ce7; font-weight: 600; transition: 0.2s; }
+button:hover { background: #7d6ff0; }
+button.secondary { background: #2a2a4e; border-color: #555; }
+button.secondary:hover { background: #3a3a5e; }
+button.danger { background: #c0392b; border-color: #c0392b; }
+
+.range-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.range-row label { font-size: 12px; color: #aaa; min-width: 80px; }
+.range-row input { flex: 1; }
+.range-row span { font-size: 12px; color: #6c5ce7; min-width: 24px; text-align: right; }
+
+/* BUILDING SIDEBAR */
+.building-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.building-item {
+  width: 56px; height: 56px; border: 2px solid #333; border-radius: 4px;
+  cursor: grab; position: relative; background: #2a2a4e; overflow: hidden;
+}
+.building-item:hover { border-color: #6c5ce7; }
+.building-item.selected { border-color: #00ff88; box-shadow: 0 0 8px #00ff8844; }
+.building-item img { width: 100%; height: 100%; object-fit: contain; }
+.building-item .label {
+  position: absolute; bottom: 0; left: 0; right: 0; background: #000a;
+  font-size: 8px; text-align: center; padding: 1px; color: #fff;
+}
+
+/* CENTER - Canvas */
+.canvas-area {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  overflow: auto; position: relative; background: #111;
+}
+#mapCanvas { image-rendering: pixelated; cursor: crosshair; }
+
+/* TOOLBAR */
+.toolbar {
+  position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+  background: #1a1a2e; border: 1px solid #333; border-radius: 8px;
+  padding: 6px 10px; display: flex; gap: 6px; z-index: 10;
+}
+.tool-btn {
+  width: 32px; height: 32px; border: 1px solid #444; border-radius: 4px;
+  background: #2a2a4e; color: #e0e0e0; cursor: pointer; font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+}
+.tool-btn:hover { border-color: #6c5ce7; }
+.tool-btn.active { background: #6c5ce7; border-color: #6c5ce7; }
+
+/* STATUS BAR */
+.status-bar {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 24px;
+  background: #1a1a2e; border-top: 1px solid #333; padding: 0 10px;
+  font-size: 11px; color: #888; display: flex; align-items: center; gap: 16px;
+}
+
+/* ZOOM CONTROLS */
+.zoom-controls {
+  position: absolute; bottom: 34px; right: 10px; display: flex; flex-direction: column; gap: 4px;
+}
+.zoom-btn {
+  width: 28px; height: 28px; border: 1px solid #444; border-radius: 4px;
+  background: #2a2a4e; color: #e0e0e0; cursor: pointer; font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+}
+.zoom-btn:hover { background: #3a3a5e; }
+
+/* LOADING OVERLAY */
+.loading-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: #0d0d1aee; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; z-index: 100;
+}
+.loading-overlay.hidden { display: none; }
+.loading-spinner { width: 40px; height: 40px; border: 3px solid #333; border-top-color: #6c5ce7; border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { margin-top: 12px; color: #888; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loadingText">Loading assets...</div>
+</div>
+
+<!-- LEFT PANEL -->
+<div class="panel-left">
+  <h2>World Theme</h2>
+  <select id="worldSelect"></select>
+  <select id="tilesetSelect"></select>
+  <button id="recalibrateBtn" class="secondary" style="font-size:11px; padding:4px 6px;">Recalibrate Tiles</button>
+
+  <h2>Generation</h2>
+  <div class="range-row">
+    <label>Building Slots</label>
+    <input type="range" id="slotCount" min="3" max="12" value="6">
+    <span id="slotCountVal">6</span>
+  </div>
+
+  <h2>Map Size</h2>
+  <div class="range-row">
+    <label>Width</label>
+    <input type="range" id="mapWidth" min="20" max="60" value="40">
+    <span id="mapWidthVal">40</span>
+  </div>
+  <div class="range-row">
+    <label>Height</label>
+    <input type="range" id="mapHeight" min="20" max="50" value="30">
+    <span id="mapHeightVal">30</span>
+  </div>
+  <div class="range-row">
+    <label>Tree Density</label>
+    <input type="range" id="treeDensity" min="20" max="80" value="45">
+    <span id="treeDensityVal">45%</span>
+  </div>
+  <div class="range-row">
+    <label>Road Width</label>
+    <input type="range" id="roadWidth" min="1" max="3" value="2">
+    <span id="roadWidthVal">2</span>
+  </div>
+
+  <button id="generateBtn">Generate Random Map</button>
+  <button id="randomBuildingsBtn" class="secondary">Fill Random Buildings</button>
+  <button id="clearBtn" class="secondary">Clear Map</button>
+
+  <div class="range-row">
+    <label>Building Size</label>
+    <input type="range" id="buildingScale" min="50" max="200" value="100">
+    <span id="buildingScaleVal">100%</span>
+  </div>
+
+  <h2>Brush</h2>
+  <div class="range-row">
+    <label>Size</label>
+    <input type="range" id="brushSize" min="1" max="5" value="2">
+    <span id="brushSizeVal">2</span>
+  </div>
+
+  <h2>Buildings</h2>
+  <div class="building-list" id="buildingList"></div>
+
+  <h2 style="margin-top: 16px">Export</h2>
+  <button id="exportBtn" class="secondary">Export as PNG</button>
+  <button id="exportJsonBtn" class="secondary">Export Map Data (JSON)</button>
+</div>
+
+<!-- CANVAS AREA -->
+<div class="canvas-area">
+  <div class="toolbar">
+    <div class="tool-btn" data-tool="level0" title="Level 0 — Path / lowest">🟤</div>
+    <div class="tool-btn active" data-tool="level1" title="Level 1 — Main ground">🟢</div>
+    <div class="tool-btn" data-tool="level2" title="Level 2 — Elevated">🟫</div>
+    <div class="tool-btn" data-tool="level3" title="Level 3 — Peak">⛰️</div>
+    <div class="tool-btn" data-tool="slot" title="Place Building Slot">🏠</div>
+    <div class="tool-btn" data-tool="pan" title="Pan View">✋</div>
+  </div>
+  <canvas id="mapCanvas"></canvas>
+  <div class="zoom-controls">
+    <div class="zoom-btn" id="zoomIn">+</div>
+    <div class="zoom-btn" id="zoomOut">-</div>
+  </div>
+  <div class="status-bar">
+    <span id="statusCoords">0, 0</span>
+    <span id="statusZoom">100%</span>
+    <span id="statusTool">Tool: Lower Terrain</span>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIGURATION - All tilesets and buildings
+// ============================================================
+const WORLDS = {
+  'enchanted-grove': {
+    name: 'Enchanted Grove',
+    tilesets: {}, wangMaps: {},
+    buildings: ['tavern','library','windmill','palace','forge','temple','market','tower','observatory','stables']
+  },
+  'shadow-keep': {
+    name: 'Shadow Keep',
+    tilesets: {}, wangMaps: {},
+    buildings: ['tavern','library','windmill','palace','forge','temple','market','tower','observatory','stables']
+  },
+  'desert-bazaar': {
+    name: 'Desert Bazaar',
+    tilesets: {}, wangMaps: {},
+    buildings: ['tavern','library','windmill','palace','forge','temple','market','tower','observatory','stables']
+  },
+  'frost-haven': {
+    name: 'Frost Haven',
+    tilesets: {}, wangMaps: {},
+    buildings: ['tavern','library','windmill','palace','forge','temple','market','tower','observatory','stables']
+  },
+  'jungle': {
+    name: 'Jungle',
+    tilesets: {}, wangMaps: {},
+    buildings: [] // No buildings yet for jungle
+  }
+};
+
+// ============================================================
+// WANG TILE AUTOTILING
+// ============================================================
+// PixelLab Wang tileset: 4x4 grid, 16 tiles
+// Corner-based: each tile represents a combination of 4 corners
+// being upper (1) or lower (0): TL TR BL BR
+// Standard blob mapping for 4-corner Wang tiles
+// Correct mapping from PixelLab metadata (verified)
+// Index = NW*8 + NE*4 + SW*2 + SE*1
+const WANG_MAP = {
+  // User-verified + missing tiles generated by rotation/flip
+  // idx = NW*8 + NE*4 + SW*2 + SE (1=grass, 0=wood after inversion)
+  0:  { x: 2, y: 1 }, // solid wood
+  1:  { x: 2, y: 2 }, // grass corner BR
+  2:  { x: 0, y: 1 }, // grass corner BL (rotated from BR)
+  3:  { x: 1, y: 3 }, // top edge
+  4:  { x: 1, y: 1 }, // grass corner TR (rotated from BR)
+  5:  { x: 3, y: 1 }, // left edge (wood left, grass right)
+  6:  { x: 2, y: 3 }, // diagonal (rare)
+  7:  { x: 3, y: 2 }, // wood corner TL
+  8:  { x: 0, y: 2 }, // grass corner TL (rotated from BR)
+  9:  { x: 3, y: 3 }, // diagonal (rare)
+  10: { x: 1, y: 2 }, // right edge (grass left, wood right)
+  11: { x: 0, y: 3 }, // wood corner TR
+  12: { x: 2, y: 0 }, // bottom edge
+  13: { x: 3, y: 0 }, // wood corner BL
+  14: { x: 1, y: 0 }, // wood corner BR
+  15: { x: 0, y: 0 }, // solid grass
+};
+
+// ============================================================
+// AUTO WANG MAP — Pixel analysis to compute per-tileset mapping
+// ============================================================
+function sampleTileCorners(img) {
+  const TS = 32;
+  const offscreen = document.createElement('canvas');
+  offscreen.width = 128; offscreen.height = 128;
+  const octx = offscreen.getContext('2d');
+  octx.drawImage(img, 0, 0);
+
+  const tiles = [];
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 4; col++) {
+      const ox = col * TS, oy = row * TS;
+      const sampleCorner = (cx, cy) => {
+        const data = octx.getImageData(cx, cy, 6, 6).data;
+        let r = 0, g = 0, b = 0, count = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          if (data[i + 3] < 128) continue;
+          r += data[i]; g += data[i+1]; b += data[i+2]; count++;
+        }
+        if (count === 0) return { r: 128, g: 128, b: 128 };
+        return { r: r/count, g: g/count, b: b/count };
+      };
+      tiles.push({
+        col, row,
+        corners: {
+          nw: sampleCorner(ox + 1, oy + 1),
+          ne: sampleCorner(ox + 25, oy + 1),
+          sw: sampleCorner(ox + 1, oy + 25),
+          se: sampleCorner(ox + 25, oy + 25),
+        }
+      });
+    }
+  }
+  return tiles;
+}
+
+// Flip transform table: given a Wang index, what index do you get after flipH / flipV?
+// flipH swaps NW↔NE, SW↔SE. flipV swaps NW↔SW, NE↔SE.
+function flipIdx(idx, fh, fv) {
+  let nw = (idx >> 3) & 1, ne = (idx >> 2) & 1, sw = (idx >> 1) & 1, se = idx & 1;
+  if (fh) { [nw, ne] = [ne, nw]; [sw, se] = [se, sw]; }
+  if (fv) { [nw, sw] = [sw, nw]; [ne, se] = [se, ne]; }
+  return nw * 8 + ne * 4 + sw * 2 + se;
+}
+
+// For each missing Wang index, derive it from an existing tile + flip
+const DERIVE_TABLE = {};
+for (let idx = 0; idx < 16; idx++) {
+  DERIVE_TABLE[idx] = [];
+  for (const [fh, fv] of [[true,false],[false,true],[true,true]]) {
+    const srcIdx = flipIdx(idx, fh, fv);
+    if (srcIdx !== idx) {
+      DERIVE_TABLE[idx].push({ src: srcIdx, flipH: fh, flipV: fv });
+    }
+  }
+}
+
+function computeWangMap(img) {
+  const tiles = sampleTileCorners(img);
+  const dist = (a, b) => Math.sqrt((a.r-b.r)**2 + (a.g-b.g)**2 + (a.b-b.b)**2);
+  const lum = c => 0.299 * c.r + 0.587 * c.g + 0.114 * c.b;
+  const avg = arr => {
+    let r=0,g=0,b=0;
+    for (const c of arr) { r+=c.r; g+=c.g; b+=c.b; }
+    return { r:r/arr.length, g:g/arr.length, b:b/arr.length };
+  };
+
+  // Step 1: Find the two SOLID tiles
+  const tileVariances = tiles.map(t => {
+    const corners = [t.corners.nw, t.corners.ne, t.corners.sw, t.corners.se];
+    const mean = avg(corners);
+    let variance = 0;
+    for (const c of corners) variance += dist(c, mean) ** 2;
+    return { tile: t, variance, mean };
+  });
+  tileVariances.sort((a, b) => a.variance - b.variance);
+  const solidA = tileVariances[0];
+  let solidB = tileVariances[1];
+  for (const tv of tileVariances.slice(1)) {
+    if (dist(tv.mean, solidA.mean) > dist(solidB.mean, solidA.mean)) {
+      solidB = tv; break;
+    }
+  }
+
+  // Step 2: Polarity — brighter solid = grass (corner value 1 after inversion)
+  const lumA = lum(solidA.mean);
+  const lumB = lum(solidB.mean);
+  const grassCenter = lumA >= lumB ? solidA.mean : solidB.mean;
+  const woodCenter = lumA >= lumB ? solidB.mean : solidA.mean;
+  console.log(`[WangMap] solidA=(${solidA.tile.col},${solidA.tile.row}) lum=${lumA.toFixed(1)} var=${solidA.variance.toFixed(1)}, solidB=(${solidB.tile.col},${solidB.tile.row}) lum=${lumB.toFixed(1)} var=${solidB.variance.toFixed(1)}`);
+  console.log(`[WangMap] grassCenter=rgb(${Math.round(grassCenter.r)},${Math.round(grassCenter.g)},${Math.round(grassCenter.b)}) lum=${lum(grassCenter).toFixed(1)}`);
+  console.log(`[WangMap] woodCenter=rgb(${Math.round(woodCenter.r)},${Math.round(woodCenter.g)},${Math.round(woodCenter.b)}) lum=${lum(woodCenter).toFixed(1)}`);
+
+  // Step 3: Score every corner by grassiness
+  const allCorners = [];
+  for (let ti = 0; ti < tiles.length; ti++) {
+    for (const key of ['nw','ne','sw','se']) {
+      const c = tiles[ti].corners[key];
+      const dg = dist(c, grassCenter);
+      const dw = dist(c, woodCenter);
+      allCorners.push({ ti, key, grassiness: dw / (dg + dw + 0.001) });
+    }
+  }
+  const sorted = [...allCorners].sort((a, b) => b.grassiness - a.grassiness);
+
+  // Step 4: Best-effort classification — use 32/32 split, allow duplicates
+  function classifyWithSplit(topN, invert) {
+    const order = invert
+      ? [...allCorners].sort((a, b) => a.grassiness - b.grassiness)
+      : sorted;
+    const grassSet = new Set();
+    for (let i = 0; i < topN; i++) grassSet.add(order[i].ti + '_' + order[i].key);
+    const wmap = {};
+    for (let ti = 0; ti < tiles.length; ti++) {
+      const cv = {};
+      for (const key of ['nw','ne','sw','se']) {
+        cv[key] = grassSet.has(ti + '_' + key) ? 1 : 0;
+      }
+      const idx = cv.nw * 8 + cv.ne * 4 + cv.sw * 2 + cv.se;
+      // Keep first occurrence (skip duplicates)
+      if (!wmap[idx]) {
+        wmap[idx] = { x: tiles[ti].col, y: tiles[ti].row };
+      }
+    }
+    return wmap;
+  }
+
+  // Try splits, pick the one with most unique indices
+  let bestMap = null, bestCount = 0;
+  for (const split of [32, 31, 33, 30, 34]) {
+    for (const inv of [false, true]) {
+      const wmap = classifyWithSplit(split, inv);
+      const count = Object.keys(wmap).length;
+      if (count > bestCount) { bestCount = count; bestMap = wmap; }
+      if (count === 16) break;
+    }
+    if (bestCount === 16) break;
+  }
+
+  // Step 5: Fill missing indices by flipping existing tiles
+  if (bestMap) {
+    for (let idx = 0; idx < 16; idx++) {
+      if (bestMap[idx]) continue;
+      // Try to derive from existing tile
+      for (const d of DERIVE_TABLE[idx]) {
+        if (bestMap[d.src]) {
+          bestMap[idx] = { ...bestMap[d.src], flipH: d.flipH, flipV: d.flipV };
+          break;
+        }
+      }
+    }
+  }
+  // POLARITY CHECK: idx 15 (all grass corners) MUST be the brighter tile
+  // idx 0 (all wood corners) MUST be the darker tile
+  // If inverted, swap all indices: new_idx = 15 - old_idx
+  if (bestMap && bestMap[0] && bestMap[15]) {
+    const t15 = tiles.find(t => t.col === bestMap[15].x && t.row === bestMap[15].y);
+    const t0 = tiles.find(t => t.col === bestMap[0].x && t.row === bestMap[0].y);
+    if (t15 && t0) {
+      const lum15 = lum(avg([t15.corners.nw, t15.corners.ne, t15.corners.sw, t15.corners.se]));
+      const lum0 = lum(avg([t0.corners.nw, t0.corners.ne, t0.corners.sw, t0.corners.se]));
+      if (lum0 > lum15) {
+        // Polarity wrong! idx 15 is darker than idx 0. Invert all indices.
+        const fixed = {};
+        for (let idx = 0; idx < 16; idx++) {
+          if (bestMap[idx]) fixed[15 - idx] = bestMap[idx];
+        }
+        bestMap = fixed;
+        // Re-fill any gaps from the inversion
+        for (let idx = 0; idx < 16; idx++) {
+          if (bestMap[idx]) continue;
+          for (const d of DERIVE_TABLE[idx]) {
+            if (bestMap[d.src] && !bestMap[d.src].flipH && !bestMap[d.src].flipV) {
+              bestMap[idx] = { ...bestMap[d.src], flipH: d.flipH, flipV: d.flipV };
+              break;
+            }
+          }
+        }
+        console.log('[WangMap] POLARITY FIXED (was inverted)');
+      }
+    }
+  }
+  return bestMap;
+}
+
+// Purge ALL old wang_map caches on load (new algorithm version)
+const WANG_CACHE_VER = 'v7_';
+(function purgeOldCaches() {
+  Object.keys(localStorage).forEach(k => {
+    if (k.startsWith('wang_map_') && !k.startsWith('wang_map_' + WANG_CACHE_VER)) {
+      localStorage.removeItem(k);
+    }
+  });
+})();
+
+function getWangMapForTileset(img, cacheKey) {
+  const fullKey = 'wang_map_' + WANG_CACHE_VER + cacheKey;
+  const cached = localStorage.getItem(fullKey);
+  if (cached) {
+    try { return JSON.parse(cached); } catch(e) {}
+  }
+  try {
+    const wmap = computeWangMap(img);
+    if (wmap) {
+      console.log('[WangMap] SUCCESS for', cacheKey, 'idx0→(' + wmap[0]?.x + ',' + wmap[0]?.y + ') idx15→(' + wmap[15]?.x + ',' + wmap[15]?.y + ')');
+      localStorage.setItem(fullKey, JSON.stringify(wmap));
+    } else {
+      console.error('[WangMap] RETURNED NULL for', cacheKey);
+    }
+    return wmap;
+  } catch(e) {
+    console.error('[WangMap] FAILED for', cacheKey, e.message);
+    return null;
+  }
+}
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  mapW: 40,
+  mapH: 30,
+  tileSize: 32,
+  zoom: 3,
+  tool: 'level1',
+  brushSize: 2,
+  terrainGrid: null,  // 0=lower, 1=upper, 2=road
+  buildingSlots: [],   // {x, y, w, h, building: null}
+  currentWorld: 'enchanted-grove',
+  currentTileset: 'default',
+  tilesetImg: null,
+  roadTilesetImg: null,
+  buildingImgs: {},
+  selectedBuilding: null,
+  isPainting: false,
+  panStart: null,
+  scrollStart: null,
+};
+
+const canvas = document.getElementById('mapCanvas');
+const ctx = canvas.getContext('2d');
+
+// ============================================================
+// ASSET LOADING
+// ============================================================
+const BASE_PATH = '../village-templates';
+
+const CACHE_BUST = Date.now();
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous'; // required for getImageData in computeWangMap
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src + '?v=' + CACHE_BUST; // cache-bust ALL image loads
+  });
+}
+
+async function discoverAssets() {
+  const loading = document.getElementById('loadingText');
+
+  // Try to load tileset images for each world
+  const worldKeys = Object.keys(WORLDS);
+
+  for (const world of worldKeys) {
+    loading.textContent = `Loading ${WORLDS[world].name}...`;
+
+    // Default tileset
+    const defaultImg = await loadImage(`${BASE_PATH}/${world}/tileset.png`);
+    if (defaultImg) {
+      WORLDS[world].tilesets['default'] = defaultImg;
+      const wm = getWangMapForTileset(defaultImg, `${world}-default`);
+      if (wm) WORLDS[world].wangMaps['default'] = wm;
+    }
+
+    // Road tileset
+    const roadImg = await loadImage(`${BASE_PATH}/variants/road-${world.split('-')[0]}.png`);
+    if (roadImg) {
+      WORLDS[world].roadTileset = roadImg;
+    }
+
+    // Buildings
+    for (const b of WORLDS[world].buildings) {
+      const bImg = await loadImage(`${BASE_PATH}/${world}/buildings/${b}.png`);
+      if (bImg) {
+        if (!WORLDS[world].buildingImgs) WORLDS[world].buildingImgs = {};
+        WORLDS[world].buildingImgs[b] = bImg;
+      }
+    }
+  }
+
+  // Load variant tilesets
+  const variantFiles = [
+    // Grove
+    { world: 'enchanted-grove', key: 'brook-willow', file: 'grove-4' },
+    { world: 'enchanted-grove', key: 'spring-apple', file: 'grove-6' },
+    // Shadow
+    { world: 'shadow-keep', key: 'eldritch-void', file: 'void-a' },
+    { world: 'shadow-keep', key: 'dungeon', file: 'shadow-2v2' },
+    { world: 'shadow-keep', key: 'toxic-swamp', file: 'shadow-3v2' },
+    { world: 'shadow-keep', key: 'battlefield', file: 'shadow-6v2' },
+    { world: 'shadow-keep', key: 'cemetery', file: 'shadow-7v2' },
+    { world: 'shadow-keep', key: 'lava-a', file: 'lava-a' },
+    { world: 'shadow-keep', key: 'lava-b', file: 'lava-b' },
+    { world: 'shadow-keep', key: 'frozen-a', file: 'frozen-a' },
+    { world: 'shadow-keep', key: 'frozen-b', file: 'frozen-b' },
+    { world: 'shadow-keep', key: 'frozen-c', file: 'frozen-c' },
+    // Desert
+    { world: 'desert-bazaar', key: 'red-canyon', file: 'desert-1' },
+    { world: 'desert-bazaar', key: 'stargazer', file: 'desert-6' },
+    // Frost
+    { world: 'frost-haven', key: 'ice-palace', file: 'frost-7' },
+    { world: 'frost-haven', key: 'ice-age', file: 'frost-6' },
+    { world: 'frost-haven', key: 'candy-land', file: 'frost-5' },
+    { world: 'frost-haven', key: 'lake-a', file: 'lake-a' },
+    { world: 'frost-haven', key: 'lake-b', file: 'lake-b' },
+    { world: 'frost-haven', key: 'lake-c', file: 'lake-c' },
+    // Jungle
+    { world: 'jungle', key: 'default', file: 'jungle-1' },
+  ];
+
+  for (const v of variantFiles) {
+    const img = await loadImage(`${BASE_PATH}/variants/${v.file}.png`);
+    if (img) {
+      WORLDS[v.world].tilesets[v.key] = img;
+      const wm = getWangMapForTileset(img, v.file);
+      if (wm) WORLDS[v.world].wangMaps[v.key] = wm;
+    }
+  }
+
+  // Also try loading jungle default from variants
+  if (!WORLDS['jungle'].tilesets['default']) {
+    const j1 = await loadImage(`${BASE_PATH}/variants/jungle-1.png`);
+    if (j1) {
+      WORLDS['jungle'].tilesets['default'] = j1;
+      const wm = getWangMapForTileset(j1, 'jungle-1');
+      if (wm) WORLDS['jungle'].wangMaps['default'] = wm;
+    }
+  }
+
+  // Load agent-generated tilesets (registered in localStorage by world-creator.html)
+  const agentList = JSON.parse(localStorage.getItem('agent_tilesets') || '[]');
+  for (const key of agentList) {
+    const img = await loadImage(`${BASE_PATH}/variants/${key}.png`);
+    if (!img) continue;
+
+    // Check for agent-generated buildings
+    const bInfoRaw = localStorage.getItem('agent_buildings_' + key);
+    let buildingsList = null, buildingsDir = null, customBuildingImgs = null;
+    if (bInfoRaw) {
+      try {
+        const bInfo = JSON.parse(bInfoRaw);
+        buildingsDir = bInfo.dir;
+        buildingsList = bInfo.list;
+        customBuildingImgs = {};
+        for (const name of bInfo.list) {
+          const bImg = await loadImage(`${BASE_PATH}/${buildingsDir}/${name}.png`);
+          if (bImg) customBuildingImgs[name] = bImg;
+        }
+      } catch(e) { console.warn('bad agent_buildings entry', e); }
+    }
+
+    // Load chain info (3-tier tilesets) if available
+    const chainRaw = localStorage.getItem('agent_chain_' + key);
+    let chainKeys = [key, key, key]; // default: use primary for all 3
+    let chainImgs = [img, img, img];
+    let chainMaps = [];
+    if (chainRaw) {
+      try {
+        const chain = JSON.parse(chainRaw);
+        if (chain.keys && chain.keys.length === 3) {
+          chainKeys = chain.keys;
+          chainImgs = [];
+          for (const ck of chain.keys) {
+            const ckImg = await loadImage(`${BASE_PATH}/variants/${ck}.png`);
+            chainImgs.push(ckImg || img);
+          }
+        }
+      } catch(e) { console.warn('bad agent_chain entry', e); }
+    }
+    for (const ck of chainKeys) {
+      const cached = localStorage.getItem('wang_map_v7_' + ck);
+      chainMaps.push(cached ? JSON.parse(cached) : null);
+    }
+
+    // Create per-tileset world entry so each agent tileset has its own buildings
+    const worldKey = 'agent-' + key;
+    WORLDS[worldKey] = {
+      name: '🤖 ' + key.replace('agent-', '').slice(0, 20),
+      tilesets: { [key]: img },
+      wangMaps: {},
+      buildings: buildingsList || WORLDS['shadow-keep'].buildings,
+      buildingImgs: customBuildingImgs || WORLDS['shadow-keep'].buildingImgs,
+      roadTileset: WORLDS['shadow-keep'].roadTileset,
+      // 3-tier chain
+      chainImgs,    // [tileset1_img, tileset2_img, tileset3_img]
+      chainMaps,    // [wang_map1, wang_map2, wang_map3]
+      chainKeys,
+    };
+    const wm = getWangMapForTileset(img, key);
+    if (wm) WORLDS[worldKey].wangMaps[key] = wm;
+  }
+}
+
+// ============================================================
+// UI SETUP
+// ============================================================
+function setupUI() {
+  const worldSelect = document.getElementById('worldSelect');
+  const tilesetSelect = document.getElementById('tilesetSelect');
+
+  // Populate world select
+  for (const [key, world] of Object.entries(WORLDS)) {
+    if (Object.keys(world.tilesets).length === 0) continue;
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = world.name;
+    worldSelect.appendChild(opt);
+  }
+
+  worldSelect.addEventListener('change', () => {
+    state.currentWorld = worldSelect.value;
+    updateTilesetSelect();
+    updateBuildingList();
+    loadCurrentTileset();
+    render();
+  });
+
+  tilesetSelect.addEventListener('change', () => {
+    state.currentTileset = tilesetSelect.value;
+    loadCurrentTileset();
+    render();
+  });
+
+  // Range inputs
+  const ranges = [
+    ['mapWidth', 'mapWidthVal', v => { state.mapW = +v; }],
+    ['mapHeight', 'mapHeightVal', v => { state.mapH = +v; }],
+    ['slotCount', 'slotCountVal', null],
+    ['treeDensity', 'treeDensityVal', null, v => v + '%'],
+    ['roadWidth', 'roadWidthVal', null],
+    ['brushSize', 'brushSizeVal', v => { state.brushSize = +v; }],
+  ];
+  for (const [id, valId, cb, fmt] of ranges) {
+    const el = document.getElementById(id);
+    const valEl = document.getElementById(valId);
+    el.addEventListener('input', () => {
+      valEl.textContent = fmt ? fmt(el.value) : el.value;
+      if (cb) cb(el.value);
+    });
+  }
+
+  // Tool buttons
+  document.querySelectorAll('.tool-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.tool = btn.dataset.tool;
+      document.getElementById('statusTool').textContent = 'Tool: ' + btn.title;
+      canvas.style.cursor = state.tool === 'pan' ? 'grab' : 'crosshair';
+    });
+  });
+
+  // Buttons
+  document.getElementById('generateBtn').addEventListener('click', generateMap);
+  document.getElementById('clearBtn').addEventListener('click', clearMap);
+  document.getElementById('randomBuildingsBtn').addEventListener('click', () => { generateRandomBuildings(); });
+  document.getElementById('exportBtn').addEventListener('click', exportPNG);
+  document.getElementById('buildingScale').addEventListener('input', (e) => {
+    document.getElementById('buildingScaleVal').textContent = e.target.value + '%';
+    render();
+  });
+  document.getElementById('exportJsonBtn').addEventListener('click', exportJSON);
+  document.getElementById('recalibrateBtn').addEventListener('click', () => {
+    const world = WORLDS[state.currentWorld];
+    const img = world.tilesets[state.currentTileset];
+    if (!img) return;
+    // Find the cache key for this tileset
+    let cacheKey = `${state.currentWorld}-default`;
+    // For variants, use the file name from variantFiles
+    const variantEntry = document.getElementById('tilesetSelect');
+    if (state.currentTileset !== 'default') {
+      // Clear any cached/manual override
+      const allKeys = Object.keys(localStorage).filter(k => k.startsWith('wang_map_'));
+      for (const k of allKeys) {
+        if (k.includes(state.currentTileset)) localStorage.removeItem(k);
+      }
+    }
+    localStorage.removeItem('wang_map_' + cacheKey);
+    // Recompute
+    const wm = computeWangMap(img);
+    if (wm) {
+      world.wangMaps[state.currentTileset] = wm;
+    }
+    render();
+  });
+  document.getElementById('zoomIn').addEventListener('click', () => { state.zoom = Math.min(6, state.zoom + 0.5); resizeCanvas(); render(); });
+  document.getElementById('zoomOut').addEventListener('click', () => { state.zoom = Math.max(0.3, state.zoom - 0.5); resizeCanvas(); render(); });
+
+  // Canvas events
+  canvas.addEventListener('mousedown', onCanvasMouseDown);
+  canvas.addEventListener('mousemove', onCanvasMouseMove);
+  canvas.addEventListener('mouseup', () => { state.isPainting = false; state.draggingSlot = null; });
+  canvas.addEventListener('mouseleave', () => { state.isPainting = false; state.draggingSlot = null; });
+  canvas.addEventListener('wheel', onCanvasWheel, { passive: false });
+
+  updateTilesetSelect();
+  updateBuildingList();
+}
+
+function updateTilesetSelect() {
+  const select = document.getElementById('tilesetSelect');
+  select.innerHTML = '';
+  const world = WORLDS[state.currentWorld];
+  for (const key of Object.keys(world.tilesets)) {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = key.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    select.appendChild(opt);
+  }
+  state.currentTileset = select.value || 'default';
+}
+
+function updateBuildingList() {
+  const list = document.getElementById('buildingList');
+  list.innerHTML = '';
+  const world = WORLDS[state.currentWorld];
+  if (!world.buildingImgs) return;
+
+  for (const [name, img] of Object.entries(world.buildingImgs)) {
+    const item = document.createElement('div');
+    item.className = 'building-item';
+    item.dataset.building = name;
+
+    const imgEl = document.createElement('img');
+    imgEl.src = img.src;
+    item.appendChild(imgEl);
+
+    const label = document.createElement('div');
+    label.className = 'label';
+    label.textContent = name;
+    item.appendChild(label);
+
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.building-item').forEach(b => b.classList.remove('selected'));
+      item.classList.add('selected');
+      state.selectedBuilding = name;
+      // Switch to slot tool
+      document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector('[data-tool="slot"]').classList.add('active');
+      state.tool = 'slot';
+    });
+
+    list.appendChild(item);
+  }
+}
+
+function loadCurrentTileset() {
+  const world = WORLDS[state.currentWorld];
+  state.tilesetImg = world.tilesets[state.currentTileset] || world.tilesets['default'] || null;
+  state.roadTilesetImg = world.roadTileset || null;
+}
+
+// ============================================================
+// MAP GENERATION
+// ============================================================
+function initGrid() {
+  // Corner grid: (W+1) x (H+1) — each value is a corner point, not a cell center
+  // Tile at (x,y) reads corners [y][x], [y][x+1], [y+1][x], [y+1][x+1]
+  state.terrainGrid = Array.from({ length: state.mapH + 1 }, () => new Uint8Array(state.mapW + 1)); // 0=grass corners, 1=tree corners
+  state.buildingSlots = [];
+}
+
+function generateMap() {
+  const slotCount = +document.getElementById('slotCount').value;
+  const density = +document.getElementById('treeDensity').value / 100;
+  const roadW = +document.getElementById('roadWidth').value;
+
+  initGrid();
+  const { mapW, mapH, terrainGrid } = state;
+  const cW = mapW + 1, cH = mapH + 1;
+
+  // SMART VILLAGE GENERATOR
+  // Trees = sidewalks/streets, Grass = building plots
+  // Every grass area fits a building. Randomized each generation.
+
+  const slots = [];
+  const slotW = 4, slotH = 4;
+  const grassPad = 2;
+  const borderW = 2;
+
+  // Step 1: Fill EVERYTHING with level 1 (main ground)
+  for (let y = 0; y < cH; y++)
+    for (let x = 0; x < cW; x++)
+      terrainGrid[y][x] = 1;
+
+  // Step 2: Random layout — pick a layout style randomly each time
+  const layoutStyle = Math.floor(Math.random() * 3); // 0=grid, 1=scattered, 2=L-shape
+
+  const plotFullW = slotW + grassPad * 2;
+  const plotFullH = slotH + grassPad * 2;
+  const availW = mapW - borderW * 2;
+  const availH = mapH - borderW * 2;
+
+  if (layoutStyle === 0) {
+    // GRID with random street widths and offsets
+    const streetW = 2 + Math.floor(Math.random() * 3); // 2-4 tiles
+    const maxCols = Math.floor((availW + streetW) / (plotFullW + streetW));
+    const maxRows = Math.floor((availH + streetW) / (plotFullH + streetW));
+    let cols = Math.min(maxCols, Math.ceil(Math.sqrt(slotCount * (availW / availH))));
+    let rows = Math.min(maxRows, Math.ceil(slotCount / cols));
+    // Random grid offset
+    const gridW = cols * plotFullW + (cols - 1) * streetW;
+    const gridH = rows * plotFullH + (rows - 1) * streetW;
+    const maxStartX = Math.max(borderW, mapW - gridW - borderW);
+    const maxStartY = Math.max(borderW, mapH - gridH - borderW);
+    const startX = borderW + Math.floor(Math.random() * Math.max(1, maxStartX - borderW));
+    const startY = borderW + Math.floor(Math.random() * Math.max(1, maxStartY - borderW));
+
+    let placed = 0;
+    for (let row = 0; row < rows && placed < slotCount; row++) {
+      for (let col = 0; col < cols && placed < slotCount; col++) {
+        const gx = startX + col * (plotFullW + streetW) + Math.floor(Math.random() * 2);
+        const gy = startY + row * (plotFullH + streetW) + Math.floor(Math.random() * 2);
+        slots.push({ x: gx + grassPad, y: gy + grassPad, w: slotW, h: slotH, building: null });
+        for (let y = gy; y <= gy + plotFullH; y++)
+          for (let x = gx; x <= gx + plotFullW; x++)
+            if (x >= 0 && x < cW && y >= 0 && y < cH) terrainGrid[y][x] = 0;
+        placed++;
+      }
+    }
+  } else if (layoutStyle === 1) {
+    // SCATTERED — random positions with minimum distance
+    const minDist = plotFullW + 2;
+    let placed = 0;
+    for (let attempt = 0; attempt < 3000 && placed < slotCount; attempt++) {
+      const gx = borderW + Math.floor(Math.random() * (availW - plotFullW));
+      const gy = borderW + Math.floor(Math.random() * (availH - plotFullH));
+      // Check distance from existing slots
+      let tooClose = false;
+      for (const s of slots) {
+        const dx = (gx + grassPad) - s.x, dy = (gy + grassPad) - s.y;
+        if (Math.abs(dx) < minDist && Math.abs(dy) < minDist) { tooClose = true; break; }
+      }
+      if (tooClose) continue;
+      slots.push({ x: gx + grassPad, y: gy + grassPad, w: slotW, h: slotH, building: null });
+      for (let y = gy; y <= gy + plotFullH; y++)
+        for (let x = gx; x <= gx + plotFullW; x++)
+          if (x >= 0 && x < cW && y >= 0 && y < cH) terrainGrid[y][x] = 0;
+      placed++;
+    }
+  } else {
+    // VILLAGE PATH — plots along a winding main street
+    const mainY = borderW + Math.floor(availH * 0.3) + Math.floor(Math.random() * Math.floor(availH * 0.4));
+    const streetH = 2 + Math.floor(Math.random() * 2);
+    // Carve horizontal main street
+    for (let y = mainY; y < mainY + streetH + 1 && y < cH; y++)
+      for (let x = borderW; x < cW - borderW; x++)
+        terrainGrid[y][x] = 0;
+
+    // Place plots on both sides of the street
+    let placed = 0;
+    const spacing = plotFullW + 2 + Math.floor(Math.random() * 3);
+    let curX = borderW + 1 + Math.floor(Math.random() * 3);
+    let side = 0; // alternate top/bottom
+    while (placed < slotCount && curX + plotFullW < mapW - borderW) {
+      const gx = curX;
+      const gy = side === 0
+        ? mainY - plotFullH - 1 - Math.floor(Math.random() * 2)
+        : mainY + streetH + 1 + Math.floor(Math.random() * 2);
+      if (gy >= borderW && gy + plotFullH < mapH - borderW) {
+        slots.push({ x: gx + grassPad, y: gy + grassPad, w: slotW, h: slotH, building: null });
+        for (let y = gy; y <= gy + plotFullH; y++)
+          for (let x = gx; x <= gx + plotFullW; x++)
+            if (x >= 0 && x < cW && y >= 0 && y < cH) terrainGrid[y][x] = 0;
+        placed++;
+      }
+      side = 1 - side;
+      if (side === 0) curX += spacing;
+    }
+    // If couldn't place all slots on the path, place remaining scattered
+    const minDist = plotFullW + 2;
+    for (let attempt = 0; attempt < 3000 && placed < slotCount; attempt++) {
+      const gx = borderW + Math.floor(Math.random() * (availW - plotFullW));
+      const gy = borderW + Math.floor(Math.random() * (availH - plotFullH));
+      let tooClose = false;
+      for (const s of slots) {
+        if (Math.abs(gx + grassPad - s.x) < minDist && Math.abs(gy + grassPad - s.y) < minDist) { tooClose = true; break; }
+      }
+      if (tooClose) continue;
+      slots.push({ x: gx + grassPad, y: gy + grassPad, w: slotW, h: slotH, building: null });
+      for (let y = gy; y <= gy + plotFullH; y++)
+        for (let x = gx; x <= gx + plotFullW; x++)
+          if (x >= 0 && x < cW && y >= 0 && y < cH) terrainGrid[y][x] = 0;
+      placed++;
+    }
+  }
+
+  state.buildingSlots = slots;
+
+  // STEP 3: Sprinkle elevation blobs (level 2) in empty grass areas
+  // (only if the world has a 3-tier chain available)
+  const chain = getActiveChain();
+  const hasChain = chain && chain.imgs[1] !== chain.imgs[0];
+  if (hasChain) {
+    // Build a mask of which corners are "used" (inside building plots)
+    const used = Array.from({ length: cH }, () => new Uint8Array(cW));
+    for (const s of slots) {
+      for (let y = Math.max(0, s.y - grassPad); y <= Math.min(cH-1, s.y + s.h + grassPad); y++)
+        for (let x = Math.max(0, s.x - grassPad); x <= Math.min(cW-1, s.x + s.w + grassPad); x++)
+          used[y][x] = 1;
+    }
+    // Place 2-4 elevation blobs
+    const blobCount = 2 + Math.floor(Math.random() * 3);
+    for (let b = 0; b < blobCount; b++) {
+      for (let attempt = 0; attempt < 40; attempt++) {
+        const cx = borderW + 2 + Math.floor(Math.random() * (mapW - 2 * borderW - 4));
+        const cy = borderW + 2 + Math.floor(Math.random() * (mapH - 2 * borderW - 4));
+        const radius = 3 + Math.floor(Math.random() * 3); // 3-5
+        // Check if area is mostly free
+        let freeCount = 0, total = 0;
+        for (let y = cy - radius; y <= cy + radius; y++)
+          for (let x = cx - radius; x <= cx + radius; x++)
+            if (x >= 0 && x < cW && y >= 0 && y < cH) {
+              total++;
+              if (!used[y][x]) freeCount++;
+            }
+        if (freeCount / total < 0.8) continue;
+        // Paint elevation blob as level 2
+        for (let y = cy - radius; y <= cy + radius; y++) {
+          for (let x = cx - radius; x <= cx + radius; x++) {
+            if (x < 0 || x >= cW || y < 0 || y >= cH) continue;
+            const d = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
+            if (d <= radius - 1 && !used[y][x]) {
+              terrainGrid[y][x] = 2;
+            }
+          }
+        }
+        // Sprinkle a tiny level-3 peak inside if blob is big enough
+        if (radius >= 4 && Math.random() < 0.6) {
+          for (let y = cy - 1; y <= cy + 1; y++)
+            for (let x = cx - 1; x <= cx + 1; x++)
+              if (x >= 0 && x < cW && y >= 0 && y < cH && !used[y][x])
+                terrainGrid[y][x] = 3;
+        }
+        break;
+      }
+    }
+    // Enforce level constraint
+    enforceLevelConstraint(terrainGrid, cW, cH);
+  }
+
+  fitToWindow();
+}
+
+function generateRandomBuildings() {
+  const world = WORLDS[state.currentWorld];
+  if (!world.buildingImgs || Object.keys(world.buildingImgs).length === 0) return;
+
+  // Shuffle building names, use each once before repeating
+  const allNames = Object.keys(world.buildingImgs);
+  const shuffled = [...allNames].sort(() => Math.random() - 0.5);
+  const emptySlots = state.buildingSlots.filter(s => !s.building);
+
+  for (let i = 0; i < emptySlots.length; i++) {
+    emptySlots[i].building = shuffled[i % shuffled.length];
+  }
+  render();
+}
+
+function drawRoad(x1, y1, x2, y2, width) {
+  const { terrainGrid, mapW, mapH } = state;
+  const cW = mapW + 1, cH = mapH + 1;
+  const hw = Math.floor(width / 2);
+
+  const dx = Math.abs(x2 - x1), dy = Math.abs(y2 - y1);
+  const sx = x1 < x2 ? 1 : -1, sy = y1 < y2 ? 1 : -1;
+  let err = dx - dy;
+  let x = x1, y = y1;
+
+  while (true) {
+    for (let ry = -hw; ry <= hw; ry++) {
+      for (let rx = -hw; rx <= hw; rx++) {
+        // Set 2x2 corners for this cell to grass
+        for (let cy = y + ry; cy <= y + ry + 1; cy++) {
+          for (let cx = x + rx; cx <= x + rx + 1; cx++) {
+            if (cx >= 0 && cx < cW && cy >= 0 && cy < cH) {
+              terrainGrid[cy][cx] = 0;
+            }
+          }
+        }
+      }
+    }
+    if (x === x2 && y === y2) break;
+    const e2 = 2 * err;
+    if (e2 > -dy) { err -= dy; x += sx; }
+    if (e2 < dx) { err += dx; y += sy; }
+  }
+}
+
+function clearMap() {
+  initGrid();
+  resizeCanvas();
+  render();
+}
+
+// ============================================================
+// CANVAS RENDERING
+// ============================================================
+function fitToWindow() {
+  const container = document.querySelector('.canvas-area');
+  const availW = container.clientWidth - 20;
+  const availH = container.clientHeight - 60; // toolbar + status bar
+  const { mapW, mapH, tileSize } = state;
+  const fitZoom = Math.min(availW / (mapW * tileSize), availH / (mapH * tileSize));
+  state.zoom = Math.max(0.5, Math.min(6, fitZoom));
+  resizeCanvas();
+  render();
+}
+
+function resizeCanvas() {
+  const { mapW, mapH, tileSize, zoom } = state;
+  canvas.width = mapW * tileSize * zoom;
+  canvas.height = mapH * tileSize * zoom;
+  document.getElementById('statusZoom').textContent = Math.round(zoom * 100) + '%';
+}
+
+// Corner grid is (W+1)x(H+1) — rendering reads corners directly, no helper needed
+
+// Multi-level rendering helpers.
+// terrainGrid now stores levels 0-3. Three chained tilesets handle transitions:
+//   tileset 0 → levels 0↔1
+//   tileset 1 → levels 1↔2
+//   tileset 2 → levels 2↔3
+// Because of base_tile_id chaining, solid tiles at each level can be fetched
+// from either adjacent tileset — they're pixel-identical. We pick:
+//   level 0 = tilesets[0].map[0]
+//   level 1 = tilesets[0].map[15]  (= tilesets[1].map[0])
+//   level 2 = tilesets[1].map[15]  (= tilesets[2].map[0])
+//   level 3 = tilesets[2].map[15]
+function getActiveChain() {
+  const world = WORLDS[state.currentWorld];
+  if (world?.chainImgs && world.chainMaps && world.chainImgs.length === 3) {
+    return { imgs: world.chainImgs, maps: world.chainMaps };
+  }
+  // Fallback: single-tileset mode — use current tileset for all transitions
+  const img = world?.tilesets?.[state.currentTileset] || state.tilesetImg;
+  const map = world?.wangMaps?.[state.currentTileset] || world?.wangMaps?.['default'] || WANG_MAP;
+  return { imgs: [img, img, img], maps: [map, map, map] };
+}
+
+function drawTileAt(dstX, dstY, dstW, dstH, img, wt) {
+  if (!img || !wt) return;
+  const ts = 32;
+  if (wt.flipH || wt.flipV) {
+    ctx.save();
+    ctx.translate(dstX + dstW / 2, dstY + dstH / 2);
+    ctx.scale(wt.flipH ? -1 : 1, wt.flipV ? -1 : 1);
+    ctx.drawImage(img, wt.x * ts, wt.y * ts, ts, ts, -dstW / 2, -dstH / 2, dstW, dstH);
+    ctx.restore();
+  } else {
+    ctx.drawImage(img, wt.x * ts, wt.y * ts, ts, ts, dstX, dstY, dstW, dstH);
+  }
+}
+
+// Given a terrain level 0-3, return {img, wt} representing the solid tile
+function solidTileForLevel(level, chain) {
+  if (level <= 0) return { img: chain.imgs[0], wt: chain.maps[0]?.[0] };
+  if (level >= 3) return { img: chain.imgs[2], wt: chain.maps[2]?.[15] };
+  // level 1 → either tileset[0].map[15] or tileset[1].map[0]. Prefer [0].map[15]
+  if (level === 1) return { img: chain.imgs[0], wt: chain.maps[0]?.[15] };
+  if (level === 2) return { img: chain.imgs[1], wt: chain.maps[1]?.[15] };
+}
+
+function render() {
+  if (!state.terrainGrid) { initGrid(); resizeCanvas(); }
+
+  const { mapW, mapH, tileSize, zoom, terrainGrid } = state;
+  const ts = tileSize;
+  const z = zoom;
+  const chain = getActiveChain();
+
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw terrain — multi-level aware
+  for (let y = 0; y < mapH; y++) {
+    for (let x = 0; x < mapW; x++) {
+      const corners = [
+        terrainGrid[y][x], terrainGrid[y][x + 1],
+        terrainGrid[y + 1][x], terrainGrid[y + 1][x + 1],
+      ];
+      const minL = Math.min(...corners);
+      const maxL = Math.max(...corners);
+      const dx = x * ts * z, dy = y * ts * z, dw = ts * z, dh = ts * z;
+
+      let img = null, wt = null;
+      if (minL === maxL) {
+        const solid = solidTileForLevel(minL, chain);
+        img = solid?.img; wt = solid?.wt;
+      } else if (maxL === minL + 1) {
+        // Transition between level minL and minL+1 — use tileset[minL]
+        const tsi = Math.min(Math.max(minL, 0), 2);
+        img = chain.imgs[tsi];
+        const cv = corners.map(c => c === maxL ? 1 : 0);
+        const idx = cv[0] * 8 + cv[1] * 4 + cv[2] * 2 + cv[3];
+        wt = chain.maps[tsi]?.[idx];
+      } else {
+        // Invalid (level-skip). Render fallback with the solid of minL as a last resort.
+        const solid = solidTileForLevel(minL, chain);
+        img = solid?.img; wt = solid?.wt;
+      }
+
+      if (img && wt) {
+        drawTileAt(dx, dy, dw, dh, img, wt);
+      } else {
+        // Ultimate fallback: colored rectangle by level
+        const colors = ['#6b4a2e', '#4a7c3f', '#2d5a1e', '#555555'];
+        ctx.fillStyle = colors[Math.min(minL, 3)] || '#333';
+        ctx.fillRect(dx, dy, dw, dh);
+      }
+    }
+  }
+
+  // Draw building slots
+  for (const slot of state.buildingSlots) {
+    const sx = slot.x * ts * z, sy = slot.y * ts * z;
+    const sw = slot.w * ts * z, sh = slot.h * ts * z;
+
+    if (slot.building) {
+      // Draw building image — bottom-aligned, horizontally centered, scaled
+      const world = WORLDS[state.currentWorld];
+      const bImg = world.buildingImgs?.[slot.building];
+      if (bImg) {
+        const scale = (+document.getElementById('buildingScale').value || 100) / 100;
+        const bw = sw * scale;
+        const bh = sh * scale;
+        const bx = sx + (sw - bw) / 2; // centered horizontally
+        const by = sy + sh - bh;        // bottom-aligned
+        ctx.drawImage(bImg, bx, by, bw, bh);
+      }
+    }
+
+    // Draw slot border
+    ctx.strokeStyle = slot.building ? '#00ff8866' : '#ffffff44';
+    ctx.lineWidth = 2;
+    ctx.setLineDash(slot.building ? [] : [4, 4]);
+    ctx.strokeRect(sx + 1, sy + 1, sw - 2, sh - 2);
+    ctx.setLineDash([]);
+
+    // Label
+    if (!slot.building) {
+      ctx.fillStyle = '#ffffff88';
+      ctx.font = `${10 * z}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('Drop Building', sx + sw / 2, sy + sh / 2 + 4 * z);
+    }
+  }
+
+  // Draw grid lines (subtle)
+  if (z >= 2) {
+    ctx.strokeStyle = '#ffffff08';
+    ctx.lineWidth = 0.5;
+    for (let x = 0; x <= mapW; x++) {
+      ctx.beginPath(); ctx.moveTo(x * ts * z, 0); ctx.lineTo(x * ts * z, mapH * ts * z); ctx.stroke();
+    }
+    for (let y = 0; y <= mapH; y++) {
+      ctx.beginPath(); ctx.moveTo(0, y * ts * z); ctx.lineTo(mapW * ts * z, y * ts * z); ctx.stroke();
+    }
+  }
+}
+
+function isRoad(x, y) {
+  const { terrainGrid, mapW, mapH } = state;
+  if (x < 0 || x >= mapW || y < 0 || y >= mapH) return false;
+  return terrainGrid[y][x] === 2;
+}
+
+
+// ============================================================
+// CANVAS INTERACTION
+// ============================================================
+function getTileCoords(e) {
+  const rect = canvas.getBoundingClientRect();
+  const x = Math.floor((e.clientX - rect.left) / (state.tileSize * state.zoom));
+  const y = Math.floor((e.clientY - rect.top) / (state.tileSize * state.zoom));
+  return { x: Math.max(0, Math.min(x, state.mapW - 1)), y: Math.max(0, Math.min(y, state.mapH - 1)) };
+}
+
+// Enforce the level-constraint: each corner's level must be within ±1 of all its
+// orthogonal neighbors. If a newly set level would violate this, cascade-fix neighbors.
+function enforceLevelConstraint(terrainGrid, cW, cH) {
+  let changed = true;
+  let iter = 0;
+  while (changed && iter < 20) {
+    changed = false; iter++;
+    for (let y = 0; y < cH; y++) {
+      for (let x = 0; x < cW; x++) {
+        const v = terrainGrid[y][x];
+        // Check 4-neighbours
+        const neighbors = [
+          x > 0 ? terrainGrid[y][x-1] : v,
+          x < cW-1 ? terrainGrid[y][x+1] : v,
+          y > 0 ? terrainGrid[y-1][x] : v,
+          y < cH-1 ? terrainGrid[y+1][x] : v,
+        ];
+        for (const n of neighbors) {
+          if (Math.abs(v - n) > 1) {
+            // Pull neighbors toward v in steps
+            const target = v > n ? v - 1 : v + 1;
+            if (x > 0 && Math.abs(terrainGrid[y][x-1] - v) > 1) { terrainGrid[y][x-1] = v > terrainGrid[y][x-1] ? v - 1 : v + 1; changed = true; }
+            if (x < cW-1 && Math.abs(terrainGrid[y][x+1] - v) > 1) { terrainGrid[y][x+1] = v > terrainGrid[y][x+1] ? v - 1 : v + 1; changed = true; }
+            if (y > 0 && Math.abs(terrainGrid[y-1][x] - v) > 1) { terrainGrid[y-1][x] = v > terrainGrid[y-1][x] ? v - 1 : v + 1; changed = true; }
+            if (y < cH-1 && Math.abs(terrainGrid[y+1][x] - v) > 1) { terrainGrid[y+1][x] = v > terrainGrid[y+1][x] ? v - 1 : v + 1; changed = true; }
+            break;
+          }
+        }
+      }
+    }
+  }
+}
+
+function paintAt(tx, ty) {
+  const { tool, brushSize, terrainGrid, mapW, mapH } = state;
+  const r = Math.floor(brushSize / 2);
+  const cW = mapW + 1, cH = mapH + 1;
+
+  if (tool === 'slot') {
+    const slot = { x: tx - 1, y: ty - 1, w: 4, h: 4, building: state.selectedBuilding };
+    slot.x = Math.max(0, Math.min(slot.x, mapW - slot.w));
+    slot.y = Math.max(0, Math.min(slot.y, mapH - slot.h));
+    // Buildings sit on level-1 flat ground. Flatten a 4x4 region.
+    for (let y = slot.y; y <= slot.y + slot.h; y++)
+      for (let x = slot.x; x <= slot.x + slot.w; x++)
+        if (y < cH && x < cW) terrainGrid[y][x] = 0;
+    state.buildingSlots.push(slot);
+    enforceLevelConstraint(terrainGrid, cW, cH);
+    return;
+  }
+
+  // Paint the requested level: level0/level1/level2/level3 OR legacy 'lower'/'upper'/'erase'
+  let value;
+  if (tool === 'level0' || tool === 'lower' || tool === 'erase') value = 0;
+  else if (tool === 'level1') value = 1;
+  else if (tool === 'level2' || tool === 'upper' || tool === 'road') value = 2;
+  else if (tool === 'level3') value = 3;
+  else value = 0;
+
+  for (let dy = -r; dy <= r; dy++) {
+    for (let dx = -r; dx <= r; dx++) {
+      const px = tx + dx, py = ty + dy;
+      for (let cy = py; cy <= py + 1; cy++) {
+        for (let cx = px; cx <= px + 1; cx++) {
+          if (cx >= 0 && cx < cW && cy >= 0 && cy < cH) {
+            terrainGrid[cy][cx] = value;
+          }
+        }
+      }
+    }
+  }
+  enforceLevelConstraint(terrainGrid, cW, cH);
+}
+
+function onCanvasMouseDown(e) {
+  if (state.tool === 'pan') {
+    state.isPanning = true;
+    state.panStart = { x: e.clientX, y: e.clientY };
+    state.scrollStart = { x: canvas.parentElement.scrollLeft, y: canvas.parentElement.scrollTop };
+    canvas.style.cursor = 'grabbing';
+    return;
+  }
+
+  const { x, y } = getTileCoords(e);
+
+  // Check if clicking on a building slot — start dragging it
+  for (const slot of state.buildingSlots) {
+    if (x >= slot.x && x < slot.x + slot.w && y >= slot.y && y < slot.y + slot.h) {
+      // If slot tool with a selected building, place the building
+      if (state.tool === 'slot' && state.selectedBuilding && !slot.building) {
+        slot.building = state.selectedBuilding;
+        render();
+        return;
+      }
+      // Otherwise start dragging this slot
+      state.draggingSlot = slot;
+      state.dragOffset = { x: x - slot.x, y: y - slot.y };
+      canvas.style.cursor = 'move';
+      return;
+    }
+  }
+
+  state.isPainting = true;
+  paintAt(x, y);
+  render();
+}
+
+function onCanvasMouseMove(e) {
+  const { x, y } = getTileCoords(e);
+  document.getElementById('statusCoords').textContent = `${x}, ${y}`;
+
+  // Dragging a building slot
+  if (state.draggingSlot) {
+    const slot = state.draggingSlot;
+    const newX = Math.max(0, Math.min(state.mapW - slot.w, x - state.dragOffset.x));
+    const newY = Math.max(0, Math.min(state.mapH - slot.h, y - state.dragOffset.y));
+    slot.x = newX;
+    slot.y = newY;
+    render();
+    return;
+  }
+
+  if (state.isPanning) {
+    const dx = e.clientX - state.panStart.x;
+    const dy = e.clientY - state.panStart.y;
+    canvas.parentElement.scrollLeft = state.scrollStart.x - dx;
+    canvas.parentElement.scrollTop = state.scrollStart.y - dy;
+    return;
+  }
+
+  if (state.isPainting && state.tool !== 'slot') {
+    paintAt(x, y);
+    render();
+  }
+}
+
+canvas.addEventListener('mouseup', () => {
+  state.isPainting = false;
+  state.isPanning = false;
+  state.draggingSlot = null;
+  canvas.style.cursor = state.tool === 'pan' ? 'grab' : 'crosshair';
+});
+
+function onCanvasWheel(e) {
+  e.preventDefault();
+  if (e.deltaY < 0) {
+    state.zoom = Math.min(6, state.zoom + 0.5);
+  } else {
+    state.zoom = Math.max(0.3, state.zoom - 0.5);
+  }
+  resizeCanvas();
+  render();
+}
+
+// ============================================================
+// EXPORT
+// ============================================================
+function exportPNG() {
+  // Render at 1x zoom for clean export
+  const oldZoom = state.zoom;
+  state.zoom = 2; // Export at 2x
+  resizeCanvas();
+  render();
+
+  const link = document.createElement('a');
+  link.download = `village-map-${state.currentWorld}-${Date.now()}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+
+  state.zoom = oldZoom;
+  resizeCanvas();
+  render();
+}
+
+function exportJSON() {
+  const data = {
+    world: state.currentWorld,
+    tileset: state.currentTileset,
+    mapW: state.mapW,
+    mapH: state.mapH,
+    terrain: state.terrainGrid.map(r => Array.from(r)),
+    slots: state.buildingSlots,
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const link = document.createElement('a');
+  link.download = `village-map-${state.currentWorld}-${Date.now()}.json`;
+  link.href = URL.createObjectURL(blob);
+  link.click();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+async function init() {
+  await discoverAssets();
+  setupUI();
+
+  // URL param: ?tileset=<key> — auto-select agent-generated tileset
+  const params = new URLSearchParams(window.location.search);
+  const urlTileset = params.get('tileset');
+  if (urlTileset) {
+    const worldKey = 'agent-' + urlTileset;
+    if (WORLDS[worldKey]) {
+      state.currentWorld = worldKey;
+      state.currentTileset = urlTileset;
+      document.getElementById('worldSelect').value = worldKey;
+      updateTilesetSelect();
+      document.getElementById('tilesetSelect').value = urlTileset;
+      state.currentTileset = urlTileset;
+      updateBuildingList();
+    }
+  }
+
+  loadCurrentTileset();
+  initGrid();
+  fitToWindow();
+  document.getElementById('loadingOverlay').classList.add('hidden');
+
+  // URL param: ?autogen=1 — auto-generate a map
+  if (params.get('autogen') === '1') {
+    setTimeout(() => {
+      generateMap();
+      setTimeout(() => generateRandomBuildings(), 300);
+    }, 500);
+  }
+}
+
+window.addEventListener('resize', () => { fitToWindow(); });
+
+init();
+</script>
+</body>
+</html>
