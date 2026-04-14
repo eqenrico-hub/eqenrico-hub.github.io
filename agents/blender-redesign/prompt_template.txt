@@ -1,60 +1,34 @@
-I'm redesigning a section of a VST plugin (a scale-locked vocoder).
+I'm designing a VST plugin (scale-locked vocoder). I need you to act as a senior UI/UX designer — think Ableton, Teenage Engineering, Output, FabFilter — and propose a FRESH, OPINIONATED redesign of one section.
 
-The attached image is ONLY for context — it shows the current layout so you know what elements exist and how they're labeled. Do NOT treat it as a starting point to tweak. Your output should be a completely fresh design based on your UI/UX judgment. Feel free to totally rearrange, restyle, reorient everything — as long as you use only the listed elements. The current layout is not a constraint, it's just an inventory.
+The attached image is ONLY an inventory of existing elements (shown with numbered yellow badges). It is NOT a starting point. Do not preserve any part of its layout, spacing, orientation, or visual logic unless you have a specific reason. Treat it as: "these are the controls that must exist; now redesign from scratch".
 
-CURRENT ELEMENTS (numbered to match badges in the reference image):
+ELEMENTS THAT MUST APPEAR (use ONLY these — no new widgets):
 {{ELEMENT_LIST}}
 
-SECTION SIZE: {{WIDTH}}mm × {{HEIGHT}}mm (W × H, matches image aspect).
+SECTION SIZE: {{WIDTH}}mm × {{HEIGHT}}mm.
 
-TASK:
-Redesign this section to be as compact, clean, minimal, and clear as possible. Maximum usability, minimum visual clutter.
+DESIGN BRIEF:
+Push for a layout a pro designer at Ableton or FabFilter would ship. Bold typography choices, unexpected groupings, novel control combinations (e.g. fuse dropdown+slider into one widget, use dials instead of sliders, replace buttons with toggles, stack vertically instead of horizontally, use a radial cluster, integrate TUNING as a pop-out drawer instead of a bar — invent). The current layout is mediocre; your job is to make it feel premium and original while staying intuitive.
 
-STRICT CONSTRAINTS (do NOT violate):
-- Use ONLY the elements listed above. Do not add "Variation", "Pan", "Output", "Edit", "Share", or any control not in the list.
-- Do not duplicate elements. Each element appears exactly once.
-- You MAY reposition, resize, restyle. You may shrink TUNING to an icon. You may convert sliders vertical ↔ horizontal.
-- You MAY remove an element if you think it's unnecessary (mention in reasoning).
-- You may NOT invent new widgets.
+Aesthetic reference: dark chassis (#0a0a0a) + thin brass accents (#c9a86b). Minimal text. You may change the aesthetic if you have a strong reason.
 
-OUTPUT — PRODUCE ALL THREE:
+DELIVERABLES (only these two, nothing else):
 
-=== REQUIRED 1: Element coordinate table ===
-Return the same FORMAT shown below, but with YOUR OWN LAYOUT — do NOT copy these example numbers, they only illustrate the column structure.
+=== 1. Schematic image ===
+Generate a flat 2D top-down mockup of YOUR redesign.
+- Aspect ratio as close to {{WIDTH}}:{{HEIGHT}} as your model allows
+- Each interactive element marked with a numbered yellow circular badge, # matching the table below
+- No 3D, no perspective, no lighting
 
-FORMAT ONLY (do not reuse these coordinates — invent your own):
+=== 2. Coordinate table ===
 ```
-#  | Name      | Type     | X  | Y  | W  | H  | Notes
-N  | <LABEL>   | <kind>   | ?  | ?  | ?  | ?  | <optional>
+#  | Name      | Type     | X  | Y  | W  | H
+N  | <LABEL>   | <kind>   | ?  | ?  | ?  | ?
 ```
+- All values in millimeters
+- Origin (0,0) = top-left, +X right, +Y down
+- Design the numbers based on YOUR mockup — don't copy any reference values
+- If you remove an element: omit its row
+- Keep the original numbering (e.g. KEY is always #1)
 
-Rules:
-- Coordinates in millimeters
-- Origin (0,0) = top-left of the section, +X right, +Y down
-- W + X must stay ≤ section width ; H + Y must stay ≤ section height
-- Design the layout yourself — use your judgment as a UI designer. The table just captures your design mathematically so I can rebuild it in Blender.
-- If you REMOVE an element: omit its row
-- Keep original numbering (don't renumber); if renaming, keep the # the same
-
-=== REQUIRED 2: Schematic image ===
-Generate a clean flat-2D top-down mockup of your redesign:
-- Aspect ratio as close to the input as your model allows (do not produce a square if you can avoid it; if you must, center the design in a wide strip)
-- Dark chassis (#0a0a0a) with brass accents (#c9a86b), rounded corners
-- Numbered yellow circular badges on each element matching your table's #
-- No 3D, no perspective, no lighting effects — flat UI schematic only
-- If your image tool cannot be invoked, say explicitly "image generation unavailable" and skip, do NOT promise one later
-
-=== REQUIRED 3: Reasoning bullets ===
-3–5 short bullets: what moved, what you grouped, what you removed (if anything), why.
-
-=== OPTIONAL 4: ASCII layout ===
-A quick ASCII sanity check (60 chars wide max):
-```
-+----------------------------------+
-| [KEY] [SCALE TYPE]         [ S ] |
-| [DEG] [TYPE]               [ S ] |
-| [        T U N I N G        ⚙]   |
-+----------------------------------+
-```
-
-AESTHETIC REFERENCE: dark chassis + thin brass frames (#c9a86b) + rounded corners + minimal typography. Keep this unless you have a strong reason to change.
+DO NOT include reasoning, ASCII diagrams, or apologies. Just the image + the table.
