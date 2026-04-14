@@ -1,44 +1,68 @@
-You are a WORLD-CLASS audio plugin UI designer. Think Arturia's synths, Baby Audio's bold cartoon style, Kilohearts' modular, FabFilter's interactive displays, Teenage Engineering's OP-1, Output's Analog Brass / Exhale, Denise Audio, Soundtoys, iZotope Ozone. This is NOT a wireframe job. This is a hero design that would sell the plugin on visual appeal alone.
+You are a WORLD-CLASS audio plugin UI designer. Think Arturia, Baby Audio, Kilohearts, FabFilter, Teenage Engineering's OP-1, Output, Denise Audio, Soundtoys, iZotope. You design plugins that sell on visual appeal and user experience alone.
 
-I need you to redesign one section of a scale-locked vocoder VST with genuine visual ambition. Think bold. Think "would this get reposted on r/synthplugins / VST screenshot accounts". Zero boring rectangles-in-a-grid.
+I need you to redesign one section of a scale-locked vocoder VST. Not a wireframe — a hero design. Zero boring grids of equal rectangles. User experience and visual ambition are equally important.
+
+═══════════════════════════════════════════════════════════
+PROCESS — THINK LIKE A DESIGNER BEFORE YOU DRAW
+═══════════════════════════════════════════════════════════
+
+PHASE 1 — For EACH element, silently answer these questions (you don't need to write the answers, just use them to inform the design):
+
+  a) FUNCTION: what does this control actually do to the audio?
+  b) EFFECT: what does the user hear change when they touch it?
+  c) INTERACTION: how does a user touch it — single click, drag, scroll, double-click, hold? Continuous or discrete?
+  d) FREQUENCY: during a typical session, is this touched once (set-and-forget), occasionally (tuning), or constantly (performance)?
+  e) USER TIER: is this for a beginner browsing options, or an expert dialing in a sound?
+  f) IMPORTANCE: if you could only show 3 of these on a tiny screen, would this be one of them? Rank it 1-5.
+  g) BEST WIDGET TYPE: given function + interaction + importance — what's the IDEAL control? Rotary dial? Linear slider? Dropdown? Segmented toggle? Numeric entry? XY pad? Pad grid? A custom widget you invent?
+  h) PAIRED/RELATED: does it naturally belong with another element (e.g. KEY+SCALE TYPE, CHORD DEGREE+TYPE)? Visual pairing should reflect this.
+  i) FEEDBACK NEEDED: does the user need visual feedback while interacting (LED, meter, curve, color)?
+
+PHASE 2 — Synthesis before drawing:
+
+  • Rank all elements by importance (Phase 1f). The top 1-2 become HERO controls — big, central, beautiful.
+  • Group by interaction frequency: constant-use controls get prime real estate + affordance; set-and-forget gets tucked away or made small.
+  • Identify the PRIMARY INTERACTION LOOP — what's the 3-5 second journey a user takes through this section? Design the layout to match that flow (left→right or center-outward).
+  • Ask: "What would surprise a user in a good way? What would make them grin?" — then bake that in (radial wheel? gem-shaped scale crystal? chord pads that light up? physical-feeling knobs?).
+
+═══════════════════════════════════════════════════════════
+THE ACTUAL TASK
+═══════════════════════════════════════════════════════════
 
 The attached image is ONLY an inventory of elements (numbered badges). It is NOT a layout reference — redesign fully from scratch.
 
-ELEMENTS (use only these, nothing new):
+ELEMENTS (use only these, no new widgets):
 {{ELEMENT_LIST}}
 
 SECTION SIZE: {{WIDTH}}mm × {{HEIGHT}}mm.
 
-EXPLORE — I WANT IDEAS LIKE:
-• Radial dial clusters instead of linear rows
-• A circular scale-wheel that rotates (KEY + SCALE TYPE as one object)
-• Chord pads laid out like physical keyboard buttons
+CREATIVE DIRECTIONS TO EXPLORE (inspiration — invent your own):
+• Radial dial clusters, rotating scale-wheels, chord pads like hardware buttons
+• Skeuomorphic brushed-metal knobs with screws, shadows, depth
+• Fused widgets — e.g. KEY+SCALE TYPE as one combo-wheel; CHORD DEGREE+TYPE+AMOUNT as one chord puck
 • Interactive spectrum-filled sliders
-• Skeuomorphic hardware (dials with brushed metal, shadows, screws)
-• Asymmetric compositions, diagonal layouts, curved container shapes
-• A "gem" or "crystal" central hero element with satellite controls
-• Organic blob containers instead of boxy frames
-• Neon/glow aesthetics, or hand-drawn, or tape/VHS, or brutalist grid
-• Integrated widgets: fuse KEY+SCALE TYPE into one combo-wheel; fuse CHORD DEGREE+TYPE+AMOUNT into a single chord puck
-— these are INSPIRATION. Invent your own. Surprise me. Never give me a grid of equal boxes.
+• Asymmetric/diagonal compositions, organic blob containers, curved shapes
+• Glow/neon/tape/VHS/brutalist/hand-drawn aesthetics — pick one and commit
+• A single hero element with satellite controls orbiting it
 
-RULES (only two, to keep it rebuildable):
-1. Use ONLY the listed elements. No new widgets, no VARIATION, no Edit button.
-2. Equivalent controls (SCALE AMOUNT ≡ CHORD AMOUNT) should feel paired visually — but paired doesn't mean identical rectangles; it can mean mirrored, symmetric, same style but different size if justified by hierarchy.
+RULES (minimal, just so I can rebuild):
+1. Use ONLY the listed elements. No new widgets, no VARIATION, no Edit.
+2. Visual pairing should reflect semantic pairing (Phase 1h).
 
-DELIVER EXACTLY TWO THINGS:
+═══════════════════════════════════════════════════════════
+DELIVERABLES — EXACTLY TWO THINGS, NOTHING ELSE
+═══════════════════════════════════════════════════════════
 
 [1] IMAGE — your hero mockup.
-  • Flat 2D top-down (so I can read positions — NO 3D, NO perspective, NO lighting effects on the *mockup*, though you can depict shadows/gradients as part of the design itself)
-  • Each interactive element marked with a numbered badge (any style, legible)
-  • Aspect roughly {{WIDTH}}:{{HEIGHT}}
-  • ZERO constraints on palette, typography, container style, shapes, decorations, illustration style
-  • If you want to go skeuomorphic/illustrated/painterly/brutalist/neon/3D-inspired — go. The "flat 2D" rule is about the rendering camera angle, not the visual style.
+  • Flat top-down camera angle so I can read positions (but rich visual style OK: skeuomorphic, painterly, neon, gradients, shadows, illustrations all allowed — the "flat" rule is camera angle, not flat design style)
+  • Each interactive element marked with a numbered badge
+  • Aspect ratio ≈ {{WIDTH}}:{{HEIGHT}}
+  • Size, shape, spacing, palette, typography, container style, decorations = ALL YOUR CALL based on your Phase 1/2 thinking
 
-[2] COORDINATE TABLE — how I rebuild it:
+[2] COORDINATE TABLE — so I can rebuild in Blender:
 ```
 #  | Name      | Type     | X   | Y   | W   | H   | Notes
 ```
-mm, origin top-left, +X right, +Y down. Keep original numbering (KEY always #1). Omit removed elements. For non-rectangular elements (circles, irregular shapes), provide the bounding box.
+mm, origin top-left, +X right, +Y down. For non-rectangular shapes, provide bounding box. Keep original numbering (KEY always #1). Omit removed elements. Notes column should say the widget type you chose (rotary dial, chord puck, segmented toggle, etc.).
 
-No reasoning, no ASCII, no explanations. Just IMAGE + TABLE.
+No reasoning bullets, no ASCII, no explanations. Just IMAGE + TABLE.
