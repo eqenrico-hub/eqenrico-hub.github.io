@@ -14,11 +14,19 @@ title: Blender Redesign Agent
   <li>Parses ChatGPT's returned table and rebuilds the geometry in Blender at the new coordinates.</li>
 </ol>
 
+<h2>One-command workflow</h2>
+<pre><code>python3 run.py scalechord     # or: eq, header, carrier_mix, main_knobs, right_knobs, band_display
+# Outputs:
+#   /Users/ricosan/Downloads/scalechord_render_in_blender.py   (run in Blender)
+#   /Users/ricosan/Downloads/scalechord_prompt.txt             (send to ChatGPT)</code></pre>
+
 <h2>Files</h2>
 <ul>
-  <li><a href="render_section.py">render_section.py</a> — Blender script. Configure <code>SECTION_ROOT</code> + <code>ELEMENTS</code>, run to output PNG + coord JSON.</li>
-  <li><a href="overlay_numbers.py">overlay_numbers.py</a> — Burns numbered badges onto the PNG (uses the JSON from step 1).</li>
-  <li><a href="prompt_template.txt">prompt_template.txt</a> — Paste into ChatGPT alongside the image. Designed to force a parseable coord table even when image gen fails.</li>
+  <li><a href="run.py">run.py</a> — unified runner. Takes a section key, emits Blender render script + pre-filled prompt.</li>
+  <li><a href="sections.json">sections.json</a> — registry of all Band Ritual sections with their Blender object names and labels. Add new sections here.</li>
+  <li><a href="prompt_template.txt">prompt_template.txt</a> — Prompt blueprint with placeholders. Designed to force a parseable coord table even when image gen fails.</li>
+  <li><a href="overlay_numbers.py">overlay_numbers.py</a> — Burns numbered badges onto the rendered PNG.</li>
+  <li><a href="validate_table.py">validate_table.py</a> — Validates ChatGPT's table response against the section spec before Blender apply. Catches duplicates, hallucinated elements, out-of-bounds coords.</li>
   <li><a href="apply_design.py">apply_design.py</a> — Paste ChatGPT's table into the <code>TABLE</code> variable, run in Blender, geometry rebuilds.</li>
 </ul>
 

@@ -1,0 +1,90 @@
+{
+  "_description": "Band Ritual section registry. Add new sections by copying an entry and editing the elements list. Each section defines: root Blender object (for bbox framing), and element list (blender_name, label).",
+  "sections": {
+    "scalechord": {
+      "root": "ScaleChordBox",
+      "description": "Scale/Chord/Tuning section under the Mix knob",
+      "expected_size_mm": "180x50",
+      "elements": [
+        ["Dropdown_Key",         "KEY",          "root note dropdown (C, C#, D...)"],
+        ["Dropdown_ScaleType",   "SCALE TYPE",   "mode dropdown (Major, Minor, Dorian, Phrygian)"],
+        ["Slider_Row1",          "SCALE AMOUNT", "slider 0-100% (scale enforcement strength)"],
+        ["Dropdown_ChordDegree", "CHORD DEGREE", "degree dropdown (i-vii)"],
+        ["Dropdown_ChordType",   "CHORD TYPE",   "type dropdown (triad, 7th, sus2, sus4)"],
+        ["Slider_Row2",          "CHORD AMOUNT", "slider 0-100% (chord wet/dry)"],
+        ["Btn_Tuning",           "TUNING",       "button opens microtuning panel"]
+      ]
+    },
+    "header": {
+      "root": "Btn_Preset",
+      "description": "Top header bar: bypass, title, preset, save, close",
+      "expected_size_mm": "720x18",
+      "elements": [
+        ["Btn_Bypass",    "BYPASS",  "toggle"],
+        ["Lbl_Title",     "TITLE",   "BAND RITUAL text"],
+        ["Btn_Preset",    "PRESET",  "preset dropdown"],
+        ["Btn_Save",      "SAVE",    "save current preset"],
+        ["Btn_Close",     "X",       "close window button"]
+      ]
+    },
+    "carrier_mix": {
+      "root": "CarrierSelect",
+      "description": "Left column: MODE dropdown + MIX knob + MOD slider",
+      "expected_size_mm": "180x120",
+      "elements": [
+        ["CarrierSelect",     "MODE",       "carrier source dropdown (Self/External/Synth/Noise)"],
+        ["Mix_Ring",          "MIX",        "big rotary knob for wet/dry"],
+        ["ModSlider_Track",   "MOD",        "vertical modulation slider"]
+      ]
+    },
+    "main_knobs": {
+      "root": "Bezel_KnobRow",
+      "description": "Main horizontal knob row under BandDisplay",
+      "expected_size_mm": "430x60",
+      "elements": [
+        ["BandCount_Ring",  "BANDS",   "number of vocoder bands"],
+        ["BandWidth_Ring",  "WIDTH",   "filter bandwidth"],
+        ["Attack_Ring",     "ATTACK",  "envelope attack"],
+        ["Release_Ring",    "RELEASE", "envelope release"],
+        ["Gate_Ring",       "GATE",    "noise gate threshold"],
+        ["Depth_Ring",      "DEPTH",   "vocoder effect intensity"],
+        ["NoiseColor_Ring", "COLOR",   "noise color / tilt"]
+      ]
+    },
+    "right_knobs": {
+      "root": "Formant_Ring",
+      "description": "Right panel: Formant, HarmShift, Noise, HPBlend + NoiseMode dropdown",
+      "expected_size_mm": "100x150",
+      "elements": [
+        ["Formant_Ring",   "FORMANT",    "formant shift knob"],
+        ["HarmShift_Ring", "HARM SHIFT", "harmonic shift knob"],
+        ["Noise_Ring",     "NOISE",      "unvoiced noise amount"],
+        ["HPBlend_Ring",   "HP BLEND",   "high-pass blend (12dB)"],
+        ["Dropdown_NoiseMode", "NOISE MODE", "Auto/Manual toggle"]
+      ]
+    },
+    "eq": {
+      "root": "Bezel_EQ",
+      "description": "Bottom EQ/Tone Sculpt section",
+      "expected_size_mm": "690x200",
+      "elements": [
+        ["Btn_EQPower",        "POWER",      "on/off LED button"],
+        ["EQ_Canvas",          "EQ DISPLAY", "interactive EQ curve canvas"],
+        ["Btn_Complement",     "COMPLEMENT", "complement toggle button"],
+        ["Lbl_ParamFreq",      "FREQ VALUE", "display node freq (19.9k)"],
+        ["Lbl_ParamGain",      "GAIN VALUE", "display node gain (+18.0dB)"],
+        ["Freq_Ring",          "FREQ",       "node frequency knob"],
+        ["Gain_Ring",          "GAIN",       "node gain knob"],
+        ["Q_Ring",             "Q",          "node Q knob"]
+      ]
+    },
+    "band_display": {
+      "root": "BandDisplay",
+      "description": "Central spectrum/band visualizer",
+      "expected_size_mm": "430x170",
+      "elements": [
+        ["BandDisplay", "SPECTRUM", "band visualizer canvas with zoom bar"]
+      ]
+    }
+  }
+}

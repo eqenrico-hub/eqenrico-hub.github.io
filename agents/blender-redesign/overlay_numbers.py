@@ -2,7 +2,17 @@
 import json
 from PIL import Image, ImageDraw, ImageFont
 
-JSON_PATH = '/tmp/section_overlay.json'
+import sys, glob
+# Take explicit path arg, OR find the most recent /tmp/*_overlay.json
+if len(sys.argv) > 1:
+    JSON_PATH = sys.argv[1]
+else:
+    candidates = sorted(glob.glob('/tmp/*_overlay.json'), key=lambda p: -__import__('os').path.getmtime(p))
+    if not candidates:
+        print("No /tmp/*_overlay.json found. Run the Blender render step first.")
+        sys.exit(1)
+    JSON_PATH = candidates[0]
+    print(f"Using most recent: {JSON_PATH}")
 
 with open(JSON_PATH) as f: d = json.load(f)
 img = Image.open(d['image']).convert('RGBA')
