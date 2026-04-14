@@ -54,6 +54,7 @@ DELIVERABLES — EXACTLY TWO THINGS, NOTHING ELSE
 ═══════════════════════════════════════════════════════════
 
 [1] IMAGE — your hero mockup.
+  ⚠️ CRITICAL: CALL YOUR IMAGE GENERATION TOOL (DALL-E / gpt-image-1) to produce a NEW image. Do NOT return the attached input image. Do NOT describe an image in text. If your image tool is unavailable or errors out, write the single line "IMAGE_FAILED" and skip to the table — never echo the user's input as output.
   • Flat top-down camera angle so I can read positions (but rich visual style OK: skeuomorphic, painterly, neon, gradients, shadows, illustrations all allowed — the "flat" rule is camera angle, not flat design style)
   • Each interactive element marked with a numbered badge
   • Aspect ratio ≈ {{WIDTH}}:{{HEIGHT}}
