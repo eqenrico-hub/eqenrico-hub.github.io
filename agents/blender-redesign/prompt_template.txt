@@ -1,6 +1,8 @@
-I'm redesigning a section of a VST plugin (a scale-locked vocoder). The attached image is my current Blender mockup with numbered yellow badges on each interactive element.
+I'm redesigning a section of a VST plugin (a scale-locked vocoder).
 
-CURRENT ELEMENTS (numbered to match badges in image):
+The attached image is ONLY for context — it shows the current layout so you know what elements exist and how they're labeled. Do NOT treat it as a starting point to tweak. Your output should be a completely fresh design based on your UI/UX judgment. Feel free to totally rearrange, restyle, reorient everything — as long as you use only the listed elements. The current layout is not a constraint, it's just an inventory.
+
+CURRENT ELEMENTS (numbered to match badges in the reference image):
 {{ELEMENT_LIST}}
 
 SECTION SIZE: {{WIDTH}}mm × {{HEIGHT}}mm (W × H, matches image aspect).
@@ -8,42 +10,51 @@ SECTION SIZE: {{WIDTH}}mm × {{HEIGHT}}mm (W × H, matches image aspect).
 TASK:
 Redesign this section to be as compact, clean, minimal, and clear as possible. Maximum usability, minimum visual clutter.
 
-OUTPUT — WHAT I ACTUALLY NEED (in priority order):
+STRICT CONSTRAINTS (do NOT violate):
+- Use ONLY the elements listed above. Do not add "Variation", "Pan", "Output", "Edit", "Share", or any control not in the list.
+- Do not duplicate elements. Each element appears exactly once.
+- You MAY reposition, resize, restyle. You may shrink TUNING to an icon. You may convert sliders vertical ↔ horizontal.
+- You MAY remove an element if you think it's unnecessary (mention in reasoning).
+- You may NOT invent new widgets.
 
-=== REQUIRED: Element coordinate table ===
-Return this EXACT format, always. This is what I use to rebuild in Blender:
+OUTPUT — PRODUCE ALL THREE:
 
+=== REQUIRED 1: Element coordinate table ===
+Return the same FORMAT shown below, but with YOUR OWN LAYOUT — do NOT copy these example numbers, they only illustrate the column structure.
+
+FORMAT ONLY (do not reuse these coordinates — invent your own):
 ```
-#  | Name           | Type        | X   | Y   | W   | H   | Notes
-1  | KEY            | dropdown    | 4   | 6   | 40  | 12  | rounded corners 3mm
-2  | SCALE TYPE     | dropdown    | 48  | 6   | 60  | 12  |
-...
+#  | Name      | Type     | X  | Y  | W  | H  | Notes
+N  | <LABEL>   | <kind>   | ?  | ?  | ?  | ?  | <optional>
 ```
 
-Coordinates in millimeters, origin (0,0) = top-left of the section, +X right, +Y down.
-If you remove an element, OMIT it (don't list with zeros).
-If you add a NEW element, give it a number > max input number.
+Rules:
+- Coordinates in millimeters
+- Origin (0,0) = top-left of the section, +X right, +Y down
+- W + X must stay ≤ section width ; H + Y must stay ≤ section height
+- Design the layout yourself — use your judgment as a UI designer. The table just captures your design mathematically so I can rebuild it in Blender.
+- If you REMOVE an element: omit its row
+- Keep original numbering (don't renumber); if renaming, keep the # the same
 
-=== REQUIRED: Reasoning bullets ===
-3–5 short bullets explaining your main decisions (what moved where and why).
+=== REQUIRED 2: Schematic image ===
+Generate a clean flat-2D top-down mockup of your redesign:
+- Aspect ratio as close to the input as your model allows (do not produce a square if you can avoid it; if you must, center the design in a wide strip)
+- Dark chassis (#0a0a0a) with brass accents (#c9a86b), rounded corners
+- Numbered yellow circular badges on each element matching your table's #
+- No 3D, no perspective, no lighting effects — flat UI schematic only
+- If your image tool cannot be invoked, say explicitly "image generation unavailable" and skip, do NOT promise one later
 
-=== OPTIONAL: Schematic PNG ===
-If your tools allow it, also output a flat top-down schematic PNG:
-- Same aspect ratio as input (match the section's W/H)
-- Dark chassis (#0a0a0a) with brass accents (#c9a86b)
-- Numbered yellow badges on each element matching your table's #
-- 1400px wide minimum
+=== REQUIRED 3: Reasoning bullets ===
+3–5 short bullets: what moved, what you grouped, what you removed (if anything), why.
 
-If you CANNOT generate images, that's fine — the TABLE alone is sufficient. Just say "image not generated" and I'll recreate from the table.
-
-=== OPTIONAL: ASCII layout ===
-A quick ASCII diagram is also helpful (60 chars wide max):
+=== OPTIONAL 4: ASCII layout ===
+A quick ASCII sanity check (60 chars wide max):
 ```
 +----------------------------------+
-| [KEY] [SCALE TYPE]         |SLIDER|
-| [DEG] [TYPE]  [VAR]        |SLIDER|
-| [      T U N I N G      ][⚙]     |
+| [KEY] [SCALE TYPE]         [ S ] |
+| [DEG] [TYPE]               [ S ] |
+| [        T U N I N G        ⚙]   |
 +----------------------------------+
 ```
 
-AESTHETIC REFERENCE: dark chassis + thin brass frames (#c9a86b) + rounded corners + minimal typography.
+AESTHETIC REFERENCE: dark chassis + thin brass frames (#c9a86b) + rounded corners + minimal typography. Keep this unless you have a strong reason to change.
