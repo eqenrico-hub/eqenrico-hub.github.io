@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Band Ritual GUI Layout Editor</title>
+<style>
+  body { background:#1a1a1a; color:#ddd; font:13px -apple-system,system-ui,sans-serif; margin:0; padding:16px 360px 16px 16px; }
+  h1 { font-size:14px; margin:0 0 8px; color:#c9a86b; }
+  #toolbar { margin-bottom:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  button { background:#c9a86b; color:#1a1a1a; border:0; padding:6px 12px; font-weight:600; cursor:pointer; border-radius:3px; }
+  button.sec { background:#444; color:#ddd; }
+  #status { color:#888; }
+  #stage-wrap { overflow:auto; border:1px solid #333; background:#0d0d0d; }
+  #chassis {
+    position:relative; background:#2b2119; box-shadow:inset 0 0 60px rgba(0,0,0,.6);
+    margin:20px auto; border:2px solid #c9a86b; border-radius:6px;
+  }
+  .el { position:absolute; box-sizing:border-box; cursor:move; user-select:none; }
+  .el.knob { border-radius:50%; background:linear-gradient(135deg,#d4b070,#8a6936); border:1px solid #5a4220; }
+  .el.bezel { border:2px solid #c9a86b; background:transparent; }
+  .el.frame { border:2px solid #c9a86b; background:#0a0a0a; }
+  .el.panel { background:#0a0a0a; border:1px solid #333; }
+  .el.display { background:#050810; border:2px solid #c9a86b; }
+  .el.keyboard { background:#eee; border:2px solid #c9a86b; }
+  .el.line { background:#c9a86b; border:0; }
+  .el.selected { outline:2px dashed #ff6; outline-offset:1px; z-index:999; }
+  .label { position:absolute; top:1px; left:3px; font-size:9px; color:#c9a86b; pointer-events:none; white-space:nowrap; }
+  .handle { position:absolute; width:8px; height:8px; background:#ff6; border:1px solid #000; z-index:10; }
+  .handle.nw { left:-4px; top:-4px; cursor:nwse-resize; }
+  .handle.n  { left:calc(50% - 4px); top:-4px; cursor:ns-resize; }
+  .handle.ne { right:-4px; top:-4px; cursor:nesw-resize; }
+  .handle.e  { right:-4px; top:calc(50% - 4px); cursor:ew-resize; }
+  .handle.se { right:-4px; bottom:-4px; cursor:nwse-resize; }
+  .handle.s  { left:calc(50% - 4px); bottom:-4px; cursor:ns-resize; }
+  .handle.sw { left:-4px; bottom:-4px; cursor:nesw-resize; }
+  .handle.w  { left:-4px; top:calc(50% - 4px); cursor:ew-resize; }
+  .el:not(.selected) .handle { display:none; }
+  #sidebar { position:fixed; right:16px; top:16px; width:320px; background:#222; padding:12px; border-radius:4px; max-height:90vh; overflow:auto; }
+  #sidebar h3 { margin:0 0 6px; font-size:12px; color:#c9a86b; }
+  .inp { display:flex; gap:4px; margin-bottom:3px; }
+  .inp label { width:36px; }
+  .inp input { flex:1; background:#111; color:#ddd; border:1px solid #333; padding:3px 5px; font-family:monospace; }
+  textarea { width:100%; height:200px; background:#111; color:#ddd; border:1px solid #333; padding:6px; font-family:monospace; font-size:11px; }
+</style>
+</head>
+<body>
+<h1>BAND RITUAL — GUI LAYOUT EDITOR</h1>
+<div id="toolbar">
+  <button id="loadBtn">Load JSON</button>
+  <input type="file" id="fileInput" style="display:none" accept=".json">
+  <button id="exportBtn">Export edited JSON</button>
+  <button id="copyBtn" class="sec">Copy JSON to clipboard</button>
+  <button id="downloadBtn" class="sec">Download JSON</button>
+  <button id="addBtn" class="sec">+ Add new frame</button>
+  <button id="delBtn" class="sec">Delete selected</button>
+  <span id="status">Load band_ritual_gui_layout.json from Desktop</span>
+</div>
+<div id="stage-wrap"><div id="chassis"></div></div>
+
+<div id="sidebar">
+  <h3>Selected element</h3>
+  <div id="info">(click an element)</div>
+  <div class="inp"><label>Name</label><input id="f-name" readonly></div>
+  <div class="inp"><label>X1 mm</label><input id="f-x1"></div>
+  <div class="inp"><label>X2 mm</label><input id="f-x2"></div>
+  <div class="inp"><label>Y1 mm</label><input id="f-y1"></div>
+  <div class="inp"><label>Y2 mm</label><input id="f-y2"></div>
+  <div class="inp"><label>Type</label>
+    <select id="f-type" style="flex:1;background:#111;color:#ddd;border:1px solid #333;padding:3px 5px">
+      <option value="frame">frame</option>
+      <option value="bezel">bezel</option>
+      <option value="panel">panel</option>
+      <option value="display">display</option>
+      <option value="knob">knob</option>
+      <option value="line">line</option>
+      <option value="keyboard">keyboard</option>
+    </select>
+  </div>
+  <div style="margin:6px 0 3px;color:#c9a86b;font-size:11px">Comment (Claude reads this)</div>
+  <textarea id="f-comment" style="height:90px" placeholder="What should this frame do? e.g. 'make taller, add LED indicator, contains 2 dropdowns'"></textarea>
+  <button id="applyBtn" class="sec" style="margin-top:6px">Apply values</button>
+  <h3 style="margin-top:12px">Exported JSON</h3>
+  <textarea id="jsonOut" placeholder="Click Export to dump"></textarea>
+</div>
+
+<script>
+let SCALE = 2.0; // px per mm — computed dynamically to fit window
+let data = null;
+
+function computeScale() {
+  if (!data) return;
+  const cW = (data.chassis.x2 - data.chassis.x1) * 1000; // mm
+  const cH = (data.chassis.y2 - data.chassis.y1) * 1000;
+  const availW = window.innerWidth  - 360; // sidebar + padding
+  const availH = window.innerHeight - 140; // toolbar + margins
+  SCALE = Math.min(availW / cW, availH / cH);
+}
+window.addEventListener('resize', () => { computeScale(); render(); });
+let selected = null;
+const chassis = document.getElementById('chassis');
+const status = document.getElementById('status');
+const jsonOut = document.getElementById('jsonOut');
+
+function mmToPx(mm){ return mm * SCALE; }
+function m_to_mm(m){ return m * 1000; }
+
+function render() {
+  computeScale();
+  chassis.innerHTML = '';
+  const cW = m_to_mm(data.chassis.x2 - data.chassis.x1);
+  const cH = m_to_mm(data.chassis.y2 - data.chassis.y1);
+  chassis.style.width = mmToPx(cW) + 'px';
+  chassis.style.height = mmToPx(cH) + 'px';
+  const cx0 = data.chassis.x1;  // m
+  const cy0 = data.chassis.y1;
+  const cy1 = data.chassis.y2;
+
+  data.elements.forEach(el => {
+    const d = document.createElement('div');
+    d.className = 'el ' + el.type;
+    d.dataset.name = el.name;
+    const w = m_to_mm(el.x2 - el.x1);
+    const h = m_to_mm(el.y2 - el.y1);
+    // Flip Y: Blender Y+ is up, CSS Y+ is down
+    const left = m_to_mm(el.x1 - cx0);
+    const top  = m_to_mm(cy1 - el.y2);
+    d.style.width  = mmToPx(w) + 'px';
+    d.style.height = mmToPx(h) + 'px';
+    d.style.left   = mmToPx(left) + 'px';
+    d.style.top    = mmToPx(top) + 'px';
+    const lab = document.createElement('div');
+    lab.className = 'label'; lab.textContent = el.name;
+    d.appendChild(lab);
+    ['nw','n','ne','e','se','s','sw','w'].forEach(pos => {
+      const h = document.createElement('div');
+      h.className = 'handle ' + pos;
+      h.dataset.pos = pos;
+      d.appendChild(h);
+    });
+    attachInteract(d, el);
+    chassis.appendChild(d);
+  });
+  status.textContent = `Loaded ${data.elements.length} elements. Drag to move, bottom-right handle to resize.`;
+}
+
+const SNAP_PX = 6;
+function getSnapTargets(excludeEl) {
+  const xs = [], ys = [];
+  data.elements.forEach(o => {
+    if (o === excludeEl) return;
+    const cx0 = data.chassis.x1, cy1 = data.chassis.y2;
+    const left = (o.x1 - cx0) * 1000 * SCALE;
+    const top  = (cy1 - o.y2) * 1000 * SCALE;
+    const w = (o.x2 - o.x1) * 1000 * SCALE;
+    const h = (o.y2 - o.y1) * 1000 * SCALE;
+    xs.push(left, left+w, left+w/2);
+    ys.push(top,  top+h,  top+h/2);
+  });
+  // Also chassis edges + center
+  const cw = chassis.clientWidth, ch = chassis.clientHeight;
+  xs.push(0, cw, cw/2);
+  ys.push(0, ch, ch/2);
+  return {xs, ys};
+}
+function snap(val, targets) {
+  let best = val, bestD = SNAP_PX;
+  targets.forEach(t => { const d = Math.abs(val - t); if (d < bestD) { bestD = d; best = t; }});
+  return best;
+}
+function drawGuides(xs_hit, ys_hit) {
+  document.querySelectorAll('.guide').forEach(g => g.remove());
+  xs_hit.forEach(x => {
+    const g = document.createElement('div'); g.className='guide';
+    g.style.cssText = `position:absolute;left:${x}px;top:0;width:1px;height:100%;background:#ff6;pointer-events:none;z-index:9999;opacity:.8`;
+    chassis.appendChild(g);
+  });
+  ys_hit.forEach(y => {
+    const g = document.createElement('div'); g.className='guide';
+    g.style.cssText = `position:absolute;top:${y}px;left:0;height:1px;width:100%;background:#ff6;pointer-events:none;z-index:9999;opacity:.8`;
+    chassis.appendChild(g);
+  });
+}
+function clearGuides(){ document.querySelectorAll('.guide').forEach(g=>g.remove()); }
+
+function attachInteract(d, el) {
+  d.addEventListener('mousedown', (e) => {
+    if (e.target.classList.contains('handle')) return;
+    e.preventDefault();
+    select(el, d);
+    const sx = e.clientX, sy = e.clientY;
+    const origLeft = parseFloat(d.style.left), origTop = parseFloat(d.style.top);
+    function onMove(me){
+      let nx = origLeft + (me.clientX - sx);
+      let ny = origTop  + (me.clientY - sy);
+      const w = parseFloat(d.style.width), h = parseFloat(d.style.height);
+      const xs_hit = [], ys_hit = [];
+      if (me.shiftKey) {
+        const {xs, ys} = getSnapTargets(el);
+        const candX = [nx, nx+w, nx+w/2];
+        const candY = [ny, ny+h, ny+h/2];
+        const snapped = candX.map(v => snap(v, xs));
+        const dxs = candX.map((v,i) => snapped[i] - v);
+        const bestDx = dxs.reduce((a,b) => Math.abs(b)<Math.abs(a)?b:a, 0);
+        if (bestDx !== 0) { nx += bestDx; xs_hit.push(snap(candX[dxs.indexOf(bestDx)]+bestDx, xs)); }
+        const snappedY = candY.map(v => snap(v, ys));
+        const dys = candY.map((v,i) => snappedY[i] - v);
+        const bestDy = dys.reduce((a,b) => Math.abs(b)<Math.abs(a)?b:a, 0);
+        if (bestDy !== 0) { ny += bestDy; ys_hit.push(snap(candY[dys.indexOf(bestDy)]+bestDy, ys)); }
+        drawGuides(xs_hit, ys_hit);
+      } else clearGuides();
+      d.style.left = nx + 'px';
+      d.style.top  = ny + 'px';
+      syncFromDOM(el, d); updateSidebar();
+    }
+    function onUp(){ clearGuides(); document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+  d.querySelectorAll('.handle').forEach(handle => {
+    handle.addEventListener('mousedown', (e) => {
+      e.stopPropagation(); e.preventDefault();
+      select(el, d);
+      const pos = handle.dataset.pos;
+      const sx = e.clientX, sy = e.clientY;
+      const origW = parseFloat(d.style.width), origH = parseFloat(d.style.height);
+      const origLeft = parseFloat(d.style.left), origTop = parseFloat(d.style.top);
+      const affectL = pos.includes('w');
+      const affectR = pos.includes('e');
+      const affectT = pos.includes('n');
+      const affectB = pos.includes('s');
+      function onMove(me){
+        let dx = me.clientX - sx, dy = me.clientY - sy;
+        let L = origLeft, T = origTop, W = origW, H = origH;
+        if (affectL) { L = origLeft + dx; W = origW - dx; }
+        if (affectR) { W = origW + dx; }
+        if (affectT) { T = origTop + dy; H = origH - dy; }
+        if (affectB) { H = origH + dy; }
+        if (W < 10) { if (affectL) L = origLeft + origW - 10; W = 10; }
+        if (H < 10) { if (affectT) T = origTop + origH - 10; H = 10; }
+        const xs_hit = [], ys_hit = [];
+        if (me.shiftKey) {
+          const {xs, ys} = getSnapTargets(el);
+          if (affectL) { const s = snap(L, xs); if (s !== L) { W += (L - s); L = s; xs_hit.push(s); }}
+          if (affectR) { const s = snap(L + W, xs); if (s !== L + W) { W = s - L; xs_hit.push(s); }}
+          if (affectT) { const s = snap(T, ys); if (s !== T) { H += (T - s); T = s; ys_hit.push(s); }}
+          if (affectB) { const s = snap(T + H, ys); if (s !== T + H) { H = s - T; ys_hit.push(s); }}
+          drawGuides(xs_hit, ys_hit);
+        } else clearGuides();
+        d.style.left = L + 'px'; d.style.top = T + 'px';
+        d.style.width = W + 'px'; d.style.height = H + 'px';
+        syncFromDOM(el, d); updateSidebar();
+      }
+      function onUp(){ clearGuides(); document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  });
+}
+
+function syncFromDOM(el, d) {
+  const cx0 = data.chassis.x1;
+  const cy1 = data.chassis.y2;
+  const leftMm = parseFloat(d.style.left) / SCALE;
+  const topMm  = parseFloat(d.style.top)  / SCALE;
+  const wMm    = parseFloat(d.style.width) / SCALE;
+  const hMm    = parseFloat(d.style.height) / SCALE;
+  el.x1 = cx0 + leftMm/1000;
+  el.x2 = el.x1 + wMm/1000;
+  el.y2 = cy1 - topMm/1000;
+  el.y1 = el.y2 - hMm/1000;
+}
+
+function select(el, d) {
+  selected = el;
+  document.querySelectorAll('.el').forEach(x => x.classList.remove('selected'));
+  d.classList.add('selected');
+  updateSidebar();
+}
+function updateSidebar() {
+  if (!selected) return;
+  document.getElementById('f-name').value = selected.name;
+  document.getElementById('f-x1').value = (selected.x1*1000).toFixed(2);
+  document.getElementById('f-x2').value = (selected.x2*1000).toFixed(2);
+  document.getElementById('f-y1').value = (selected.y1*1000).toFixed(2);
+  document.getElementById('f-y2').value = (selected.y2*1000).toFixed(2);
+  document.getElementById('f-type').value = selected.type;
+  document.getElementById('f-comment').value = selected.comment || '';
+}
+// Auto-save comment + type on change
+['f-comment','f-type','f-name'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    if (!selected) return;
+    selected.comment = document.getElementById('f-comment').value;
+    selected.type = document.getElementById('f-type').value;
+    selected.name = document.getElementById('f-name').value || selected.name;
+  });
+});
+document.getElementById('f-name').removeAttribute('readonly');
+document.getElementById('applyBtn').addEventListener('click', () => {
+  if (!selected) return;
+  selected.x1 = parseFloat(document.getElementById('f-x1').value)/1000;
+  selected.x2 = parseFloat(document.getElementById('f-x2').value)/1000;
+  selected.y1 = parseFloat(document.getElementById('f-y1').value)/1000;
+  selected.y2 = parseFloat(document.getElementById('f-y2').value)/1000;
+  selected.type = document.getElementById('f-type').value;
+  selected.comment = document.getElementById('f-comment').value;
+  selected.name = document.getElementById('f-name').value || selected.name;
+  render();
+});
+
+document.getElementById('addBtn').addEventListener('click', () => {
+  if (!data) return;
+  const cx = (data.chassis.x1 + data.chassis.x2)/2;
+  const cy = (data.chassis.y1 + data.chassis.y2)/2;
+  const newEl = {
+    name: 'NewFrame_' + Date.now().toString().slice(-5),
+    type: 'bezel',
+    x1: cx - 0.04, x2: cx + 0.04,
+    y1: cy - 0.02, y2: cy + 0.02,
+    comment: '',
+    is_new: true
+  };
+  data.elements.push(newEl);
+  render();
+});
+
+document.getElementById('delBtn').addEventListener('click', () => {
+  if (!selected || !data) return;
+  if (!confirm('Delete ' + selected.name + '?')) return;
+  data.elements = data.elements.filter(e => e !== selected);
+  selected = null;
+  render();
+});
+
+document.getElementById('loadBtn').addEventListener('click', () => document.getElementById('fileInput').click());
+document.getElementById('fileInput').addEventListener('change', (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => { data = JSON.parse(r.result); render(); };
+  r.readAsText(f);
+});
+document.getElementById('exportBtn').addEventListener('click', () => {
+  jsonOut.value = JSON.stringify(data, null, 2);
+  status.textContent = 'Exported — copy or download.';
+});
+document.getElementById('copyBtn').addEventListener('click', () => {
+  if (!jsonOut.value) jsonOut.value = JSON.stringify(data, null, 2);
+  jsonOut.select(); document.execCommand('copy');
+  status.textContent = 'Copied to clipboard.';
+});
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'band_ritual_gui_layout_edited.json';
+  a.click();
+});
+
+// Auto-load from URL (?json=path) if present
+(async () => {
+  try {
+    const res = await fetch('band_ritual_gui_layout.json');
+    if (res.ok) { data = await res.json(); render(); }
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>

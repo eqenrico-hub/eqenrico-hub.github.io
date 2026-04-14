@@ -36,6 +36,48 @@ title: Agents
 <div class="agent-grid">
 
   <div class="agent-card">
+    <h2>🎨 Blender Redesign Agent</h2>
+    <p class="desc">
+      Bridges ChatGPT (or any vision-LLM) to Blender for rapid GUI iteration.
+      Renders a tight top-down view of one GUI section with numbered yellow badges,
+      provides a prompt template that forces a parseable mm-coordinate table,
+      and rebuilds the geometry in Blender from ChatGPT's table in one click.
+      Built for VST plugin GUI work — the coord table survives even when the LLM
+      can't generate images.
+    </p>
+    <div class="stack">
+      <span class="tag">Python</span>
+      <span class="tag">Blender bpy</span>
+      <span class="tag">Pillow</span>
+      <span class="tag">ChatGPT</span>
+    </div>
+    <div class="links">
+      <a href="blender-redesign/">Details &amp; scripts →</a>
+    </div>
+  </div>
+
+  <div class="agent-card">
+    <h2>🖼️ GUI Frame Tool</h2>
+    <p class="desc">
+      Browser-based 2D editor for translating Blender GUI layouts to draggable
+      frames. Load a layout JSON (exported from Blender), drag/resize any frame
+      with 8 handles (corners + edges), Shift-snap to align with other frames,
+      add new frames, delete frames, attach comments that Claude reads when
+      applying changes back to Blender. Auto-fits to any window size. The round-trip
+      tool for tuning VST GUI proportions before committing to 3D.
+    </p>
+    <div class="stack">
+      <span class="tag">HTML</span>
+      <span class="tag">Vanilla JS</span>
+      <span class="tag">Drag &amp; Drop</span>
+      <span class="tag">No build</span>
+    </div>
+    <div class="links">
+      <a href="gui-frame-tool/">Launch tool →</a>
+    </div>
+  </div>
+
+  <div class="agent-card">
     <h2>🤖 MapBuilder</h2>
     <p class="desc">
       Autonomous fantasy world generator. Takes a single text prompt

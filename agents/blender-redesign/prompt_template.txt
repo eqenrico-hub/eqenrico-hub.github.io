@@ -1,0 +1,49 @@
+I'm redesigning a section of a VST plugin (a scale-locked vocoder). The attached image is my current Blender mockup with numbered yellow badges on each interactive element.
+
+CURRENT ELEMENTS (numbered to match badges in image):
+{{ELEMENT_LIST}}
+
+SECTION SIZE: {{WIDTH}}mm × {{HEIGHT}}mm (W × H, matches image aspect).
+
+TASK:
+Redesign this section to be as compact, clean, minimal, and clear as possible. Maximum usability, minimum visual clutter.
+
+OUTPUT — WHAT I ACTUALLY NEED (in priority order):
+
+=== REQUIRED: Element coordinate table ===
+Return this EXACT format, always. This is what I use to rebuild in Blender:
+
+```
+#  | Name           | Type        | X   | Y   | W   | H   | Notes
+1  | KEY            | dropdown    | 4   | 6   | 40  | 12  | rounded corners 3mm
+2  | SCALE TYPE     | dropdown    | 48  | 6   | 60  | 12  |
+...
+```
+
+Coordinates in millimeters, origin (0,0) = top-left of the section, +X right, +Y down.
+If you remove an element, OMIT it (don't list with zeros).
+If you add a NEW element, give it a number > max input number.
+
+=== REQUIRED: Reasoning bullets ===
+3–5 short bullets explaining your main decisions (what moved where and why).
+
+=== OPTIONAL: Schematic PNG ===
+If your tools allow it, also output a flat top-down schematic PNG:
+- Same aspect ratio as input (match the section's W/H)
+- Dark chassis (#0a0a0a) with brass accents (#c9a86b)
+- Numbered yellow badges on each element matching your table's #
+- 1400px wide minimum
+
+If you CANNOT generate images, that's fine — the TABLE alone is sufficient. Just say "image not generated" and I'll recreate from the table.
+
+=== OPTIONAL: ASCII layout ===
+A quick ASCII diagram is also helpful (60 chars wide max):
+```
++----------------------------------+
+| [KEY] [SCALE TYPE]         |SLIDER|
+| [DEG] [TYPE]  [VAR]        |SLIDER|
+| [      T U N I N G      ][⚙]     |
++----------------------------------+
+```
+
+AESTHETIC REFERENCE: dark chassis + thin brass frames (#c9a86b) + rounded corners + minimal typography.

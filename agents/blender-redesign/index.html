@@ -1,0 +1,35 @@
+---
+layout: default
+title: Blender Redesign Agent
+---
+
+<h1>🎨 Blender Redesign Agent</h1>
+<p><em>ChatGPT → Blender recreation pipeline for GUI sections</em></p>
+
+<h2>What it does</h2>
+<p>Given any Blender GUI section (e.g. a VST plugin panel), the agent:</p>
+<ol>
+  <li>Renders the section top-down with <strong>numbered yellow badges</strong> on every interactive element.</li>
+  <li>Emits a prompt to feed ChatGPT (or any vision-LLM) that explicitly requests a coordinate table in mm.</li>
+  <li>Parses ChatGPT's returned table and rebuilds the geometry in Blender at the new coordinates.</li>
+</ol>
+
+<h2>Files</h2>
+<ul>
+  <li><a href="render_section.py">render_section.py</a> — Blender script. Configure <code>SECTION_ROOT</code> + <code>ELEMENTS</code>, run to output PNG + coord JSON.</li>
+  <li><a href="overlay_numbers.py">overlay_numbers.py</a> — Burns numbered badges onto the PNG (uses the JSON from step 1).</li>
+  <li><a href="prompt_template.txt">prompt_template.txt</a> — Paste into ChatGPT alongside the image. Designed to force a parseable coord table even when image gen fails.</li>
+  <li><a href="apply_design.py">apply_design.py</a> — Paste ChatGPT's table into the <code>TABLE</code> variable, run in Blender, geometry rebuilds.</li>
+</ul>
+
+<h2>Workflow</h2>
+<pre><code>1. Blender:  run render_section.py    → section_render.png + /tmp/section_overlay.json
+2. Host:     python3 overlay_numbers.py → numbered badges burned in
+3. ChatGPT:  upload PNG + paste prompt_template.txt (filled in)
+4. Copy table from response → paste into apply_design.py TABLE variable
+5. Blender:  run apply_design.py      → new geometry at ChatGPT's coords</code></pre>
+
+<h2>Why a TABLE not just an image</h2>
+<p>Text-only ChatGPT models can't generate PNGs. The agent is built so the <strong>coordinate table is the primary output</strong> — it's all that's needed to rebuild in Blender. The image is optional.</p>
+
+<p><a href="../">← Back to Agents</a></p>
