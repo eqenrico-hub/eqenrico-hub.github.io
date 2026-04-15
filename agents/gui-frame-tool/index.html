@@ -357,32 +357,76 @@ function perpDist(p, a, b) {
   return Math.hypot(p[0]-proj[0], p[1]-proj[1]);
 }
 
-// Detect if shape is closer to circle/rect and return that primitive
+// Kasa's linear-least-squares circle fit — given points, returns best {cx, cy, r}
+function fitCircle(pts) {
+  const n = pts.length;
+  let Sx=0,Sy=0,Sxx=0,Syy=0,Sxy=0,Sxxx=0,Syyy=0,Sxyy=0,Sxxy=0;
+  pts.forEach(([x,y]) => {
+    Sx+=x; Sy+=y; Sxx+=x*x; Syy+=y*y; Sxy+=x*y;
+    Sxxx+=x*x*x; Syyy+=y*y*y; Sxyy+=x*y*y; Sxxy+=x*x*y;
+  });
+  // Solve 2x2: a[cx,cy] = b
+  const A11 = 2*(Sxx - Sx*Sx/n), A12 = 2*(Sxy - Sx*Sy/n);
+  const A21 = 2*(Sxy - Sx*Sy/n), A22 = 2*(Syy - Sy*Sy/n);
+  const b1 = Sxxx + Sxyy - (Sxx+Syy)*Sx/n;
+  const b2 = Syyy + Sxxy - (Sxx+Syy)*Sy/n;
+  const det = A11*A22 - A12*A21;
+  if (Math.abs(det) < 1e-9) return null;
+  const cx = (b1*A22 - b2*A12)/det;
+  const cy = (A11*b2 - A21*b1)/det;
+  const r = Math.sqrt((Sxx + Syy - 2*cx*Sx - 2*cy*Sy)/n + cx*cx + cy*cy);
+  return { cx, cy, r };
+}
+
+// Detect if shape is closer to circle/arc/rect and return that primitive
 function snapToPrimitive(points) {
-  // Bounding box
+  if (points.length < 4) return null;
+  // --- Circle/arc fit via Kasa ---
+  const fit = fitCircle(points);
+  if (fit) {
+    const { cx, cy, r } = fit;
+    const residuals = points.map(p => Math.abs(Math.hypot(p[0]-cx, p[1]-cy) - r) / r);
+    const avgResid = residuals.reduce((a,b)=>a+b,0) / residuals.length;
+    if (avgResid < 0.12) {
+      // Good circular fit — determine if full circle or arc
+      // Angular coverage: angles of all points, find largest gap
+      const angles = points.map(p => Math.atan2(p[1]-cy, p[0]-cx)).sort((a,b) => a-b);
+      let maxGap = 2*Math.PI - (angles[angles.length-1] - angles[0]);
+      for (let i = 1; i < angles.length; i++) {
+        const gap = angles[i] - angles[i-1];
+        if (gap > maxGap) maxGap = gap;
+      }
+      if (maxGap < Math.PI/6) {
+        // Covers most of the circle → return CIRCLE
+        return { type: 'circle', cx, cy, r };
+      } else {
+        // Arc — first-to-last angle in drawing order
+        const first = points[0], last = points[points.length-1];
+        const aFirst = Math.atan2(first[1]-cy, first[0]-cx);
+        const aLast  = Math.atan2(last[1]-cy, last[0]-cx);
+        // Convert to our convention: 0=top, CW positive
+        const toDeg = (a) => { let d = -a*180/Math.PI + 90; while(d>180)d-=360; while(d<-180)d+=360; return Math.round(d); };
+        return {
+          type: 'arc', cx, cy,
+          r_in: r*0.80, r_out: r*1.15,
+          angle_start_deg: toDeg(aFirst),
+          angle_end_deg:   toDeg(aLast),
+        };
+      }
+    }
+  }
+  // --- Rectangle fit ---
   const xs = points.map(p=>p[0]), ys = points.map(p=>p[1]);
   const minX = Math.min(...xs), maxX = Math.max(...xs);
   const minY = Math.min(...ys), maxY = Math.max(...ys);
-  const cx = (minX+maxX)/2, cy = (minY+maxY)/2;
   const w = maxX - minX, h = maxY - minY;
-  const r = (w+h)/4;
-  // Measure circular-ness: for each point, |distance from center - r| / r
-  let circErr = 0;
-  points.forEach(p => { circErr += Math.abs(Math.hypot(p[0]-cx, p[1]-cy) - r) / r; });
-  circErr /= points.length;
-  // Measure rect-ness: how far points are from closest bbox edge (normalized)
   let rectErr = 0;
   points.forEach(p => {
     const d = Math.min(Math.abs(p[0]-minX), Math.abs(p[0]-maxX), Math.abs(p[1]-minY), Math.abs(p[1]-maxY));
     rectErr += d / Math.max(w,h);
   });
   rectErr /= points.length;
-  console.log('circErr', circErr, 'rectErr', rectErr);
-  if (circErr < 0.15 && circErr < rectErr) {
-    return {type:'circle', cx, cy, r};
-  } else if (rectErr < 0.08) {
-    return {type:'rect', x:minX, y:minY, w, h};
-  }
+  if (rectErr < 0.08) return { type:'rect', x:minX, y:minY, w, h };
   return null;
 }
 
