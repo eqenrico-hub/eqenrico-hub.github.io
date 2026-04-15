@@ -176,37 +176,63 @@ def apply_spec(json_path, chassis_png=None, clear_old=True):
         m = _material_from_rgba(f"I2B_M_Small_{i:02d}", rgba, rough=0.3, metal=0.5)
         _cylinder(f"I2B_Small_{i:02d}", cx, cy, r, 0.007, 0.010, m, coll)
 
-    # --- Rectangles — only build 3D for the truly INTERACTIVE ones ---
-    # Let the chassis PNG handle display/decor/dropdown/label flat surfaces.
-    INTERACTIVE_RECT_KINDS = {
-        "pill", "pill_wide", "pill_small",
-        "square_button", "square_btn",
-        "vslider", "vertical_slider", "vertical_slider_candidate",
-    }
+    # --- Rectangles — build 3D for EVERY element so the scene stands alone ---
+    # Thin Z-extrusion so with-chassis render doesn't overpower the PNG art.
     for i, r in enumerate(spec.get("rectangles", [])):
-        if r["kind"] not in INTERACTIVE_RECT_KINDS:
-            continue
         x1, y1 = _px_to_world(spec, r["x"], r["y"])
         x2, y2 = _px_to_world(spec, r["x"] + r["w"], r["y"] + r["h"])
         rgba = tuple(r.get("rgba", (0.1, 0.08, 0.08, 1.0)))
         metal, rough = _infer_metal_rough(rgba)
         m = _material_from_rgba(f"I2B_M_Rect_{i:02d}", rgba, rough=rough, metal=metal)
-        # Vertical slider: only build the THUMB (a small box in the middle, not the full track)
-        if "slider" in r["kind"]:
+        kind = r.get("kind", "rect")
+        if "slider" in kind:
+            # Slider: build both the thin track AND the thumb
             cx = (x1 + x2) / 2
             cy = (y1 + y2) / 2
-            tw = abs(x2 - x1) * 0.85
+            # Track (full extent, thin Z)
+            _box(f"I2B_SliderTrack_{i:02d}", x1, y1, x2, y2, 0.002, 0.004, m, coll)
+            # Thumb (highlighted wider box at the middle)
+            tw = abs(x2 - x1) * 0.9
             th = abs(y2 - y1) * 0.15
+            mt = _material_from_rgba(f"I2B_M_SliderThumb_{i:02d}", (0.85, 0.65, 0.35, 1.0), rough=0.3, metal=0.8)
             _box(f"I2B_SliderThumb_{i:02d}", cx - tw/2, cy - th/2, cx + tw/2, cy + th/2,
-                 0.004, 0.009, m, coll)
+                 0.005, 0.010, mt, coll)
         else:
-            _box(f"I2B_Rect_{i:02d}_{r['kind']}", x1, y1, x2, y2, 0.003, 0.007, m, coll)
-    # Skip color_regions entirely when chassis PNG is present — it already shows them.
-    # Skip spectrum strip — JUCE draws the live visualizer; chassis PNG is the "off" art.
+            z_top = 0.005 if kind in ("display",) else 0.006
+            _box(f"I2B_Rect_{i:02d}_{kind}", x1, y1, x2, y2, 0.003, z_top, m, coll)
 
-    # --- Keyboard: skip if chassis PNG is present (chassis already shows painted keys) ---
-    # Stage 3+ will add subtle 3D edges; for now chassis PNG is authoritative for keyboard appearance.
+    # --- Keyboard: thin 3D for each key ---
     kb = spec.get("keyboard_strip")
+    if kb:
+        x1w, y1w = _px_to_world(spec, kb["x1"], kb["y1"])
+        x2w, y2w = _px_to_world(spec, kb["x2"], kb["y2"])
+        total_w = abs(x2w - x1w)
+        num_white = 14
+        white_w = total_w / num_white
+        gap = 0.0005
+        m_w = _material_from_rgba("I2B_M_WKey", (0.94, 0.91, 0.85, 1.0), rough=0.45, metal=0.0)
+        m_b = _material_from_rgba("I2B_M_BKey", (0.10, 0.08, 0.06, 1.0), rough=0.55, metal=0.0)
+        ylo = min(y1w, y2w); yhi = max(y1w, y2w)
+        for k in range(num_white):
+            kx1 = x1w + k * white_w + gap
+            kx2 = x1w + (k + 1) * white_w - gap
+            _box(f"I2B_WK_{k:02d}", kx1, ylo, kx2, yhi, 0.001, 0.005, m_w, coll)
+        black_after = [0, 1, 3, 4, 5, 7, 8, 10, 11, 12]
+        bw = white_w * 0.58
+        bh = abs(y2w - y1w) * 0.62
+        for idx, wa in enumerate(black_after):
+            if wa >= num_white - 1: continue
+            boundary = x1w + (wa + 1) * white_w
+            _box(f"I2B_BK_{idx:02d}", boundary - bw/2, yhi - bh, boundary + bw/2, yhi,
+                 0.005, 0.008, m_b, coll)
+
+    # --- Texts: thin emissive planes as placeholder glyphs ---
+    for i, t in enumerate(spec.get("texts", [])):
+        x1, y1 = _px_to_world(spec, t["x"], t["y"])
+        x2, y2 = _px_to_world(spec, t["x"] + t["w"], t["y"] + t["h"])
+        rgba = tuple(t.get("rgba", (0.85, 0.82, 0.75, 1.0)))
+        m = _material_from_rgba(f"I2B_M_Text_{i:02d}", rgba, rough=0.6, metal=0.0)
+        _box(f"I2B_Text_{i:02d}_{t.get('id','?')}", x1, y1, x2, y2, 0.004, 0.006, m, coll)
 
     # Skip texts when chassis is present — chassis shows them. Stage 4 will render glyphs.
 

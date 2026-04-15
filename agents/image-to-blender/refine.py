@@ -40,12 +40,13 @@ def _bgr_to_rgba01(bgr):
     return (bgr[2] / 255.0, bgr[1] / 255.0, bgr[0] / 255.0, 1.0)
 
 
-def _snap_circle(cx, cy, expected_r, cv_circles, tolerance=40):
-    """Find the closest CV-detected circle within tolerance, return its (cx,cy,r)."""
+def _snap_circle(cx, cy, expected_r, cv_circles, tolerance=120):
+    """Find the closest CV-detected circle within tolerance whose radius is plausible."""
     best = None; best_d = tolerance
     for dcx, dcy, dr in cv_circles:
         d = ((cx - dcx) ** 2 + (cy - dcy) ** 2) ** 0.5
-        if d < best_d and abs(dr - expected_r) < max(expected_r * 0.6, 15):
+        # Accept radii within 80% of expected to catch varied knob styles
+        if d < best_d and abs(dr - expected_r) < max(expected_r * 0.8, 20):
             best_d = d
             best = (dcx, dcy, dr)
     return best
