@@ -1,40 +1,24 @@
 """
-Blender-side applier for image-to-blender element detection.
+Blender-side applier for image-to-blender detection v3.
 
-Reads a JSON spec produced by detect.py and builds 3D geometry inside
-a dedicated Blender collection ON TOP of the source chassis PNG (which
-should be added as an image-plane first — see setup_chassis() helper).
+Reads a JSON spec produced by detect.py v3 and builds 3D geometry for
+every detected element using sampled per-element colors so the scene
+can stand alone without the chassis PNG underneath.
 
 Usage (in Blender scripting tab or via mcp-blender bridge):
     exec(open('/path/to/apply.py').read())
-    apply_spec('/path/to/detect_spec.json', chassis_png='/path/to/chassis.png')
+    apply_spec('/path/to/spec.json', chassis_png='/path/to/chassis.png')  # with chassis
+    apply_spec('/path/to/spec.json', chassis_png=None)                    # rebuild only
 """
 import bpy, bmesh, math, json
 from mathutils import Vector
 from pathlib import Path
 
 
-# ================================================================
-# Config — tune for your image/scene
-# ================================================================
-PX_TO_M = 0.001                # 1 px = 1 mm
+PX_TO_M = 0.001
 COLLECTION_NAME = "ImageToBlender_V2"
 
-MATERIALS = {
-    "knob_outer":  {"rgba": (0.70, 0.45, 0.18, 1.0), "rough": 0.35, "metal": 0.85},
-    "knob_cap":    {"rgba": (0.18, 0.14, 0.11, 1.0), "rough": 0.45, "metal": 0.60},
-    "slider":      {"rgba": (0.85, 0.65, 0.35, 1.0), "rough": 0.30, "metal": 0.80},
-    "button_red":  {"rgba": (0.75, 0.18, 0.20, 1.0), "rough": 0.40, "metal": 0.30},
-    "button_dark": {"rgba": (0.10, 0.08, 0.08, 1.0), "rough": 0.55, "metal": 0.20},
-    "piano_white": {"rgba": (0.92, 0.89, 0.82, 1.0), "rough": 0.45, "metal": 0.00},
-    "piano_black": {"rgba": (0.08, 0.07, 0.05, 1.0), "rough": 0.55, "metal": 0.00},
-    "eq_node":     {"rgba": (0.95, 0.72, 0.25, 1.0), "rough": 0.25, "metal": 0.70},
-}
 
-
-# ================================================================
-# Helpers
-# ================================================================
 def _ensure_collection(name):
     coll = bpy.data.collections.get(name)
     if coll is None:
@@ -42,9 +26,8 @@ def _ensure_collection(name):
         bpy.context.scene.collection.children.link(coll)
     return coll
 
-def _material(mat_key):
-    cfg = MATERIALS[mat_key]
-    name = f"M_I2B_{mat_key}"
+
+def _material_from_rgba(name, rgba, rough=0.45, metal=0.0):
     m = bpy.data.materials.get(name)
     if m is None:
         m = bpy.data.materials.new(name)
@@ -53,16 +36,31 @@ def _material(mat_key):
     nt.nodes.clear()
     out = nt.nodes.new("ShaderNodeOutputMaterial")
     b = nt.nodes.new("ShaderNodeBsdfPrincipled")
-    b.inputs["Base Color"].default_value = cfg["rgba"]
-    b.inputs["Roughness"].default_value = cfg["rough"]
-    b.inputs["Metallic"].default_value = cfg["metal"]
+    b.inputs["Base Color"].default_value = rgba
+    b.inputs["Roughness"].default_value = rough
+    b.inputs["Metallic"].default_value = metal
     nt.links.new(b.outputs["BSDF"], out.inputs["Surface"])
     return m
+
+
+def _infer_metal_rough(rgba):
+    """Heuristic: brass/gold colors → metallic. Near-black → dark matte."""
+    r, g, b, _ = rgba
+    # Warm amber/brass heuristic: high R, moderate G, low B
+    if r > 0.5 and g > 0.3 and b < 0.4:
+        return 0.8, 0.30
+    # Cool metal: near equal RGB and bright
+    if abs(r - g) < 0.08 and abs(g - b) < 0.08 and r > 0.55:
+        return 0.6, 0.35
+    # Otherwise: matte
+    return 0.0, 0.55
+
 
 def _px_to_world(spec, px, py):
     W = spec["width"] * PX_TO_M
     H = spec["height"] * PX_TO_M
     return (px * PX_TO_M - W / 2, H / 2 - py * PX_TO_M)
+
 
 def _cylinder(name, cx, cy, r, z_bot, z_top, mat, coll, segs=48):
     mesh = bpy.data.meshes.new(name)
@@ -83,12 +81,13 @@ def _cylinder(name, cx, cy, r, z_bot, z_top, mat, coll, segs=48):
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     bm.to_mesh(mesh)
     bm.free()
-    obj = bpy.data.objects.new(name, mesh)
-    coll.objects.link(obj)
+    o = bpy.data.objects.new(name, mesh)
+    coll.objects.link(o)
     for p in mesh.polygons:
         p.use_smooth = True
-    obj.data.materials.append(mat)
-    return obj
+    o.data.materials.append(mat)
+    return o
+
 
 def _box(name, x1, y1, x2, y2, z_bot, z_top, mat, coll):
     mesh = bpy.data.meshes.new(name)
@@ -101,22 +100,13 @@ def _box(name, x1, y1, x2, y2, z_bot, z_top, mat, coll):
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     bm.to_mesh(mesh)
     bm.free()
-    obj = bpy.data.objects.new(name, mesh)
-    coll.objects.link(obj)
-    obj.data.materials.append(mat)
-    for p in mesh.polygons:
-        p.use_smooth = True
-    return obj
+    o = bpy.data.objects.new(name, mesh)
+    coll.objects.link(o)
+    o.data.materials.append(mat)
+    return o
 
 
-# ================================================================
-# Public API
-# ================================================================
-def setup_chassis(chassis_png_path: str, coll_name: str = COLLECTION_NAME):
-    """Creates an image-plane at z=0 with the chassis PNG as emission texture."""
-    import bmesh
-    coll = _ensure_collection(coll_name)
-    # Remove any existing chassis
+def setup_chassis(chassis_png_path, coll):
     for o in list(bpy.data.objects):
         if o.name.startswith("I2B_Chassis"):
             bpy.data.objects.remove(o, do_unlink=True)
@@ -130,7 +120,7 @@ def setup_chassis(chassis_png_path: str, coll_name: str = COLLECTION_NAME):
     v2 = bm.verts.new((+W/2, -H/2, 0))
     v3 = bm.verts.new((+W/2, +H/2, 0))
     v4 = bm.verts.new((-W/2, +H/2, 0))
-    f = bm.faces.new([v1, v2, v3, v4])
+    bm.faces.new([v1, v2, v3, v4])
     uv = bm.loops.layers.uv.new("UVMap")
     for face in bm.faces:
         for loop in face.loops:
@@ -140,7 +130,6 @@ def setup_chassis(chassis_png_path: str, coll_name: str = COLLECTION_NAME):
     bm.to_mesh(mesh); bm.free()
     obj = bpy.data.objects.new("I2B_Chassis", mesh)
     coll.objects.link(obj)
-    # Material: emission with the PNG
     mat = bpy.data.materials.new("I2B_M_Chassis")
     mat.use_nodes = True
     nt = mat.node_tree
@@ -155,82 +144,112 @@ def setup_chassis(chassis_png_path: str, coll_name: str = COLLECTION_NAME):
     return obj
 
 
-def apply_spec(json_path: str, chassis_png: str | None = None, clear_old: bool = True):
-    """Build 3D elements in Blender from a detect.py JSON spec."""
+def apply_spec(json_path, chassis_png=None, clear_old=True):
     with open(json_path) as f:
         spec = json.load(f)
     coll = _ensure_collection(COLLECTION_NAME)
     if chassis_png:
-        setup_chassis(chassis_png, COLLECTION_NAME)
-    # Remove old I2B elements (except chassis)
+        setup_chassis(chassis_png, coll)
     if clear_old:
         for o in list(bpy.data.objects):
             if o.name.startswith("I2B_") and o.name != "I2B_Chassis":
                 bpy.data.objects.remove(o, do_unlink=True)
 
-    M_KNOB = _material("knob_outer")
-    M_CAP  = _material("knob_cap")
-    M_NODE = _material("eq_node")
-    M_SLD  = _material("slider")
-    M_BTN_DARK = _material("button_dark")
-    M_WK   = _material("piano_white")
-    M_BK   = _material("piano_black")
-
-    # --- Knobs ---
+    # --- Knobs with sampled colors ---
     for i, k in enumerate(spec.get("knobs", [])):
         cx, cy = _px_to_world(spec, k["cx"], k["cy"])
         r = k["r"] * PX_TO_M
-        _cylinder(f"I2B_Knob_{i:02d}_outer", cx, cy, r, 0.002, 0.007, M_KNOB, coll)
-        _cylinder(f"I2B_Knob_{i:02d}_cap", cx, cy, max(r*0.55, 0.006), 0.007, 0.010, M_CAP, coll)
+        rgba = tuple(k.get("rgba", (0.7, 0.45, 0.18, 1.0)))
+        metal, rough = _infer_metal_rough(rgba)
+        m_outer = _material_from_rgba(f"I2B_M_Knob_{i:02d}", rgba, rough=rough, metal=metal)
+        m_cap = _material_from_rgba(f"I2B_M_KnobCap_{i:02d}",
+                                    (rgba[0]*0.25, rgba[1]*0.25, rgba[2]*0.25, 1.0),
+                                    rough=0.5, metal=metal*0.7)
+        _cylinder(f"I2B_Knob_{i:02d}_outer", cx, cy, r, 0.002, 0.008, m_outer, coll)
+        _cylinder(f"I2B_Knob_{i:02d}_cap", cx, cy, max(r*0.55, 0.006), 0.008, 0.011, m_cap, coll)
 
-    # --- Small circles (EQ nodes) ---
+    # --- Small circles ---
     for i, s in enumerate(spec.get("small_circles", [])):
         cx, cy = _px_to_world(spec, s["cx"], s["cy"])
         r = s["r"] * PX_TO_M
-        _cylinder(f"I2B_Node_{i:02d}", cx, cy, r, 0.006, 0.009, M_NODE, coll)
+        rgba = tuple(s.get("rgba", (0.95, 0.72, 0.25, 1.0)))
+        m = _material_from_rgba(f"I2B_M_Small_{i:02d}", rgba, rough=0.3, metal=0.5)
+        _cylinder(f"I2B_Small_{i:02d}", cx, cy, r, 0.007, 0.010, m, coll)
 
     # --- Rectangles ---
     for i, r in enumerate(spec.get("rectangles", [])):
         x1, y1 = _px_to_world(spec, r["x"], r["y"])
         x2, y2 = _px_to_world(spec, r["x"] + r["w"], r["y"] + r["h"])
-        mat = {"vertical_slider_candidate": M_SLD,
-               "horizontal_button_candidate": M_BTN_DARK,
-               "square_button_candidate": M_BTN_DARK}[r["kind"]]
-        _box(f"I2B_Rect_{i:02d}_{r['kind'][:3]}", x1, y1, x2, y2, 0.003, 0.007, mat, coll)
+        rgba = tuple(r.get("rgba", (0.1, 0.08, 0.08, 1.0)))
+        metal, rough = _infer_metal_rough(rgba)
+        m = _material_from_rgba(f"I2B_M_Rect_{i:02d}", rgba, rough=rough, metal=metal)
+        _box(f"I2B_Rect_{i:02d}_{r['kind']}", x1, y1, x2, y2, 0.003, 0.007, m, coll)
 
-    # --- Keyboard: build white + black keys based on strip bounds ---
+    # --- Color regions (distinct-color UI blobs) ---
+    for i, cr in enumerate(spec.get("color_regions", [])):
+        x1, y1 = _px_to_world(spec, cr["x"], cr["y"])
+        x2, y2 = _px_to_world(spec, cr["x"] + cr["w"], cr["y"] + cr["h"])
+        rgba = tuple(cr.get("rgba", (0.5, 0.5, 0.5, 1.0)))
+        metal, rough = _infer_metal_rough(rgba)
+        m = _material_from_rgba(f"I2B_M_Color_{i:02d}", rgba, rough=rough, metal=metal)
+        _box(f"I2B_ColorRegion_{i:02d}", x1, y1, x2, y2, 0.004, 0.008, m, coll)
+
+    # --- Spectrum strip — render as a solid purple block ---
+    sp = spec.get("spectrum_strip")
+    if sp:
+        x1, y1 = _px_to_world(spec, sp["x1"], sp["y1"])
+        x2, y2 = _px_to_world(spec, sp["x2"], sp["y2"])
+        m = _material_from_rgba("I2B_M_Spectrum", (0.45, 0.15, 0.55, 1.0), rough=0.4, metal=0.1)
+        _box("I2B_Spectrum", x1, y1, x2, y2, 0.001, 0.004, m, coll)
+
+    # --- Keyboard ---
     kb = spec.get("keyboard_strip")
     if kb:
         x1w, y1w = _px_to_world(spec, kb["x1"], kb["y1"])
         x2w, y2w = _px_to_world(spec, kb["x2"], kb["y2"])
         total_w = abs(x2w - x1w)
-        # Assume 14 white keys (standard vocoder range); tuneable
         num_white = 14
         white_w = total_w / num_white
         gap = 0.0005
+        m_w = _material_from_rgba("I2B_M_WKey", (0.92, 0.89, 0.82, 1.0), rough=0.45, metal=0.0)
+        m_b = _material_from_rgba("I2B_M_BKey", (0.08, 0.07, 0.05, 1.0), rough=0.55, metal=0.0)
+        ylo = min(y1w, y2w); yhi = max(y1w, y2w)
         for k in range(num_white):
             kx1 = x1w + k * white_w + gap
             kx2 = x1w + (k + 1) * white_w - gap
-            _box(f"I2B_WK_{k:02d}", kx1, y1w, kx2, y2w, 0.001, 0.007, M_WK, coll)
-        # Black keys: standard pattern (after C,D,F,G,A within each octave)
-        black_after = [0,1,3,4,5, 7,8,10,11,12]
-        bh = abs(y2w - y1w) * 0.62
-        bk_top_y = y1w  # remember y1w is upper in world space (y flipped)
-        # In world coords, y1w corresponds to the TOP of the keyboard zone (smallest py)
-        # Actually px_to_world flips y so higher py → lower y_world. Let's recompute cleanly:
-        ylo, yhi = min(y1w, y2w), max(y1w, y2w)
-        black_top = yhi
-        black_bot = yhi - bh
+            _box(f"I2B_WK_{k:02d}", kx1, ylo, kx2, yhi, 0.001, 0.007, m_w, coll)
+        black_after = [0, 1, 3, 4, 5, 7, 8, 10, 11, 12]
         bw = white_w * 0.58
-        for idx, w_after in enumerate(black_after):
-            if w_after >= num_white - 1: continue
-            boundary = x1w + (w_after + 1) * white_w
-            _box(f"I2B_BK_{idx:02d}", boundary - bw/2, black_bot, boundary + bw/2, black_top,
-                 0.007, 0.012, M_BK, coll)
+        bh = abs(y2w - y1w) * 0.62
+        for idx, wa in enumerate(black_after):
+            if wa >= num_white - 1: continue
+            boundary = x1w + (wa + 1) * white_w
+            _box(f"I2B_BK_{idx:02d}", boundary - bw/2, yhi - bh, boundary + bw/2, yhi,
+                 0.007, 0.012, m_b, coll)
 
-    print(f"Applied: {len(spec['knobs'])} knobs, {len(spec['small_circles'])} nodes, "
-          f"{len(spec['rectangles'])} rects, keyboard={'yes' if kb else 'no'}")
+    # --- Texts: build small emissive planes at text positions ---
+    for i, t in enumerate(spec.get("texts", [])):
+        x1, y1 = _px_to_world(spec, t["x"], t["y"])
+        x2, y2 = _px_to_world(spec, t["x"] + t["w"], t["y"] + t["h"])
+        # Label as a dark-grey glowing plane (placeholder for actual text rendering)
+        m = _material_from_rgba(f"I2B_M_Text_{i:02d}", (0.85, 0.82, 0.75, 1.0), rough=0.7, metal=0.0)
+        _box(f"I2B_Text_{i:02d}", x1, y1, x2, y2, 0.010, 0.012, m, coll)
+
+    print(f"Applied: knobs={len(spec.get('knobs', []))}, "
+          f"small={len(spec.get('small_circles', []))}, "
+          f"rects={len(spec.get('rectangles', []))}, "
+          f"color_regions={len(spec.get('color_regions', []))}, "
+          f"spectrum={'yes' if spec.get('spectrum_strip') else 'no'}, "
+          f"keyboard={'yes' if spec.get('keyboard_strip') else 'no'}, "
+          f"texts={len(spec.get('texts', []))}")
+
+
+def hide_chassis(hidden=True):
+    c = bpy.data.objects.get("I2B_Chassis")
+    if c:
+        c.hide_viewport = hidden
+        c.hide_render = hidden
 
 
 if __name__ == "__main__":
-    print("apply.py — call apply_spec('/path/to/spec.json', chassis_png='/path/to/chassis.png') in Blender")
+    print("apply.py — use apply_spec(...) / hide_chassis(True) in Blender")
