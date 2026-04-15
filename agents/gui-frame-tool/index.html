@@ -302,13 +302,44 @@ function finalizeFreehand(rawPoints) {
       if (mirrorH) partners.push(Math.PI - theta);
       if (mirrorV) partners.push(-theta);
       if (mirrorH && mirrorV) partners.push(Math.PI + theta);
-      // Average radii at all partner angles
       let sum = 0;
       partners.forEach(pTheta => sum += sampleR(pTheta));
       averaged[i] = { theta, r: sum / partners.length };
     }
-    // Convert back to Cartesian — points guaranteed equidistant in angle → smooth polygon
-    points = averaged.map(s => [cx + Math.cos(s.theta) * s.r, cy + Math.sin(s.theta) * s.r]);
+    // LOW-PASS FILTER on the radius array to kill drawing wobble
+    // Circular (wrap-around) Gaussian smoothing
+    const sigma = 5;   // samples — higher = smoother
+    const kRadius = Math.ceil(sigma * 3);
+    const kernel = [];
+    let kSum = 0;
+    for (let k = -kRadius; k <= kRadius; k++) {
+      const w = Math.exp(-(k*k)/(2*sigma*sigma));
+      kernel.push(w); kSum += w;
+    }
+    const radii = averaged.map(s => s.r);
+    const smoothed = new Array(N);
+    for (let i = 0; i < N; i++) {
+      let sum = 0;
+      for (let k = -kRadius; k <= kRadius; k++) {
+        const j = ((i + k) % N + N) % N;  // wrap around
+        sum += radii[j] * kernel[k + kRadius];
+      }
+      smoothed[i] = sum / kSum;
+    }
+    // Check variance — if nearly constant radius, snap to perfect circle
+    const meanR = smoothed.reduce((a,b)=>a+b,0) / N;
+    const maxDev = Math.max(...smoothed.map(r => Math.abs(r - meanR)));
+    const relDev = maxDev / meanR;
+    if (relDev < 0.06) {
+      // Basically a circle — output perfect circle
+      const id = state.nextId++;
+      state.shapes.push({ id, type:'circle', name:`circle_${id}`, comment:'', cx, cy, r: meanR });
+      state.selectedId = id;
+      render();
+      return;
+    }
+    // Otherwise: reconstruct smooth polygon from filtered radii
+    points = averaged.map((s, i) => [cx + Math.cos(s.theta) * smoothed[i], cy + Math.sin(s.theta) * smoothed[i]]);
   }
 
   // Snap to primitive if requested
