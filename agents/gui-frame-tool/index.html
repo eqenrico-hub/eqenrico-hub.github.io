@@ -118,6 +118,38 @@ const selectedInfo = document.getElementById('selected-info');
 const jsonOut = document.getElementById('jsonOut');
 
 // =========================== BG IMAGE ===========================
+// Auto-load default background if served via URL (?bg=...) or from folder
+function loadBgFromUrl(url, displayName) {
+  bgImg.onload = () => {
+    state.bgUrl = url;
+    state.bgNaturalW = bgImg.naturalWidth;
+    state.bgNaturalH = bgImg.naturalHeight;
+    stage.style.width = bgImg.naturalWidth + 'px';
+    stage.style.height = bgImg.naturalHeight + 'px';
+    const maxW = window.innerWidth - 360;
+    if (bgImg.naturalWidth > maxW) {
+      const scale = maxW / bgImg.naturalWidth;
+      stage.style.width = (bgImg.naturalWidth * scale) + 'px';
+      stage.style.height = (bgImg.naturalHeight * scale) + 'px';
+    }
+    svg.setAttribute('viewBox', `0 0 ${bgImg.naturalWidth} ${bgImg.naturalHeight}`);
+    svg.setAttribute('preserveAspectRatio', 'none');
+    status.textContent = `Loaded ${displayName || 'image'}: ${bgImg.naturalWidth}×${bgImg.naturalHeight}px`;
+    render();
+  };
+  bgImg.onerror = () => { status.textContent = `Could not auto-load ${url}. Click Load Background PNG.`; };
+  bgImg.src = url;
+}
+
+// Try auto-loading: URL param ?bg=... OR default gemini_reference.png
+(function autoLoad() {
+  const p = new URLSearchParams(location.search);
+  const bgParam = p.get('bg');
+  if (bgParam) { loadBgFromUrl(bgParam, bgParam); return; }
+  // Try the default reference
+  loadBgFromUrl('gemini_reference.png', 'gemini_reference.png');
+})();
+
 document.getElementById('loadBgBtn').onclick = () => document.getElementById('bgInput').click();
 document.getElementById('bgInput').onchange = (e) => {
   const f = e.target.files[0]; if (!f) return;
