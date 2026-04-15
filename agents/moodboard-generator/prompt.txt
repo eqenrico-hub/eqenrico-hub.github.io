@@ -1,0 +1,31 @@
+MOOD BOARD GENERATION — STYLE DNA EXTRACTION
+
+You are a senior VST plugin art director (Arturia / FabFilter / Baby Audio / Output / Teenage Engineering / Soundtoys caliber).
+
+I am attaching MULTIPLE IMAGES:
+
+- IMAGE 1: a screenshot of my plugin as it currently appears inside the DAW. This shows the FUNCTIONAL STRUCTURE — which controls exist, where they sit, what the layout is. Do NOT evaluate its visual style; it is intentionally rough. Use it ONLY to understand what the plugin contains.
+
+- IMAGE 2 (and any subsequent images): style references — VSTs whose AESTHETIC you want to borrow. Use these for palette, materials, typography, decorative language, lighting mood.
+
+TASK:
+
+Produce a single MOOD BOARD image that captures the ART-DIRECTION DNA distilled from the style reference(s). The mood board is not a UI mockup — it is a VISUAL STYLE GUIDE.
+
+The mood board must contain, arranged cleanly on one canvas:
+
+1. A 5–7 color PALETTE (swatches with hex codes labeled).
+2. 3–4 MATERIAL TEXTURE samples (e.g. "oxblood brushed metal", "anthracite lacquer with brass inlay", "tarnished bronze with verdigris", etc.) — each as a small square with a label describing the material.
+3. 2–3 TYPOGRAPHY samples at different weights/sizes showing the font personality (serif vs sans, engraved vs printed, the hierarchy between section labels and control values).
+4. 2–3 DECORATIVE MOTIFS sampled from the reference (rivets, filigree, engraved lines, sigils, chamfer patterns, patina variations).
+5. 1–2 LIGHTING MOOD samples — small vignettes showing the type of light/shadow/gloss you expect on interactive elements.
+
+AESTHETIC DIRECTION: take the style references and distill them. Do NOT hybridize with default "plugin designer" aesthetic. Match the references tightly.
+
+CONSTRAINTS:
+- Do NOT include any actual plugin controls in the mood board — this is about abstract style DNA, not UI layout.
+- Do NOT copy any recognizable control layout from the style references.
+- Dark background (match reference mood).
+- 1600×900 aspect, clean composition, everything labeled.
+
+OUTPUT: one mood board PNG. No reasoning. Just the image.

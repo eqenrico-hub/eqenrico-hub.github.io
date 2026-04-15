@@ -1,0 +1,37 @@
+---
+layout: default
+title: Moodboard Generator Agent
+---
+
+<h1>🎨 Moodboard Generator</h1>
+<p><em>Extract style DNA from reference VSTs into a structured moodboard</em></p>
+
+<h2>What it does</h2>
+<p>Given a current plugin GUI (any DAW screenshot) + one or more style-reference VSTs, this prompt asks a vision-LLM (ChatGPT / Gemini / Claude) to produce a single moodboard image containing palette swatches with hex codes, material samples, typography specimens, decorative motifs, and lighting vignettes — all distilled from the style references.</p>
+
+<p>The moodboard is <strong>not</strong> a UI mockup — it's an abstract visual style guide you can reference when rebuilding the GUI in Blender or HTML.</p>
+
+<h2>How to use</h2>
+<ol>
+  <li>Open <a href="prompt.txt">prompt.txt</a> in a text editor, copy all content.</li>
+  <li>In ChatGPT (or similar), start a new conversation.</li>
+  <li>Upload <strong>IMAGE 1</strong>: your plugin's current GUI screenshot.</li>
+  <li>Upload <strong>IMAGE 2+</strong>: one or more style reference VST screenshots.</li>
+  <li>Paste the prompt as your message.</li>
+  <li>The model returns a moodboard PNG.</li>
+</ol>
+
+<h2>When this is useful</h2>
+<ul>
+  <li>Before committing to a full redesign — see what the "style DNA" of the references actually is.</li>
+  <li>As a reference sheet to share with teammates or iterate separately.</li>
+  <li>As input to a subsequent GUI-redesign prompt (though typically you can skip straight to redesign — the moodboard step is optional).</li>
+</ul>
+
+<h2>Related agents</h2>
+<ul>
+  <li><a href="../blender-redesign/">Blender Redesign Agent</a> — ChatGPT → Blender pipeline for GUI sections</li>
+  <li><a href="../gui-frame-tool/">GUI Frame Tool</a> — Browser 2D editor for layout positions</li>
+</ul>
+
+<p><a href="../">← Back to Agents</a></p>
