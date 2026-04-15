@@ -787,15 +787,49 @@ function snapPointToEdge(x, y, cx, cy, searchRadius = 30) {
   return [bestX, bestY];
 }
 
+function enforceSymmetryOnPolygon(pointsArr, cx, cy, mH, mV) {
+  // Convert to polar, average radius across symmetric partner angles, convert back
+  if (!mH && !mV) return pointsArr;
+  const N = pointsArr.length;
+  const polar = pointsArr.map(p => ({
+    theta: Math.atan2(p[1]-cy, p[0]-cx),
+    r: Math.hypot(p[0]-cx, p[1]-cy)
+  }));
+  // For each point, find its symmetric partners and average
+  function findR(targetTheta) {
+    let best = polar[0], bestD = Infinity;
+    polar.forEach(p => {
+      let d = Math.abs(p.theta - targetTheta);
+      if (d > Math.PI) d = 2*Math.PI - d;
+      if (d < bestD) { bestD = d; best = p; }
+    });
+    return best.r;
+  }
+  return polar.map(p => {
+    let partners = [p.theta];
+    if (mH) partners.push(Math.PI - p.theta);
+    if (mV) partners.push(-p.theta);
+    if (mH && mV) partners.push(Math.PI + p.theta);
+    let sum = 0;
+    partners.forEach(t => sum += findR(t));
+    const avgR = sum / partners.length;
+    return [cx + Math.cos(p.theta)*avgR, cy + Math.sin(p.theta)*avgR];
+  });
+}
+
 document.getElementById('snapEdgesBtn').onclick = () => {
   const s = state.shapes.find(x => x.id === state.selectedId);
   if (!s) { status.textContent = 'Select a shape first'; return; }
   if (!state.bgNaturalW) { status.textContent = 'Load background image first'; return; }
   status.textContent = 'Analyzing edges…';
   setTimeout(() => {
+    const mH = document.getElementById('mirror-h').checked;
+    const mV = document.getElementById('mirror-v').checked;
     if (s.type === 'polygon') {
       const [cx, cy] = centerOf(s);
       s.points = s.points.map(p => snapPointToEdge(p[0], p[1], cx, cy, 30));
+      // Re-enforce symmetry if mirrors are on
+      s.points = enforceSymmetryOnPolygon(s.points, cx, cy, mH, mV);
     } else if (s.type === 'circle') {
       // Sample perimeter, snap each sample, refit circle
       const pts = [];
