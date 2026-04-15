@@ -68,10 +68,11 @@
     <button data-type="polygon">◆ Polygon</button>
     <button data-type="freehand">✎ Freehand</button>
   </div>
-  <div id="mirror-bar" style="display:flex; gap:4px; margin-bottom:6px; font-size:11px; align-items:center;">
+  <div id="mirror-bar" style="display:flex; gap:4px; margin-bottom:6px; font-size:11px; align-items:center; flex-wrap:wrap;">
     <span>Symmetrize:</span>
     <label><input type="checkbox" id="mirror-h" checked> H</label>
     <label><input type="checkbox" id="mirror-v"> V</label>
+    <label><input type="checkbox" id="mirror-d"> D (8-fold)</label>
     <label><input type="checkbox" id="snap-primitive"> Snap→Circle/Rect</label>
   </div>
   <div class="tip">Click a button, then click on image (Rect/Circle/Ring/Arc/Poly) OR click-drag a freehand shape (Freehand). On release, Freehand auto-mirrors per checkboxes above.</div>
@@ -276,6 +277,7 @@ function finalizeFreehand(rawPoints) {
 
   const mirrorH = document.getElementById('mirror-h').checked;
   const mirrorV = document.getElementById('mirror-v').checked;
+  const mirrorD = document.getElementById('mirror-d').checked;
   const snap = document.getElementById('snap-primitive').checked;
 
   // Centroid
@@ -283,7 +285,7 @@ function finalizeFreehand(rawPoints) {
   const cy = points.reduce((a,p) => a+p[1], 0) / points.length;
 
   // If any mirror is requested, use polar-domain averaging
-  if (mirrorH || mirrorV) {
+  if (mirrorH || mirrorV || mirrorD) {
     const N = 128;  // samples around 360°
     // Convert input to polar (theta in -π..π, radius)
     const polar = points.map(p => {
@@ -326,6 +328,15 @@ function finalizeFreehand(rawPoints) {
       if (mirrorH) partners.push(Math.PI - theta);
       if (mirrorV) partners.push(-theta);
       if (mirrorH && mirrorV) partners.push(Math.PI + theta);
+      if (mirrorD) {
+        // D4 dihedral 8-fold symmetry: add all ±θ + n*π/2 partners
+        // Union with existing partners, dedupe
+        const base = [theta, -theta];
+        for (let rot = 0; rot < 4; rot++) {
+          const r = rot * Math.PI/2;
+          base.forEach(b => partners.push(b + r));
+        }
+      }
       let sum = 0;
       partners.forEach(pTheta => sum += sampleR(pTheta));
       averaged[i] = { theta, r: sum / partners.length };
@@ -341,6 +352,13 @@ function finalizeFreehand(rawPoints) {
       if (mirrorH) thetas.push(Math.PI - theta);
       if (mirrorV) thetas.push(-theta);
       if (mirrorH && mirrorV) thetas.push(Math.PI + theta);
+      if (mirrorD) {
+        const base = [theta, -theta];
+        for (let rot = 0; rot < 4; rot++) {
+          const r = rot * Math.PI/2;
+          base.forEach(b => thetas.push(b + r));
+        }
+      }
       thetas.forEach(t => {
         // Find nearest sample index
         let idx0 = 0, bestD = Infinity;
@@ -787,15 +805,12 @@ function snapPointToEdge(x, y, cx, cy, searchRadius = 30) {
   return [bestX, bestY];
 }
 
-function enforceSymmetryOnPolygon(pointsArr, cx, cy, mH, mV) {
-  // Convert to polar, average radius across symmetric partner angles, convert back
-  if (!mH && !mV) return pointsArr;
-  const N = pointsArr.length;
+function enforceSymmetryOnPolygon(pointsArr, cx, cy, mH, mV, mD) {
+  if (!mH && !mV && !mD) return pointsArr;
   const polar = pointsArr.map(p => ({
     theta: Math.atan2(p[1]-cy, p[0]-cx),
     r: Math.hypot(p[0]-cx, p[1]-cy)
   }));
-  // For each point, find its symmetric partners and average
   function findR(targetTheta) {
     let best = polar[0], bestD = Infinity;
     polar.forEach(p => {
@@ -810,6 +825,13 @@ function enforceSymmetryOnPolygon(pointsArr, cx, cy, mH, mV) {
     if (mH) partners.push(Math.PI - p.theta);
     if (mV) partners.push(-p.theta);
     if (mH && mV) partners.push(Math.PI + p.theta);
+    if (mD) {
+      const base = [p.theta, -p.theta];
+      for (let rot = 0; rot < 4; rot++) {
+        const r = rot * Math.PI/2;
+        base.forEach(b => partners.push(b + r));
+      }
+    }
     let sum = 0;
     partners.forEach(t => sum += findR(t));
     const avgR = sum / partners.length;
@@ -825,11 +847,12 @@ document.getElementById('snapEdgesBtn').onclick = () => {
   setTimeout(() => {
     const mH = document.getElementById('mirror-h').checked;
     const mV = document.getElementById('mirror-v').checked;
+    const mD = document.getElementById('mirror-d').checked;
     if (s.type === 'polygon') {
       const [cx, cy] = centerOf(s);
       s.points = s.points.map(p => snapPointToEdge(p[0], p[1], cx, cy, 30));
       // Re-enforce symmetry if mirrors are on
-      s.points = enforceSymmetryOnPolygon(s.points, cx, cy, mH, mV);
+      s.points = enforceSymmetryOnPolygon(s.points, cx, cy, mH, mV, mD);
     } else if (s.type === 'circle') {
       // Sample perimeter, snap each sample, refit circle
       const pts = [];
