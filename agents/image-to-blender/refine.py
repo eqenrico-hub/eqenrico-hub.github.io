@@ -11,20 +11,29 @@ import cv2
 from detect import detect as cv_detect
 
 
-def _median_color_in_bbox(img, x, y, w, h):
+def _median_color_in_bbox(img, x, y, w, h, inset=0.35):
+    """Sample median of the INNER core of the bounding box to avoid chassis bleed."""
     x = max(0, int(x)); y = max(0, int(y))
-    x2 = min(img.shape[1], int(x + w))
-    y2 = min(img.shape[0], int(y + h))
-    if x2 <= x or y2 <= y:
-        return (128, 128, 128)
-    roi = img[y:y2, x:x2]
+    w = int(w); h = int(h)
+    # Shrink by `inset` on each side
+    dx = int(w * inset); dy = int(h * inset)
+    x1 = x + dx; y1 = y + dy
+    x2 = min(img.shape[1], x + w - dx)
+    y2 = min(img.shape[0], y + h - dy)
+    if x2 <= x1 or y2 <= y1:
+        # Fallback: single center pixel
+        cx = max(0, min(img.shape[1] - 1, x + w // 2))
+        cy = max(0, min(img.shape[0] - 1, y + h // 2))
+        return tuple(int(c) for c in img[cy, cx])
+    roi = img[y1:y2, x1:x2]
     med = np.median(roi.reshape(-1, 3), axis=0)
     return tuple(int(c) for c in med)
 
 
 def _median_color_circle(img, cx, cy, r):
-    # Use a bounding box of the circle
-    return _median_color_in_bbox(img, cx - r, cy - r, 2 * r, 2 * r)
+    # Sample the inner 60% of the circle
+    inner = max(3, int(r * 0.6))
+    return _median_color_in_bbox(img, cx - inner, cy - inner, 2 * inner, 2 * inner, inset=0.0)
 
 
 def _bgr_to_rgba01(bgr):
