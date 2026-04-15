@@ -247,36 +247,68 @@ svg.addEventListener('mousedown', (e) => {
 });
 
 function finalizeFreehand(rawPoints) {
-  // Simplify the raw path via Ramer-Douglas-Peucker (distance tolerance)
-  const simplified = rdp(rawPoints, 4);  // 4px tolerance
-  let points = simplified;
+  // Simplify first to reduce noise
+  let points = rdp(rawPoints, 3);
 
   const mirrorH = document.getElementById('mirror-h').checked;
   const mirrorV = document.getElementById('mirror-v').checked;
   const snap = document.getElementById('snap-primitive').checked;
 
-  // Compute centroid
+  // Centroid
   const cx = points.reduce((a,p) => a+p[0], 0) / points.length;
   const cy = points.reduce((a,p) => a+p[1], 0) / points.length;
 
-  // Apply symmetrization
-  if (mirrorH && mirrorV) {
-    // Quadrant 1 → mirror to all 4
-    points = points.filter(p => p[0] >= cx && p[1] <= cy);
-    if (points.length < 2) points = [[cx+40, cy-40], [cx+40, cy-10]];
-    const q2 = points.map(p => [2*cx - p[0], p[1]]);
-    const q3 = points.map(p => [2*cx - p[0], 2*cy - p[1]]);
-    const q4 = points.map(p => [p[0], 2*cy - p[1]]);
-    points = [...points, ...q2.reverse(), ...q3, ...q4.reverse()];
-  } else if (mirrorH) {
-    // Mirror left/right around cx
-    const rightSide = points.filter(p => p[0] >= cx);
-    const leftMirror = rightSide.map(p => [2*cx - p[0], p[1]]).reverse();
-    points = [...rightSide, ...leftMirror];
-  } else if (mirrorV) {
-    const topSide = points.filter(p => p[1] <= cy);
-    const botMirror = topSide.map(p => [p[0], 2*cy - p[1]]).reverse();
-    points = [...topSide, ...botMirror];
+  // If any mirror is requested, use polar-domain averaging
+  if (mirrorH || mirrorV) {
+    const N = 128;  // samples around 360°
+    // Convert input to polar (theta in -π..π, radius)
+    const polar = points.map(p => {
+      const dx = p[0] - cx, dy = p[1] - cy;
+      return { theta: Math.atan2(dy, dx), r: Math.hypot(dx, dy) };
+    }).sort((a,b) => a.theta - b.theta);
+    // Sample radius at N equal angular positions via linear interpolation along the angular path
+    function sampleR(targetTheta) {
+      // Normalize to -π..π
+      let t = targetTheta; while (t > Math.PI) t -= 2*Math.PI; while (t < -Math.PI) t += 2*Math.PI;
+      // Find nearest polar points either side
+      // Use wrap-around by duplicating
+      const extended = polar.concat(polar.map(p => ({theta: p.theta + 2*Math.PI, r: p.r})));
+      for (let i = 0; i < extended.length - 1; i++) {
+        const a = extended[i], b = extended[i+1];
+        if (a.theta <= t && t <= b.theta) {
+          if (b.theta === a.theta) return a.r;
+          const f = (t - a.theta) / (b.theta - a.theta);
+          return a.r + f * (b.r - a.r);
+        }
+      }
+      // Fallback: nearest
+      let best = polar[0], bestD = Math.abs(polar[0].theta - t);
+      polar.forEach(p => { const d = Math.abs(p.theta - t); if (d < bestD) { bestD = d; best = p; } });
+      return best.r;
+    }
+    const samples = [];
+    for (let i = 0; i < N; i++) {
+      const theta = -Math.PI + 2*Math.PI*i/N;
+      samples.push({ theta, r: sampleR(theta) });
+    }
+    // Enforce symmetry by AVERAGING radius across symmetric partner angles
+    // H mirror: r(θ) = r(π - θ)   [y stays, x flips → θ → π - θ]
+    // V mirror: r(θ) = r(-θ)      [x stays, y flips → θ → -θ]
+    // H+V: r(θ) = avg of {θ, π-θ, -θ, π+θ}
+    const averaged = new Array(N);
+    for (let i = 0; i < N; i++) {
+      const theta = samples[i].theta;
+      let partners = [theta];
+      if (mirrorH) partners.push(Math.PI - theta);
+      if (mirrorV) partners.push(-theta);
+      if (mirrorH && mirrorV) partners.push(Math.PI + theta);
+      // Average radii at all partner angles
+      let sum = 0;
+      partners.forEach(pTheta => sum += sampleR(pTheta));
+      averaged[i] = { theta, r: sum / partners.length };
+    }
+    // Convert back to Cartesian — points guaranteed equidistant in angle → smooth polygon
+    points = averaged.map(s => [cx + Math.cos(s.theta) * s.r, cy + Math.sin(s.theta) * s.r]);
   }
 
   // Snap to primitive if requested
