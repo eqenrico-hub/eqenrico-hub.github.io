@@ -80,6 +80,8 @@
   <div id="selected-info">(none)</div>
   <div id="params"></div>
   <button id="deleteBtn" class="sec" style="margin-top:4px">Delete selected</button>
+  <button id="snapEdgesBtn" class="sec" style="margin-top:4px">⚡ Snap to Image Edges</button>
+  <div class="tip">Pulls each point of selected shape to nearest high-contrast edge in the PNG beneath (search radius 30px).</div>
 
   <h3 style="margin-top:10px">All shapes</h3>
   <div id="shape-list"></div>
@@ -733,6 +735,103 @@ document.getElementById('deleteBtn').onclick = () => {
   state.shapes = state.shapes.filter(s => s.id !== state.selectedId);
   state.selectedId = null;
   render();
+};
+
+// =========================== SNAP TO IMAGE EDGES ===========================
+let edgeCanvasCached = null;
+function buildEdgeMap() {
+  if (edgeCanvasCached) return edgeCanvasCached;
+  const c = document.createElement('canvas');
+  c.width = state.bgNaturalW; c.height = state.bgNaturalH;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(bgImg, 0, 0, c.width, c.height);
+  const img = ctx.getImageData(0, 0, c.width, c.height);
+  const W = c.width, H = c.height;
+  // Grayscale
+  const gray = new Float32Array(W*H);
+  for (let i = 0; i < W*H; i++) {
+    const o = i*4;
+    gray[i] = 0.299*img.data[o] + 0.587*img.data[o+1] + 0.114*img.data[o+2];
+  }
+  // Sobel gradient magnitude
+  const mag = new Float32Array(W*H);
+  for (let y = 1; y < H-1; y++) {
+    for (let x = 1; x < W-1; x++) {
+      const i = y*W + x;
+      const gx = -gray[i-W-1] - 2*gray[i-1] - gray[i+W-1]
+                 +gray[i-W+1] + 2*gray[i+1] + gray[i+W+1];
+      const gy = -gray[i-W-1] - 2*gray[i-W] - gray[i-W+1]
+                 +gray[i+W-1] + 2*gray[i+W] + gray[i+W+1];
+      mag[i] = Math.sqrt(gx*gx + gy*gy);
+    }
+  }
+  edgeCanvasCached = { W, H, mag };
+  return edgeCanvasCached;
+}
+
+function snapPointToEdge(x, y, cx, cy, searchRadius = 30) {
+  const { W, H, mag } = buildEdgeMap();
+  // Search ALONG the radial direction from center — move in/out to find strongest edge
+  const dx = x - cx, dy = y - cy;
+  const len = Math.hypot(dx, dy);
+  if (len < 1) return [x, y];
+  const ux = dx/len, uy = dy/len;
+  let bestMag = 0, bestX = x, bestY = y;
+  for (let step = -searchRadius; step <= searchRadius; step++) {
+    const px = Math.round(x + ux*step);
+    const py = Math.round(y + uy*step);
+    if (px < 1 || py < 1 || px >= W-1 || py >= H-1) continue;
+    const m = mag[py*W + px];
+    if (m > bestMag) { bestMag = m; bestX = px; bestY = py; }
+  }
+  return [bestX, bestY];
+}
+
+document.getElementById('snapEdgesBtn').onclick = () => {
+  const s = state.shapes.find(x => x.id === state.selectedId);
+  if (!s) { status.textContent = 'Select a shape first'; return; }
+  if (!state.bgNaturalW) { status.textContent = 'Load background image first'; return; }
+  status.textContent = 'Analyzing edges…';
+  setTimeout(() => {
+    if (s.type === 'polygon') {
+      const [cx, cy] = centerOf(s);
+      s.points = s.points.map(p => snapPointToEdge(p[0], p[1], cx, cy, 30));
+    } else if (s.type === 'circle') {
+      // Sample perimeter, snap each sample, refit circle
+      const pts = [];
+      for (let i = 0; i < 64; i++) {
+        const a = 2*Math.PI*i/64;
+        pts.push([s.cx + Math.cos(a)*s.r, s.cy + Math.sin(a)*s.r]);
+      }
+      const snapped = pts.map(p => snapPointToEdge(p[0], p[1], s.cx, s.cy, 40));
+      const fit = fitCircle(snapped);
+      if (fit) { s.cx = fit.cx; s.cy = fit.cy; s.r = fit.r; }
+    } else if (s.type === 'ring') {
+      // Snap both inner and outer circles
+      for (const key of ['r_in','r_out']) {
+        const pts = [];
+        for (let i = 0; i < 48; i++) {
+          const a = 2*Math.PI*i/48;
+          pts.push([s.cx + Math.cos(a)*s[key], s.cy + Math.sin(a)*s[key]]);
+        }
+        const snapped = pts.map(p => snapPointToEdge(p[0], p[1], s.cx, s.cy, 30));
+        const fit = fitCircle(snapped);
+        if (fit) { s[key] = fit.r; }
+      }
+    } else if (s.type === 'rect') {
+      // Snap each edge independently (top, bottom, left, right)
+      // Sample midpoints of each edge, find strongest edge perpendicular to it
+      // Simpler: snap each corner
+      const corners = [[s.x, s.y],[s.x+s.w, s.y],[s.x+s.w, s.y+s.h],[s.x, s.y+s.h]];
+      const cx = s.x + s.w/2, cy = s.y + s.h/2;
+      const snapped = corners.map(p => snapPointToEdge(p[0], p[1], cx, cy, 20));
+      const xs = snapped.map(p=>p[0]), ys = snapped.map(p=>p[1]);
+      s.x = Math.min(...xs); s.y = Math.min(...ys);
+      s.w = Math.max(...xs) - s.x; s.h = Math.max(...ys) - s.y;
+    }
+    render();
+    status.textContent = 'Snapped to edges.';
+  }, 10);
 };
 
 // =========================== EXPORT ===========================
