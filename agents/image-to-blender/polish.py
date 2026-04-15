@@ -123,16 +123,30 @@ def polish(spec):
     knob_els = [by_id[i][1] for i in knob_ids if i in by_id]
     if len(knob_els) == 5:
         _align_row(knob_els, equal_r=True)
-        # Equal spacing across range
-        _equal_spacing(knob_els, 530, 1010)
-    # Knob labels: align to knobs
+        _equal_spacing(knob_els, 560, 928)
+    # Knob labels: centered under each knob, same baseline Y
     label_ids = ["widthLabel", "attackLabel", "releaseLabel", "gateLabel", "depthLabel"]
+    label_baseline_y = None
+    if knob_els:
+        label_baseline_y = knob_els[0]["cy"] + knob_els[0]["r"] + 16
     for kid, lid in zip(knob_ids, label_ids):
         if kid in by_id and lid in by_id:
-            k = by_id[kid][1]
-            l = by_id[lid][1]
+            k = by_id[kid][1]; l = by_id[lid][1]
             l["x"] = k["cx"] - l["w"] // 2
-            l["y"] = k["cy"] + k["r"] + 10
+            l["y"] = label_baseline_y
+    # bandCount_display + stack_pill + bandCount_sub ALIGN with knob row baseline
+    if knob_els and "bandCount_display" in by_id:
+        d = by_id["bandCount_display"][1]
+        d["cy"] = knob_els[0]["cy"]
+        d["y"] = d["cy"] - d["h"] // 2
+    if "stack_pill" in by_id and "bandCount_display" in by_id:
+        sp = by_id["stack_pill"][1]; d = by_id["bandCount_display"][1]
+        sp["cy"] = d["cy"] - d["h"] // 2 - sp["h"] // 2 - 2
+        sp["y"] = sp["cy"] - sp["h"] // 2
+    if "bandCount_sub" in by_id and "bandCount_display" in by_id:
+        sub = by_id["bandCount_sub"][1]; d = by_id["bandCount_display"][1]
+        sub["cx"] = d["cx"]; sub["x"] = sub["cx"] - sub["w"] // 2
+        sub["y"] = d["y"] + d["h"] + 2
 
     # --- RIGHT PANEL: symmetric pairs around RIGHT_PANEL_CX ---
     if "formantKnob" in by_id and "harmShiftKnob" in by_id:
@@ -152,13 +166,28 @@ def polish(spec):
             k = by_id[kid][1]; l = by_id[lid][1]
             l["x"] = k["cx"] - l["w"] // 2
             l["y"] = k["cy"] + k["r"] + 8
-    # noiseMode dropdown + noiseColor centered on right panel center
+    # noiseMode dropdown + noiseColor centered on right panel center, stacked
     if "noiseColorKnob" in by_id:
-        by_id["noiseColorKnob"][1]["cx"] = RIGHT_PANEL_CX
+        n = by_id["noiseColorKnob"][1]
+        n["cx"] = RIGHT_PANEL_CX
+        # Place below hpBlendKnob row with comfortable spacing
+        if "hpBlendKnob" in by_id:
+            hpb = by_id["hpBlendKnob"][1]
+            n["cy"] = hpb["cy"] + hpb["r"] + 80  # gap below hp-blend label
     if "noiseMode" in by_id:
         nm = by_id["noiseMode"][1]
         nm["cx"] = RIGHT_PANEL_CX
+        # Place between hpBlend row and noiseColor
+        if "hpBlendKnob" in by_id and "noiseColorKnob" in by_id:
+            hpb = by_id["hpBlendKnob"][1]; nc = by_id["noiseColorKnob"][1]
+            nm["cy"] = (hpb["cy"] + nc["cy"]) // 2
         nm["x"] = nm["cx"] - nm["w"] // 2
+        nm["y"] = nm["cy"] - nm["h"] // 2
+    # noiseColor label centered under knob
+    if "noiseColorLabel" in by_id and "noiseColorKnob" in by_id:
+        l = by_id["noiseColorLabel"][1]; k = by_id["noiseColorKnob"][1]
+        l["x"] = k["cx"] - l["w"] // 2
+        l["y"] = k["cy"] + k["r"] + 10
 
     # --- EQ NODES: same Y, evenly spaced ---
     eq_ids = ["eq_node_1", "eq_node_2", "eq_node_3", "eq_node_4"]
