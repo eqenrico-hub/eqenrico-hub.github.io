@@ -2,367 +2,445 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Band Ritual GUI Layout Editor</title>
+<title>GUI Frame Tool — Any Shape Editor</title>
 <style>
-  body { background:#1a1a1a; color:#ddd; font:13px -apple-system,system-ui,sans-serif; margin:0; padding:16px 360px 16px 16px; }
+  body { background:#1a1a1a; color:#ddd; font:13px -apple-system,system-ui,sans-serif; margin:0; padding:12px 340px 12px 12px; }
   h1 { font-size:14px; margin:0 0 8px; color:#c9a86b; }
-  #toolbar { margin-bottom:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-  button { background:#c9a86b; color:#1a1a1a; border:0; padding:6px 12px; font-weight:600; cursor:pointer; border-radius:3px; }
+  #toolbar { margin-bottom:10px; display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  button { background:#c9a86b; color:#1a1a1a; border:0; padding:5px 10px; font-weight:600; cursor:pointer; border-radius:3px; font-size:12px;}
   button.sec { background:#444; color:#ddd; }
-  #status { color:#888; }
-  #stage-wrap { overflow:auto; border:1px solid #333; background:#0d0d0d; }
-  #chassis {
-    position:relative; background:#2b2119; box-shadow:inset 0 0 60px rgba(0,0,0,.6);
-    margin:20px auto; border:2px solid #c9a86b; border-radius:6px;
+  button.active { background:#ff9b3a; color:#1a1a1a; }
+  #status { color:#888; margin-left:8px; }
+  #stage-wrap { overflow:auto; border:1px solid #333; background:#0d0d0d; position:relative; }
+  #stage {
+    position:relative; margin:20px auto; display:block;
   }
-  .el { position:absolute; box-sizing:border-box; cursor:move; user-select:none; }
-  .el.knob { border-radius:50%; background:linear-gradient(135deg,#d4b070,#8a6936); border:1px solid #5a4220; }
-  .el.bezel { border:2px solid #c9a86b; background:transparent; }
-  .el.frame { border:2px solid #c9a86b; background:#0a0a0a; }
-  .el.panel { background:#0a0a0a; border:1px solid #333; }
-  .el.display { background:#050810; border:2px solid #c9a86b; }
-  .el.keyboard { background:#eee; border:2px solid #c9a86b; }
-  .el.line { background:#c9a86b; border:0; }
-  .el.selected { outline:2px dashed #ff6; outline-offset:1px; z-index:999; }
-  .label { position:absolute; top:1px; left:3px; font-size:9px; color:#c9a86b; pointer-events:none; white-space:nowrap; }
-  .handle { position:absolute; width:8px; height:8px; background:#ff6; border:1px solid #000; z-index:10; }
-  .handle.nw { left:-4px; top:-4px; cursor:nwse-resize; }
-  .handle.n  { left:calc(50% - 4px); top:-4px; cursor:ns-resize; }
-  .handle.ne { right:-4px; top:-4px; cursor:nesw-resize; }
-  .handle.e  { right:-4px; top:calc(50% - 4px); cursor:ew-resize; }
-  .handle.se { right:-4px; bottom:-4px; cursor:nwse-resize; }
-  .handle.s  { left:calc(50% - 4px); bottom:-4px; cursor:ns-resize; }
-  .handle.sw { left:-4px; bottom:-4px; cursor:nesw-resize; }
-  .handle.w  { left:-4px; top:calc(50% - 4px); cursor:ew-resize; }
-  .el:not(.selected) .handle { display:none; }
-  #sidebar { position:fixed; right:16px; top:16px; width:320px; background:#222; padding:12px; border-radius:4px; max-height:90vh; overflow:auto; }
+  #bg-img { display:block; width:100%; height:auto; pointer-events:none; }
+  #svg-layer {
+    position:absolute; top:0; left:0; width:100%; height:100%; overflow:visible;
+    cursor:crosshair;
+  }
+  .shape-wrap { position:absolute; cursor:move; }
+  .handle { position:absolute; width:12px; height:12px; background:#ff6; border:2px solid #000; border-radius:50%; z-index:1000; cursor:pointer; }
+  .poly-handle { width:10px; height:10px; background:#6fa; }
+  #sidebar { position:fixed; right:12px; top:12px; width:310px; background:#222; padding:10px; border-radius:4px; max-height:96vh; overflow:auto; }
   #sidebar h3 { margin:0 0 6px; font-size:12px; color:#c9a86b; }
-  .inp { display:flex; gap:4px; margin-bottom:3px; }
-  .inp label { width:36px; }
-  .inp input { flex:1; background:#111; color:#ddd; border:1px solid #333; padding:3px 5px; font-family:monospace; }
-  textarea { width:100%; height:200px; background:#111; color:#ddd; border:1px solid #333; padding:6px; font-family:monospace; font-size:11px; }
+  .inp { display:flex; gap:4px; margin-bottom:3px; align-items:center;}
+  .inp label { width:60px; font-size:11px;}
+  .inp input, .inp select { flex:1; background:#111; color:#ddd; border:1px solid #333; padding:3px 5px; font-family:monospace; font-size:11px;}
+  textarea { width:100%; height:180px; background:#111; color:#ddd; border:1px solid #333; padding:6px; font-family:monospace; font-size:10px;}
+  #shape-list { max-height:200px; overflow-y:auto; margin-top:6px; border:1px solid #333; padding:4px; font-size:11px;}
+  .shape-item { padding:3px 5px; cursor:pointer; border-bottom:1px solid #2a2a2a; display:flex; justify-content:space-between;}
+  .shape-item:hover { background:#2a2a2a;}
+  .shape-item.selected { background:#443311; color:#ff6;}
+  .dim-inp { width:60px !important; }
+  #new-shape-bar { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:6px; }
+  #new-shape-bar button { padding:4px 8px; font-size:11px; }
+  .tip { font-size:10px; color:#888; margin:4px 0; }
 </style>
 </head>
 <body>
-<h1>BAND RITUAL — GUI LAYOUT EDITOR</h1>
+<h1>GUI FRAME TOOL — Any Shape Editor</h1>
 <div id="toolbar">
-  <button id="loadBtn">Load JSON</button>
-  <input type="file" id="fileInput" style="display:none" accept=".json">
-  <button id="exportBtn">Export edited JSON</button>
-  <button id="copyBtn" class="sec">Copy JSON to clipboard</button>
+  <button id="loadBgBtn">Load Background PNG</button>
+  <input type="file" id="bgInput" style="display:none" accept="image/*">
+  <button id="loadJsonBtn" class="sec">Load JSON</button>
+  <input type="file" id="jsonInput" style="display:none" accept=".json">
+  <button id="exportBtn">Copy JSON</button>
   <button id="downloadBtn" class="sec">Download JSON</button>
-  <button id="addBtn" class="sec">+ Add new frame</button>
-  <button id="delBtn" class="sec">Delete selected</button>
-  <span id="status">Load band_ritual_gui_layout.json from Desktop</span>
+  <span id="status">Load a background image to start.</span>
 </div>
-<div id="stage-wrap"><div id="chassis"></div></div>
+
+<div id="stage-wrap">
+  <div id="stage">
+    <img id="bg-img" src="">
+    <svg id="svg-layer" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+</div>
 
 <div id="sidebar">
-  <h3>Selected element</h3>
-  <div id="info">(click an element)</div>
-  <div class="inp"><label>Name</label><input id="f-name" readonly></div>
-  <div class="inp"><label>X1 mm</label><input id="f-x1"></div>
-  <div class="inp"><label>X2 mm</label><input id="f-x2"></div>
-  <div class="inp"><label>Y1 mm</label><input id="f-y1"></div>
-  <div class="inp"><label>Y2 mm</label><input id="f-y2"></div>
-  <div class="inp"><label>Type</label>
-    <select id="f-type" style="flex:1;background:#111;color:#ddd;border:1px solid #333;padding:3px 5px">
-      <option value="frame">frame</option>
-      <option value="bezel">bezel</option>
-      <option value="panel">panel</option>
-      <option value="display">display</option>
-      <option value="knob">knob</option>
-      <option value="line">line</option>
-      <option value="keyboard">keyboard</option>
-    </select>
+  <h3>Add shape</h3>
+  <div id="new-shape-bar">
+    <button data-type="rect">▢ Rect</button>
+    <button data-type="circle">○ Circle</button>
+    <button data-type="ring">◎ Ring</button>
+    <button data-type="arc">◠ Arc</button>
+    <button data-type="polygon">◆ Polygon</button>
   </div>
-  <div style="margin:6px 0 3px;color:#c9a86b;font-size:11px">Comment (Claude reads this)</div>
-  <textarea id="f-comment" style="height:90px" placeholder="What should this frame do? e.g. 'make taller, add LED indicator, contains 2 dropdowns'"></textarea>
-  <button id="applyBtn" class="sec" style="margin-top:6px">Apply values</button>
-  <h3 style="margin-top:12px">Exported JSON</h3>
-  <textarea id="jsonOut" placeholder="Click Export to dump"></textarea>
+  <div class="tip">Click a button, then click on the image to place the shape at its center.</div>
+
+  <h3 style="margin-top:10px">Selected shape</h3>
+  <div id="selected-info">(none)</div>
+  <div id="params"></div>
+  <button id="deleteBtn" class="sec" style="margin-top:4px">Delete selected</button>
+
+  <h3 style="margin-top:10px">All shapes</h3>
+  <div id="shape-list"></div>
+
+  <h3 style="margin-top:10px">JSON</h3>
+  <textarea id="jsonOut" placeholder="Click 'Copy JSON' or 'Download JSON'"></textarea>
 </div>
 
 <script>
-let SCALE = 2.0; // px per mm — computed dynamically to fit window
-let data = null;
+// =========================== DATA ===========================
+const state = {
+  bgUrl: null,
+  bgNaturalW: 0,
+  bgNaturalH: 0,
+  shapes: [],
+  selectedId: null,
+  nextId: 1,
+  placeMode: null,  // 'rect' | 'circle' | 'ring' | 'arc' | 'polygon' | null
+};
 
-function computeScale() {
-  if (!data) return;
-  const cW = (data.chassis.x2 - data.chassis.x1) * 1000; // mm
-  const cH = (data.chassis.y2 - data.chassis.y1) * 1000;
-  const availW = window.innerWidth  - 360; // sidebar + padding
-  const availH = window.innerHeight - 140; // toolbar + margins
-  SCALE = Math.min(availW / cW, availH / cH);
-}
-window.addEventListener('resize', () => { computeScale(); render(); });
-let selected = null;
-const chassis = document.getElementById('chassis');
+// Each shape: { id, type, name, comment, ... type-specific params (in natural image pixels) }
+// rect: {x, y, w, h}
+// circle: {cx, cy, r}
+// ring: {cx, cy, r_in, r_out}
+// arc: {cx, cy, r_in, r_out, angle_start_deg, angle_end_deg}  // 0=top, CW+
+// polygon: {points: [[x,y], ...]}
+
+// =========================== DOM ===========================
+const stage = document.getElementById('stage');
+const bgImg = document.getElementById('bg-img');
+const svg = document.getElementById('svg-layer');
 const status = document.getElementById('status');
+const shapeList = document.getElementById('shape-list');
+const params = document.getElementById('params');
+const selectedInfo = document.getElementById('selected-info');
 const jsonOut = document.getElementById('jsonOut');
 
-function mmToPx(mm){ return mm * SCALE; }
-function m_to_mm(m){ return m * 1000; }
-
-function render() {
-  computeScale();
-  chassis.innerHTML = '';
-  const cW = m_to_mm(data.chassis.x2 - data.chassis.x1);
-  const cH = m_to_mm(data.chassis.y2 - data.chassis.y1);
-  chassis.style.width = mmToPx(cW) + 'px';
-  chassis.style.height = mmToPx(cH) + 'px';
-  const cx0 = data.chassis.x1;  // m
-  const cy0 = data.chassis.y1;
-  const cy1 = data.chassis.y2;
-
-  data.elements.forEach(el => {
-    const d = document.createElement('div');
-    d.className = 'el ' + el.type;
-    d.dataset.name = el.name;
-    const w = m_to_mm(el.x2 - el.x1);
-    const h = m_to_mm(el.y2 - el.y1);
-    // Flip Y: Blender Y+ is up, CSS Y+ is down
-    const left = m_to_mm(el.x1 - cx0);
-    const top  = m_to_mm(cy1 - el.y2);
-    d.style.width  = mmToPx(w) + 'px';
-    d.style.height = mmToPx(h) + 'px';
-    d.style.left   = mmToPx(left) + 'px';
-    d.style.top    = mmToPx(top) + 'px';
-    const lab = document.createElement('div');
-    lab.className = 'label'; lab.textContent = el.name;
-    d.appendChild(lab);
-    ['nw','n','ne','e','se','s','sw','w'].forEach(pos => {
-      const h = document.createElement('div');
-      h.className = 'handle ' + pos;
-      h.dataset.pos = pos;
-      d.appendChild(h);
-    });
-    attachInteract(d, el);
-    chassis.appendChild(d);
-  });
-  status.textContent = `Loaded ${data.elements.length} elements. Drag to move, bottom-right handle to resize.`;
-}
-
-const SNAP_PX = 6;
-function getSnapTargets(excludeEl) {
-  const xs = [], ys = [];
-  data.elements.forEach(o => {
-    if (o === excludeEl) return;
-    const cx0 = data.chassis.x1, cy1 = data.chassis.y2;
-    const left = (o.x1 - cx0) * 1000 * SCALE;
-    const top  = (cy1 - o.y2) * 1000 * SCALE;
-    const w = (o.x2 - o.x1) * 1000 * SCALE;
-    const h = (o.y2 - o.y1) * 1000 * SCALE;
-    xs.push(left, left+w, left+w/2);
-    ys.push(top,  top+h,  top+h/2);
-  });
-  // Also chassis edges + center
-  const cw = chassis.clientWidth, ch = chassis.clientHeight;
-  xs.push(0, cw, cw/2);
-  ys.push(0, ch, ch/2);
-  return {xs, ys};
-}
-function snap(val, targets) {
-  let best = val, bestD = SNAP_PX;
-  targets.forEach(t => { const d = Math.abs(val - t); if (d < bestD) { bestD = d; best = t; }});
-  return best;
-}
-function drawGuides(xs_hit, ys_hit) {
-  document.querySelectorAll('.guide').forEach(g => g.remove());
-  xs_hit.forEach(x => {
-    const g = document.createElement('div'); g.className='guide';
-    g.style.cssText = `position:absolute;left:${x}px;top:0;width:1px;height:100%;background:#ff6;pointer-events:none;z-index:9999;opacity:.8`;
-    chassis.appendChild(g);
-  });
-  ys_hit.forEach(y => {
-    const g = document.createElement('div'); g.className='guide';
-    g.style.cssText = `position:absolute;top:${y}px;left:0;height:1px;width:100%;background:#ff6;pointer-events:none;z-index:9999;opacity:.8`;
-    chassis.appendChild(g);
-  });
-}
-function clearGuides(){ document.querySelectorAll('.guide').forEach(g=>g.remove()); }
-
-function attachInteract(d, el) {
-  d.addEventListener('mousedown', (e) => {
-    if (e.target.classList.contains('handle')) return;
-    e.preventDefault();
-    select(el, d);
-    const sx = e.clientX, sy = e.clientY;
-    const origLeft = parseFloat(d.style.left), origTop = parseFloat(d.style.top);
-    function onMove(me){
-      let nx = origLeft + (me.clientX - sx);
-      let ny = origTop  + (me.clientY - sy);
-      const w = parseFloat(d.style.width), h = parseFloat(d.style.height);
-      const xs_hit = [], ys_hit = [];
-      if (me.shiftKey) {
-        const {xs, ys} = getSnapTargets(el);
-        const candX = [nx, nx+w, nx+w/2];
-        const candY = [ny, ny+h, ny+h/2];
-        const snapped = candX.map(v => snap(v, xs));
-        const dxs = candX.map((v,i) => snapped[i] - v);
-        const bestDx = dxs.reduce((a,b) => Math.abs(b)<Math.abs(a)?b:a, 0);
-        if (bestDx !== 0) { nx += bestDx; xs_hit.push(snap(candX[dxs.indexOf(bestDx)]+bestDx, xs)); }
-        const snappedY = candY.map(v => snap(v, ys));
-        const dys = candY.map((v,i) => snappedY[i] - v);
-        const bestDy = dys.reduce((a,b) => Math.abs(b)<Math.abs(a)?b:a, 0);
-        if (bestDy !== 0) { ny += bestDy; ys_hit.push(snap(candY[dys.indexOf(bestDy)]+bestDy, ys)); }
-        drawGuides(xs_hit, ys_hit);
-      } else clearGuides();
-      d.style.left = nx + 'px';
-      d.style.top  = ny + 'px';
-      syncFromDOM(el, d); updateSidebar();
-    }
-    function onUp(){ clearGuides(); document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); }
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
-  });
-  d.querySelectorAll('.handle').forEach(handle => {
-    handle.addEventListener('mousedown', (e) => {
-      e.stopPropagation(); e.preventDefault();
-      select(el, d);
-      const pos = handle.dataset.pos;
-      const sx = e.clientX, sy = e.clientY;
-      const origW = parseFloat(d.style.width), origH = parseFloat(d.style.height);
-      const origLeft = parseFloat(d.style.left), origTop = parseFloat(d.style.top);
-      const affectL = pos.includes('w');
-      const affectR = pos.includes('e');
-      const affectT = pos.includes('n');
-      const affectB = pos.includes('s');
-      function onMove(me){
-        let dx = me.clientX - sx, dy = me.clientY - sy;
-        let L = origLeft, T = origTop, W = origW, H = origH;
-        if (affectL) { L = origLeft + dx; W = origW - dx; }
-        if (affectR) { W = origW + dx; }
-        if (affectT) { T = origTop + dy; H = origH - dy; }
-        if (affectB) { H = origH + dy; }
-        if (W < 10) { if (affectL) L = origLeft + origW - 10; W = 10; }
-        if (H < 10) { if (affectT) T = origTop + origH - 10; H = 10; }
-        const xs_hit = [], ys_hit = [];
-        if (me.shiftKey) {
-          const {xs, ys} = getSnapTargets(el);
-          if (affectL) { const s = snap(L, xs); if (s !== L) { W += (L - s); L = s; xs_hit.push(s); }}
-          if (affectR) { const s = snap(L + W, xs); if (s !== L + W) { W = s - L; xs_hit.push(s); }}
-          if (affectT) { const s = snap(T, ys); if (s !== T) { H += (T - s); T = s; ys_hit.push(s); }}
-          if (affectB) { const s = snap(T + H, ys); if (s !== T + H) { H = s - T; ys_hit.push(s); }}
-          drawGuides(xs_hit, ys_hit);
-        } else clearGuides();
-        d.style.left = L + 'px'; d.style.top = T + 'px';
-        d.style.width = W + 'px'; d.style.height = H + 'px';
-        syncFromDOM(el, d); updateSidebar();
-      }
-      function onUp(){ clearGuides(); document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); }
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
-    });
-  });
-}
-
-function syncFromDOM(el, d) {
-  const cx0 = data.chassis.x1;
-  const cy1 = data.chassis.y2;
-  const leftMm = parseFloat(d.style.left) / SCALE;
-  const topMm  = parseFloat(d.style.top)  / SCALE;
-  const wMm    = parseFloat(d.style.width) / SCALE;
-  const hMm    = parseFloat(d.style.height) / SCALE;
-  el.x1 = cx0 + leftMm/1000;
-  el.x2 = el.x1 + wMm/1000;
-  el.y2 = cy1 - topMm/1000;
-  el.y1 = el.y2 - hMm/1000;
-}
-
-function select(el, d) {
-  selected = el;
-  document.querySelectorAll('.el').forEach(x => x.classList.remove('selected'));
-  d.classList.add('selected');
-  updateSidebar();
-}
-function updateSidebar() {
-  if (!selected) return;
-  document.getElementById('f-name').value = selected.name;
-  document.getElementById('f-x1').value = (selected.x1*1000).toFixed(2);
-  document.getElementById('f-x2').value = (selected.x2*1000).toFixed(2);
-  document.getElementById('f-y1').value = (selected.y1*1000).toFixed(2);
-  document.getElementById('f-y2').value = (selected.y2*1000).toFixed(2);
-  document.getElementById('f-type').value = selected.type;
-  document.getElementById('f-comment').value = selected.comment || '';
-}
-// Auto-save comment + type on change
-['f-comment','f-type','f-name'].forEach(id => {
-  document.getElementById(id).addEventListener('input', () => {
-    if (!selected) return;
-    selected.comment = document.getElementById('f-comment').value;
-    selected.type = document.getElementById('f-type').value;
-    selected.name = document.getElementById('f-name').value || selected.name;
-  });
-});
-document.getElementById('f-name').removeAttribute('readonly');
-document.getElementById('applyBtn').addEventListener('click', () => {
-  if (!selected) return;
-  selected.x1 = parseFloat(document.getElementById('f-x1').value)/1000;
-  selected.x2 = parseFloat(document.getElementById('f-x2').value)/1000;
-  selected.y1 = parseFloat(document.getElementById('f-y1').value)/1000;
-  selected.y2 = parseFloat(document.getElementById('f-y2').value)/1000;
-  selected.type = document.getElementById('f-type').value;
-  selected.comment = document.getElementById('f-comment').value;
-  selected.name = document.getElementById('f-name').value || selected.name;
-  render();
-});
-
-document.getElementById('addBtn').addEventListener('click', () => {
-  if (!data) return;
-  const cx = (data.chassis.x1 + data.chassis.x2)/2;
-  const cy = (data.chassis.y1 + data.chassis.y2)/2;
-  const newEl = {
-    name: 'NewFrame_' + Date.now().toString().slice(-5),
-    type: 'bezel',
-    x1: cx - 0.04, x2: cx + 0.04,
-    y1: cy - 0.02, y2: cy + 0.02,
-    comment: '',
-    is_new: true
-  };
-  data.elements.push(newEl);
-  render();
-});
-
-document.getElementById('delBtn').addEventListener('click', () => {
-  if (!selected || !data) return;
-  if (!confirm('Delete ' + selected.name + '?')) return;
-  data.elements = data.elements.filter(e => e !== selected);
-  selected = null;
-  render();
-});
-
-document.getElementById('loadBtn').addEventListener('click', () => document.getElementById('fileInput').click());
-document.getElementById('fileInput').addEventListener('change', (e) => {
+// =========================== BG IMAGE ===========================
+document.getElementById('loadBgBtn').onclick = () => document.getElementById('bgInput').click();
+document.getElementById('bgInput').onchange = (e) => {
   const f = e.target.files[0]; if (!f) return;
-  const r = new FileReader();
-  r.onload = () => { data = JSON.parse(r.result); render(); };
-  r.readAsText(f);
+  const url = URL.createObjectURL(f);
+  bgImg.onload = () => {
+    state.bgUrl = url;
+    state.bgNaturalW = bgImg.naturalWidth;
+    state.bgNaturalH = bgImg.naturalHeight;
+    stage.style.width = (bgImg.naturalWidth) + 'px';
+    stage.style.height = (bgImg.naturalHeight) + 'px';
+    // Fit to viewport
+    const maxW = window.innerWidth - 360;
+    if (bgImg.naturalWidth > maxW) {
+      const scale = maxW / bgImg.naturalWidth;
+      stage.style.width = (bgImg.naturalWidth * scale) + 'px';
+      stage.style.height = (bgImg.naturalHeight * scale) + 'px';
+    }
+    svg.setAttribute('viewBox', `0 0 ${bgImg.naturalWidth} ${bgImg.naturalHeight}`);
+    svg.setAttribute('preserveAspectRatio', 'none');
+    status.textContent = `Loaded ${bgImg.naturalWidth}×${bgImg.naturalHeight}px`;
+    render();
+  };
+  bgImg.src = url;
+};
+
+// =========================== COORDINATE HELPERS ===========================
+function imgPosFromEvent(e) {
+  const rect = stage.getBoundingClientRect();
+  const xDisp = e.clientX - rect.left;
+  const yDisp = e.clientY - rect.top;
+  const scaleX = state.bgNaturalW / rect.width;
+  const scaleY = state.bgNaturalH / rect.height;
+  return [xDisp * scaleX, yDisp * scaleY];
+}
+
+// =========================== SHAPE CREATION ===========================
+document.querySelectorAll('#new-shape-bar button').forEach(btn => {
+  btn.onclick = () => {
+    const type = btn.dataset.type;
+    state.placeMode = type;
+    document.querySelectorAll('#new-shape-bar button').forEach(b => b.classList.toggle('active', b===btn));
+    status.textContent = `Click on image to place ${type}`;
+  };
 });
-document.getElementById('exportBtn').addEventListener('click', () => {
-  jsonOut.value = JSON.stringify(data, null, 2);
-  status.textContent = 'Exported — copy or download.';
+
+svg.addEventListener('click', (e) => {
+  if (!state.placeMode || !state.bgNaturalW) return;
+  const [x, y] = imgPosFromEvent(e);
+  const id = state.nextId++;
+  const name = `${state.placeMode}_${id}`;
+  let s;
+  if (state.placeMode === 'rect') s = {id,type:'rect',name,comment:'',x:x-40, y:y-20, w:80, h:40};
+  if (state.placeMode === 'circle') s = {id,type:'circle',name,comment:'',cx:x, cy:y, r:40};
+  if (state.placeMode === 'ring') s = {id,type:'ring',name,comment:'',cx:x, cy:y, r_in:40, r_out:70};
+  if (state.placeMode === 'arc') s = {id,type:'arc',name,comment:'',cx:x, cy:y, r_in:60, r_out:100, angle_start_deg:-60, angle_end_deg:60};
+  if (state.placeMode === 'polygon') s = {id,type:'polygon',name,comment:'',points:[[x-30,y-30],[x+30,y-30],[x+30,y+30],[x-30,y+30]]};
+  state.shapes.push(s);
+  state.selectedId = id;
+  state.placeMode = null;
+  document.querySelectorAll('#new-shape-bar button').forEach(b => b.classList.remove('active'));
+  render();
 });
-document.getElementById('copyBtn').addEventListener('click', () => {
-  if (!jsonOut.value) jsonOut.value = JSON.stringify(data, null, 2);
+
+// =========================== RENDER ===========================
+function render() {
+  svg.innerHTML = '';
+  state.shapes.forEach(s => drawShape(s));
+  renderList();
+  renderParams();
+}
+
+function drawShape(s) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const selected = (s.id === state.selectedId);
+  const stroke = selected ? '#ffee66' : '#ff9b3a';
+  const strokeW = selected ? 4 : 3;
+  let shape;
+  if (s.type === 'rect') {
+    shape = document.createElementNS(ns, 'rect');
+    shape.setAttribute('x', s.x); shape.setAttribute('y', s.y);
+    shape.setAttribute('width', s.w); shape.setAttribute('height', s.h);
+    shape.setAttribute('fill', 'rgba(255,155,58,0.12)');
+  } else if (s.type === 'circle') {
+    shape = document.createElementNS(ns, 'circle');
+    shape.setAttribute('cx', s.cx); shape.setAttribute('cy', s.cy);
+    shape.setAttribute('r', s.r);
+    shape.setAttribute('fill', 'rgba(255,155,58,0.12)');
+  } else if (s.type === 'ring') {
+    shape = document.createElementNS(ns, 'path');
+    const d = `M ${s.cx-s.r_out} ${s.cy} A ${s.r_out} ${s.r_out} 0 1 0 ${s.cx+s.r_out} ${s.cy} A ${s.r_out} ${s.r_out} 0 1 0 ${s.cx-s.r_out} ${s.cy} Z M ${s.cx-s.r_in} ${s.cy} A ${s.r_in} ${s.r_in} 0 1 1 ${s.cx+s.r_in} ${s.cy} A ${s.r_in} ${s.r_in} 0 1 1 ${s.cx-s.r_in} ${s.cy} Z`;
+    shape.setAttribute('d', d);
+    shape.setAttribute('fill-rule','evenodd');
+    shape.setAttribute('fill', 'rgba(255,155,58,0.12)');
+  } else if (s.type === 'arc') {
+    shape = document.createElementNS(ns, 'path');
+    const a1 = (s.angle_start_deg - 90) * Math.PI / 180;
+    const a2 = (s.angle_end_deg - 90) * Math.PI / 180;
+    const sweep = s.angle_end_deg - s.angle_start_deg;
+    const large = Math.abs(sweep) > 180 ? 1 : 0;
+    const dir = sweep > 0 ? 1 : 0;
+    const x1o = s.cx + Math.cos(a1)*s.r_out, y1o = s.cy + Math.sin(a1)*s.r_out;
+    const x2o = s.cx + Math.cos(a2)*s.r_out, y2o = s.cy + Math.sin(a2)*s.r_out;
+    const x1i = s.cx + Math.cos(a1)*s.r_in, y1i = s.cy + Math.sin(a1)*s.r_in;
+    const x2i = s.cx + Math.cos(a2)*s.r_in, y2i = s.cy + Math.sin(a2)*s.r_in;
+    const d = `M ${x1o} ${y1o} A ${s.r_out} ${s.r_out} 0 ${large} ${dir} ${x2o} ${y2o} L ${x2i} ${y2i} A ${s.r_in} ${s.r_in} 0 ${large} ${1-dir} ${x1i} ${y1i} Z`;
+    shape.setAttribute('d', d);
+    shape.setAttribute('fill', 'rgba(255,155,58,0.15)');
+  } else if (s.type === 'polygon') {
+    shape = document.createElementNS(ns, 'polygon');
+    shape.setAttribute('points', s.points.map(p => p.join(',')).join(' '));
+    shape.setAttribute('fill', 'rgba(255,155,58,0.12)');
+  }
+  shape.setAttribute('stroke', stroke);
+  shape.setAttribute('stroke-width', strokeW);
+  shape.style.cursor = 'move';
+  shape.addEventListener('mousedown', (e) => startDrag(e, s));
+  shape.addEventListener('click', (e) => { e.stopPropagation(); select(s.id); });
+  svg.appendChild(shape);
+
+  // Label
+  const lbl = document.createElementNS(ns,'text');
+  const cx = centerOf(s)[0], cy = centerOf(s)[1];
+  lbl.setAttribute('x', cx); lbl.setAttribute('y', cy);
+  lbl.setAttribute('fill', '#ff6'); lbl.setAttribute('font-size', '14');
+  lbl.setAttribute('text-anchor','middle'); lbl.setAttribute('font-weight','700');
+  lbl.setAttribute('stroke','#000'); lbl.setAttribute('stroke-width','3');
+  lbl.setAttribute('paint-order','stroke');
+  lbl.style.pointerEvents = 'none';
+  lbl.textContent = `${s.id}:${s.name}`;
+  svg.appendChild(lbl);
+
+  if (selected) drawHandles(s);
+}
+
+function centerOf(s) {
+  if (s.type === 'rect') return [s.x + s.w/2, s.y + s.h/2];
+  if (s.type === 'circle' || s.type === 'ring' || s.type === 'arc') return [s.cx, s.cy];
+  if (s.type === 'polygon') {
+    let sx=0, sy=0; s.points.forEach(p => {sx+=p[0];sy+=p[1];});
+    return [sx/s.points.length, sy/s.points.length];
+  }
+}
+
+function drawHandles(s) {
+  const ns = 'http://www.w3.org/2000/svg';
+  function addHandle(x, y, cls, handler) {
+    const h = document.createElementNS(ns,'circle');
+    h.setAttribute('cx', x); h.setAttribute('cy', y); h.setAttribute('r', 7);
+    h.setAttribute('fill', cls === 'inner' ? '#6fa' : '#ff6');
+    h.setAttribute('stroke', '#000'); h.setAttribute('stroke-width', 2);
+    h.style.cursor = 'pointer';
+    h.addEventListener('mousedown', handler);
+    svg.appendChild(h);
+  }
+  if (s.type === 'rect') {
+    addHandle(s.x+s.w, s.y+s.h, 'outer', (e) => startResizeRect(e, s));
+  } else if (s.type === 'circle') {
+    addHandle(s.cx+s.r, s.cy, 'outer', (e) => startResizeCircleR(e, s));
+  } else if (s.type === 'ring') {
+    addHandle(s.cx+s.r_out, s.cy, 'outer', (e) => startResizeRingOuter(e, s));
+    addHandle(s.cx+s.r_in, s.cy, 'inner', (e) => startResizeRingInner(e, s));
+  } else if (s.type === 'arc') {
+    // 4 handles: r_out, r_in, angle_start, angle_end
+    const aStart = (s.angle_start_deg - 90) * Math.PI / 180;
+    const aEnd   = (s.angle_end_deg   - 90) * Math.PI / 180;
+    addHandle(s.cx+s.r_out, s.cy, 'outer', (e) => startResizeArcOuter(e, s));
+    addHandle(s.cx+s.r_in, s.cy, 'inner', (e) => startResizeArcInner(e, s));
+    addHandle(s.cx+Math.cos(aStart)*s.r_out, s.cy+Math.sin(aStart)*s.r_out, 'outer', (e) => startResizeArcAngle(e, s, 'start'));
+    addHandle(s.cx+Math.cos(aEnd)*s.r_out, s.cy+Math.sin(aEnd)*s.r_out, 'outer', (e) => startResizeArcAngle(e, s, 'end'));
+  } else if (s.type === 'polygon') {
+    s.points.forEach((p, i) => {
+      addHandle(p[0], p[1], 'outer', (e) => startDragPolyPoint(e, s, i));
+    });
+  }
+}
+
+// =========================== DRAG / RESIZE ===========================
+function startDrag(e, s) {
+  e.stopPropagation();
+  select(s.id);
+  const [sx, sy] = imgPosFromEvent(e);
+  const orig = JSON.parse(JSON.stringify(s));
+  function onMove(me) {
+    const [mx, my] = imgPosFromEvent(me);
+    const dx = mx - sx, dy = my - sy;
+    if (s.type === 'rect') { s.x = orig.x + dx; s.y = orig.y + dy; }
+    else if (s.type==='circle'||s.type==='ring'||s.type==='arc') {
+      s.cx = orig.cx + dx; s.cy = orig.cy + dy;
+    } else if (s.type === 'polygon') {
+      s.points = orig.points.map(p => [p[0]+dx, p[1]+dy]);
+    }
+    render();
+  }
+  function onUp() { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); }
+  document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp);
+}
+
+function dragHelper(e, onMove) {
+  e.stopPropagation(); e.preventDefault();
+  function up() { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', up); }
+  document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', up);
+}
+function startResizeRect(e, s) { dragHelper(e, (me) => { const [mx,my]=imgPosFromEvent(me); s.w = Math.max(5, mx - s.x); s.h = Math.max(5, my - s.y); render(); }); }
+function startResizeCircleR(e, s) { dragHelper(e, (me) => { const [mx,my]=imgPosFromEvent(me); s.r = Math.max(3, Math.hypot(mx-s.cx, my-s.cy)); render(); }); }
+function startResizeRingOuter(e, s) { dragHelper(e, (me) => { const [mx,my]=imgPosFromEvent(me); s.r_out = Math.max(s.r_in+4, Math.hypot(mx-s.cx, my-s.cy)); render(); }); }
+function startResizeRingInner(e, s) { dragHelper(e, (me) => { const [mx,my]=imgPosFromEvent(me); s.r_in = Math.max(0, Math.min(s.r_out-4, Math.hypot(mx-s.cx, my-s.cy))); render(); }); }
+function startResizeArcOuter(e, s) { dragHelper(e, (me) => { const [mx,my]=imgPosFromEvent(me); s.r_out = Math.max(s.r_in+4, Math.hypot(mx-s.cx, my-s.cy)); render(); }); }
+function startResizeArcInner(e, s) { dragHelper(e, (me) => { const [mx,my]=imgPosFromEvent(me); s.r_in = Math.max(0, Math.min(s.r_out-4, Math.hypot(mx-s.cx, my-s.cy))); render(); }); }
+function startResizeArcAngle(e, s, which) {
+  dragHelper(e, (me) => {
+    const [mx,my]=imgPosFromEvent(me);
+    const a = Math.atan2(my-s.cy, mx-s.cx) * 180 / Math.PI + 90;
+    let deg = a; while(deg > 180) deg -= 360; while(deg < -180) deg += 360;
+    if (which === 'start') s.angle_start_deg = deg;
+    else s.angle_end_deg = deg;
+    render();
+  });
+}
+function startDragPolyPoint(e, s, i) {
+  dragHelper(e, (me) => { const [mx,my]=imgPosFromEvent(me); s.points[i] = [mx,my]; render(); });
+}
+
+// =========================== SIDEBAR ===========================
+function select(id) { state.selectedId = id; render(); }
+function renderList() {
+  shapeList.innerHTML = '';
+  state.shapes.forEach(s => {
+    const el = document.createElement('div');
+    el.className = 'shape-item' + (s.id===state.selectedId?' selected':'');
+    el.innerHTML = `<span>${s.id}: ${s.type} — ${s.name}</span><span style="color:#888">${s.comment?'📝':''}</span>`;
+    el.onclick = () => select(s.id);
+    shapeList.appendChild(el);
+  });
+}
+
+function renderParams() {
+  const s = state.shapes.find(x => x.id === state.selectedId);
+  if (!s) { selectedInfo.textContent = '(none)'; params.innerHTML = ''; return; }
+  selectedInfo.textContent = `${s.type} #${s.id}`;
+  let html = '';
+  html += `<div class="inp"><label>Name</label><input value="${s.name}" data-f="name"></div>`;
+  html += `<div class="inp"><label>Comment</label><input value="${s.comment||''}" data-f="comment"></div>`;
+  if (s.type === 'rect') {
+    html += `<div class="inp"><label>X</label><input type="number" class="dim-inp" value="${Math.round(s.x)}" data-f="x"><label>Y</label><input type="number" class="dim-inp" value="${Math.round(s.y)}" data-f="y"></div>`;
+    html += `<div class="inp"><label>W</label><input type="number" class="dim-inp" value="${Math.round(s.w)}" data-f="w"><label>H</label><input type="number" class="dim-inp" value="${Math.round(s.h)}" data-f="h"></div>`;
+  } else if (s.type === 'circle') {
+    html += `<div class="inp"><label>CX</label><input type="number" class="dim-inp" value="${Math.round(s.cx)}" data-f="cx"><label>CY</label><input type="number" class="dim-inp" value="${Math.round(s.cy)}" data-f="cy"></div>`;
+    html += `<div class="inp"><label>R</label><input type="number" class="dim-inp" value="${Math.round(s.r)}" data-f="r"></div>`;
+  } else if (s.type === 'ring') {
+    html += `<div class="inp"><label>CX</label><input type="number" class="dim-inp" value="${Math.round(s.cx)}" data-f="cx"><label>CY</label><input type="number" class="dim-inp" value="${Math.round(s.cy)}" data-f="cy"></div>`;
+    html += `<div class="inp"><label>R_in</label><input type="number" class="dim-inp" value="${Math.round(s.r_in)}" data-f="r_in"><label>R_out</label><input type="number" class="dim-inp" value="${Math.round(s.r_out)}" data-f="r_out"></div>`;
+  } else if (s.type === 'arc') {
+    html += `<div class="inp"><label>CX</label><input type="number" class="dim-inp" value="${Math.round(s.cx)}" data-f="cx"><label>CY</label><input type="number" class="dim-inp" value="${Math.round(s.cy)}" data-f="cy"></div>`;
+    html += `<div class="inp"><label>R_in</label><input type="number" class="dim-inp" value="${Math.round(s.r_in)}" data-f="r_in"><label>R_out</label><input type="number" class="dim-inp" value="${Math.round(s.r_out)}" data-f="r_out"></div>`;
+    html += `<div class="inp"><label>∠Start</label><input type="number" class="dim-inp" value="${Math.round(s.angle_start_deg)}" data-f="angle_start_deg"><label>∠End</label><input type="number" class="dim-inp" value="${Math.round(s.angle_end_deg)}" data-f="angle_end_deg"></div>`;
+  } else if (s.type === 'polygon') {
+    html += `<div class="tip">Drag green vertices to reshape. Add points via console: state.shapes[i].points.push([x,y])</div>`;
+    s.points.forEach((p, i) => {
+      html += `<div class="inp"><label>P${i+1}</label><input type="number" class="dim-inp" value="${Math.round(p[0])}" data-poly="${i}" data-xy="0"><input type="number" class="dim-inp" value="${Math.round(p[1])}" data-poly="${i}" data-xy="1"></div>`;
+    });
+  }
+  params.innerHTML = html;
+  params.querySelectorAll('input').forEach(inp => {
+    inp.oninput = () => {
+      if (inp.dataset.poly !== undefined) {
+        const i = +inp.dataset.poly, xy = +inp.dataset.xy;
+        s.points[i][xy] = +inp.value;
+      } else {
+        const f = inp.dataset.f;
+        s[f] = isNaN(+inp.value) ? inp.value : +inp.value;
+      }
+      render();
+    };
+  });
+}
+
+// =========================== DELETE ===========================
+document.getElementById('deleteBtn').onclick = () => {
+  state.shapes = state.shapes.filter(s => s.id !== state.selectedId);
+  state.selectedId = null;
+  render();
+};
+
+// =========================== EXPORT ===========================
+function exportJson() {
+  return JSON.stringify({
+    bg_image: state.bgUrl ? (state.bgUrl.split('/').pop()) : null,
+    bg_width: state.bgNaturalW,
+    bg_height: state.bgNaturalH,
+    shapes: state.shapes
+  }, null, 2);
+}
+document.getElementById('exportBtn').onclick = () => {
+  jsonOut.value = exportJson();
   jsonOut.select(); document.execCommand('copy');
-  status.textContent = 'Copied to clipboard.';
-});
-document.getElementById('downloadBtn').addEventListener('click', () => {
-  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  status.textContent = 'JSON copied.';
+};
+document.getElementById('downloadBtn').onclick = () => {
+  const blob = new Blob([exportJson()], {type:'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'band_ritual_gui_layout_edited.json';
+  a.download = 'shapes.json';
   a.click();
+};
+document.getElementById('loadJsonBtn').onclick = () => document.getElementById('jsonInput').click();
+document.getElementById('jsonInput').onchange = (e) => {
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const d = JSON.parse(r.result);
+      state.shapes = d.shapes || [];
+      state.nextId = Math.max(0, ...state.shapes.map(s => s.id)) + 1;
+      render();
+    } catch(e) { alert('Invalid JSON'); }
+  };
+  r.readAsText(f);
+};
+
+// Deselect on bg click
+svg.addEventListener('click', (e) => {
+  if (e.target === svg) { state.selectedId = null; render(); }
 });
 
-// Auto-load from URL (?json=path) if present
-(async () => {
-  try {
-    const res = await fetch('band_ritual_gui_layout.json');
-    if (res.ok) { data = await res.json(); render(); }
-  } catch(e) {}
-})();
+// Keyboard: delete selected with Delete/Backspace
+document.addEventListener('keydown', (e) => {
+  if ((e.key === 'Delete' || e.key === 'Backspace') && state.selectedId && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+    document.getElementById('deleteBtn').click();
+  }
+});
 </script>
 </body>
 </html>
