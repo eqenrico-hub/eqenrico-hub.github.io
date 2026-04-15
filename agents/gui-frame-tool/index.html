@@ -66,8 +66,15 @@
     <button data-type="ring">◎ Ring</button>
     <button data-type="arc">◠ Arc</button>
     <button data-type="polygon">◆ Polygon</button>
+    <button data-type="freehand">✎ Freehand</button>
   </div>
-  <div class="tip">Click a button, then click on the image to place the shape at its center.</div>
+  <div id="mirror-bar" style="display:flex; gap:4px; margin-bottom:6px; font-size:11px; align-items:center;">
+    <span>Symmetrize:</span>
+    <label><input type="checkbox" id="mirror-h" checked> H</label>
+    <label><input type="checkbox" id="mirror-v"> V</label>
+    <label><input type="checkbox" id="snap-primitive"> Snap→Circle/Rect</label>
+  </div>
+  <div class="tip">Click a button, then click on image (Rect/Circle/Ring/Arc/Poly) OR click-drag a freehand shape (Freehand). On release, Freehand auto-mirrors per checkboxes above.</div>
 
   <h3 style="margin-top:10px">Selected shape</h3>
   <div id="selected-info">(none)</div>
@@ -157,7 +164,7 @@ document.querySelectorAll('#new-shape-bar button').forEach(btn => {
 });
 
 svg.addEventListener('click', (e) => {
-  if (!state.placeMode || !state.bgNaturalW) return;
+  if (!state.placeMode || !state.bgNaturalW || state.placeMode === 'freehand') return;
   const [x, y] = imgPosFromEvent(e);
   const id = state.nextId++;
   const name = `${state.placeMode}_${id}`;
@@ -173,6 +180,147 @@ svg.addEventListener('click', (e) => {
   document.querySelectorAll('#new-shape-bar button').forEach(b => b.classList.remove('active'));
   render();
 });
+
+// =========================== FREEHAND + MIRROR ===========================
+let freehandPoints = null;
+let freehandPreviewEl = null;
+
+svg.addEventListener('mousedown', (e) => {
+  if (state.placeMode !== 'freehand' || !state.bgNaturalW) return;
+  e.preventDefault();
+  freehandPoints = [imgPosFromEvent(e)];
+  // Preview polyline
+  freehandPreviewEl = document.createElementNS('http://www.w3.org/2000/svg','polyline');
+  freehandPreviewEl.setAttribute('stroke', '#ff6');
+  freehandPreviewEl.setAttribute('stroke-width', 3);
+  freehandPreviewEl.setAttribute('fill', 'rgba(255,255,100,0.1)');
+  svg.appendChild(freehandPreviewEl);
+  const onMove = (me) => {
+    freehandPoints.push(imgPosFromEvent(me));
+    freehandPreviewEl.setAttribute('points', freehandPoints.map(p => p.join(',')).join(' '));
+  };
+  const onUp = () => {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    if (freehandPreviewEl) svg.removeChild(freehandPreviewEl);
+    freehandPreviewEl = null;
+    if (freehandPoints.length < 3) { freehandPoints = null; return; }
+    finalizeFreehand(freehandPoints);
+    freehandPoints = null;
+    state.placeMode = null;
+    document.querySelectorAll('#new-shape-bar button').forEach(b => b.classList.remove('active'));
+  };
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+});
+
+function finalizeFreehand(rawPoints) {
+  // Simplify the raw path via Ramer-Douglas-Peucker (distance tolerance)
+  const simplified = rdp(rawPoints, 4);  // 4px tolerance
+  let points = simplified;
+
+  const mirrorH = document.getElementById('mirror-h').checked;
+  const mirrorV = document.getElementById('mirror-v').checked;
+  const snap = document.getElementById('snap-primitive').checked;
+
+  // Compute centroid
+  const cx = points.reduce((a,p) => a+p[0], 0) / points.length;
+  const cy = points.reduce((a,p) => a+p[1], 0) / points.length;
+
+  // Apply symmetrization
+  if (mirrorH && mirrorV) {
+    // Quadrant 1 → mirror to all 4
+    points = points.filter(p => p[0] >= cx && p[1] <= cy);
+    if (points.length < 2) points = [[cx+40, cy-40], [cx+40, cy-10]];
+    const q2 = points.map(p => [2*cx - p[0], p[1]]);
+    const q3 = points.map(p => [2*cx - p[0], 2*cy - p[1]]);
+    const q4 = points.map(p => [p[0], 2*cy - p[1]]);
+    points = [...points, ...q2.reverse(), ...q3, ...q4.reverse()];
+  } else if (mirrorH) {
+    // Mirror left/right around cx
+    const rightSide = points.filter(p => p[0] >= cx);
+    const leftMirror = rightSide.map(p => [2*cx - p[0], p[1]]).reverse();
+    points = [...rightSide, ...leftMirror];
+  } else if (mirrorV) {
+    const topSide = points.filter(p => p[1] <= cy);
+    const botMirror = topSide.map(p => [p[0], 2*cy - p[1]]).reverse();
+    points = [...topSide, ...botMirror];
+  }
+
+  // Snap to primitive if requested
+  if (snap) {
+    const snapped = snapToPrimitive(points);
+    if (snapped) {
+      const id = state.nextId++;
+      snapped.id = id;
+      snapped.name = `${snapped.type}_${id}`;
+      snapped.comment = '';
+      state.shapes.push(snapped);
+      state.selectedId = id;
+      render();
+      return;
+    }
+  }
+
+  // Keep as polygon
+  const id = state.nextId++;
+  state.shapes.push({
+    id, type:'polygon', name:`freehand_${id}`, comment:'', points
+  });
+  state.selectedId = id;
+  render();
+}
+
+// Ramer-Douglas-Peucker simplification
+function rdp(points, eps) {
+  if (points.length < 3) return points;
+  const [first, last] = [points[0], points[points.length-1]];
+  let maxDist = 0, idx = 0;
+  for (let i = 1; i < points.length-1; i++) {
+    const d = perpDist(points[i], first, last);
+    if (d > maxDist) { maxDist = d; idx = i; }
+  }
+  if (maxDist > eps) {
+    return [...rdp(points.slice(0, idx+1), eps).slice(0, -1), ...rdp(points.slice(idx), eps)];
+  }
+  return [first, last];
+}
+function perpDist(p, a, b) {
+  const dx = b[0]-a[0], dy = b[1]-a[1];
+  if (dx === 0 && dy === 0) return Math.hypot(p[0]-a[0], p[1]-a[1]);
+  const t = ((p[0]-a[0])*dx + (p[1]-a[1])*dy) / (dx*dx+dy*dy);
+  const proj = [a[0]+t*dx, a[1]+t*dy];
+  return Math.hypot(p[0]-proj[0], p[1]-proj[1]);
+}
+
+// Detect if shape is closer to circle/rect and return that primitive
+function snapToPrimitive(points) {
+  // Bounding box
+  const xs = points.map(p=>p[0]), ys = points.map(p=>p[1]);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const cx = (minX+maxX)/2, cy = (minY+maxY)/2;
+  const w = maxX - minX, h = maxY - minY;
+  const r = (w+h)/4;
+  // Measure circular-ness: for each point, |distance from center - r| / r
+  let circErr = 0;
+  points.forEach(p => { circErr += Math.abs(Math.hypot(p[0]-cx, p[1]-cy) - r) / r; });
+  circErr /= points.length;
+  // Measure rect-ness: how far points are from closest bbox edge (normalized)
+  let rectErr = 0;
+  points.forEach(p => {
+    const d = Math.min(Math.abs(p[0]-minX), Math.abs(p[0]-maxX), Math.abs(p[1]-minY), Math.abs(p[1]-maxY));
+    rectErr += d / Math.max(w,h);
+  });
+  rectErr /= points.length;
+  console.log('circErr', circErr, 'rectErr', rectErr);
+  if (circErr < 0.15 && circErr < rectErr) {
+    return {type:'circle', cx, cy, r};
+  } else if (rectErr < 0.08) {
+    return {type:'rect', x:minX, y:minY, w, h};
+  }
+  return null;
+}
 
 // =========================== RENDER ===========================
 function render() {
