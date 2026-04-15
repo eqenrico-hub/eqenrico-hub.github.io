@@ -37,6 +37,12 @@ These are accumulated lessons from real-world UI design critique. Apply ALL of t
 
 15. **Lead, don't ask for trivial decisions.** When the user has already stated principles, apply them — don't re-ask. Surface decisions only when there's a genuine design fork that meaningfully changes the outcome.
 
+16. **Shapes must AFFORD their function.** A rotary control has to LOOK rotatable — circles, subtle ovals, soft-cornered polygons, rings with gentle scallops. Sharp diamonds, trapezoids, triangles, stars, and shapes with acute angles do NOT read as "something you grab and turn" — they fight user expectation. Distinction should come from subtle variation of a rotational base, not by swapping to a non-rotational shape language.
+
+17. **Subtle variation, not radical shape swapping.** For a multi-ring knob, all rings should read as "turnable parts." Distinction per ring = slight difference in: corner radius, scallop amplitude, top/bottom asymmetry, edge profile. Not "one is a diamond and one is an arch." A pro plugin designer's full knob set is 95% circles with 5% subtle deviations.
+
+18. **Reference canonical VST knob silhouettes.** Looking at Arturia, FabFilter, Baby Audio, Teenage Engineering OP-1, iZotope — virtually every knob is a circle or soft-rounded polygon. When in doubt, revert to "circle with one small distinguishing feature" rather than inventing a novel shape language. Novelty at the silhouette level almost always LOSES user trust.
+
 ═══════════════════════════════════════════════════════════
 PROCESS — THINK LIKE A DESIGNER BEFORE YOU DRAW
 ═══════════════════════════════════════════════════════════
