@@ -144,7 +144,13 @@ def setup_chassis(chassis_png_path, coll):
     return obj
 
 
-def apply_spec(json_path, chassis_png=None, clear_old=True):
+def apply_spec(json_path, chassis_png=None, clear_old=True, mode="full"):
+    """
+    mode:
+      "full"  — build 3D for every element (for standalone rebuild with no chassis)
+      "interactive_only" — only knobs, slider thumbs, EQ nodes, power button,
+                           pill buttons; let chassis PNG show everything else
+    """
     with open(json_path) as f:
         spec = json.load(f)
     coll = _ensure_collection(COLLECTION_NAME)
@@ -176,9 +182,14 @@ def apply_spec(json_path, chassis_png=None, clear_old=True):
         m = _material_from_rgba(f"I2B_M_Small_{i:02d}", rgba, rough=0.3, metal=0.5)
         _cylinder(f"I2B_Small_{i:02d}", cx, cy, r, 0.007, 0.010, m, coll)
 
-    # --- Rectangles — build 3D for EVERY element so the scene stands alone ---
-    # Thin Z-extrusion so with-chassis render doesn't overpower the PNG art.
+    # --- Rectangles ---
+    INTERACTIVE_KINDS = {"pill", "pill_wide", "pill_small",
+                         "square_btn", "vslider",
+                         "vertical_slider", "vertical_slider_candidate"}
+    skip_flat = (mode == "interactive_only")
     for i, r in enumerate(spec.get("rectangles", [])):
+        if skip_flat and r.get("kind") not in INTERACTIVE_KINDS:
+            continue
         x1, y1 = _px_to_world(spec, r["x"], r["y"])
         x2, y2 = _px_to_world(spec, r["x"] + r["w"], r["y"] + r["h"])
         rgba = tuple(r.get("rgba", (0.1, 0.08, 0.08, 1.0)))
@@ -201,8 +212,8 @@ def apply_spec(json_path, chassis_png=None, clear_old=True):
             z_top = 0.005 if kind in ("display",) else 0.006
             _box(f"I2B_Rect_{i:02d}_{kind}", x1, y1, x2, y2, 0.003, z_top, m, coll)
 
-    # --- Keyboard: thin 3D for each key ---
-    kb = spec.get("keyboard_strip")
+    # --- Keyboard: thin 3D for each key (skip in interactive_only mode) ---
+    kb = spec.get("keyboard_strip") if mode != "interactive_only" else None
     if kb:
         x1w, y1w = _px_to_world(spec, kb["x1"], kb["y1"])
         x2w, y2w = _px_to_world(spec, kb["x2"], kb["y2"])
@@ -226,8 +237,9 @@ def apply_spec(json_path, chassis_png=None, clear_old=True):
             _box(f"I2B_BK_{idx:02d}", boundary - bw/2, yhi - bh, boundary + bw/2, yhi,
                  0.005, 0.008, m_b, coll)
 
-    # --- Texts: thin emissive planes as placeholder glyphs ---
-    for i, t in enumerate(spec.get("texts", [])):
+    # --- Texts: thin emissive planes as placeholder glyphs (skip in interactive_only) ---
+    text_iter = spec.get("texts", []) if mode != "interactive_only" else []
+    for i, t in enumerate(text_iter):
         x1, y1 = _px_to_world(spec, t["x"], t["y"])
         x2, y2 = _px_to_world(spec, t["x"] + t["w"], t["y"] + t["h"])
         rgba = tuple(t.get("rgba", (0.85, 0.82, 0.75, 1.0)))
