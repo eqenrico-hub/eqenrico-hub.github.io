@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8">
+<title>Worlds CMS — MapBuilder</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#0d0d1a; color:#e0e0e0; font-family:'Segoe UI',system-ui,sans-serif; min-height:100vh; }
+.topbar { background:#1a1a2e; padding:14px 24px; border-bottom:1px solid #333; display:flex; align-items:center; gap:16px; }
+.topbar h1 { font-size:18px; background:linear-gradient(90deg,#6c5ce7,#00ff88); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.topbar a { color:#aaa; text-decoration:none; font-size:13px; padding:6px 12px; border-radius:4px; }
+.topbar a:hover { background:#2a2a4e; color:#fff; }
+.topbar .spacer { flex:1; }
+.topbar button { padding:8px 14px; background:#2a2a4e; border:1px solid #444; color:#fff; border-radius:4px; cursor:pointer; font-size:12px; }
+.topbar button:hover { background:#3a3a5e; }
+.topbar button.bootstrap { background:#c0392b; border-color:#c0392b; }
+
+.container { max-width:1400px; margin:0 auto; padding:24px; }
+
+/* Gallery */
+.gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:20px; }
+.world-card { background:#1a1a2e; border:1px solid #333; border-radius:10px; padding:14px; cursor:pointer; transition:0.2s; }
+.world-card:hover { border-color:#6c5ce7; transform:translateY(-2px); }
+.world-card h3 { font-size:14px; color:#fff; margin-bottom:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.world-card .theme { font-size:11px; color:#888; margin-bottom:10px; }
+.world-card .thumbs { display:flex; gap:6px; margin-bottom:10px; }
+.world-card .thumb { width:32%; aspect-ratio:1; background:#0a0a18; border-radius:6px; overflow:hidden; }
+.world-card .thumb img { width:100%; height:100%; image-rendering:pixelated; object-fit:cover; }
+.world-card .badges { display:flex; gap:6px; font-size:10px; }
+.badge { padding:2px 8px; background:#2a2a4e; border-radius:10px; color:#aaa; }
+.empty { text-align:center; padding:60px 20px; color:#666; }
+
+/* Detail view */
+.detail-header { display:flex; align-items:center; gap:16px; margin-bottom:20px; }
+.detail-header h2 { flex:1; color:#fff; }
+.back-btn { padding:8px 14px; background:#2a2a4e; border:1px solid #444; color:#fff; border-radius:4px; cursor:pointer; }
+.back-btn:hover { background:#3a3a5e; }
+.danger-btn { padding:8px 14px; background:#c0392b; border:none; color:#fff; border-radius:4px; cursor:pointer; }
+
+.tabs { display:flex; gap:2px; margin-bottom:20px; border-bottom:1px solid #333; }
+.tab { padding:10px 20px; background:#1a1a2e; border:1px solid #333; border-bottom:none; color:#aaa; cursor:pointer; border-radius:6px 6px 0 0; }
+.tab.active { background:#2a2a4e; color:#fff; border-color:#6c5ce7; }
+
+.tab-content { display:none; background:#1a1a2e; border:1px solid #333; border-radius:0 8px 8px 8px; padding:20px; min-height:400px; }
+.tab-content.active { display:block; }
+
+.tileset-editor { margin-bottom:30px; background:#0a0a18; padding:16px; border-radius:8px; }
+.tileset-editor h3 { color:#6c5ce7; margin-bottom:8px; font-size:14px; }
+.tileset-editor .meta { font-size:11px; color:#666; margin-bottom:10px; }
+.tileset-editor iframe { width:100%; height:620px; border:none; border-radius:6px; background:#1a1a2e; }
+.tileset-editor .toolbar { display:flex; gap:8px; margin-bottom:10px; }
+.tileset-editor .toolbar button { padding:6px 10px; font-size:12px; border-radius:4px; background:#2a2a4e; border:1px solid #444; color:#fff; cursor:pointer; }
+.tileset-editor .toolbar button:hover { background:#3a3a5e; }
+.tileset-editor .toolbar button.reset { background:#c0392b; border-color:#c0392b; }
+
+.asset-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:12px; }
+.asset { background:#0a0a18; border:1px solid #222; border-radius:6px; padding:10px; text-align:center; }
+.asset img { width:100%; aspect-ratio:1; image-rendering:pixelated; object-fit:contain; background:#1a1a2e; border-radius:4px; }
+.asset .name { font-size:11px; color:#aaa; margin-top:6px; word-break:break-word; }
+
+.info-grid { display:grid; grid-template-columns:150px 1fr; gap:10px; font-size:13px; }
+.info-grid dt { color:#888; }
+.info-grid dd { color:#fff; word-break:break-all; }
+
+#log { background:#0a0a18; padding:12px; border-radius:6px; font-family:monospace; font-size:11px; max-height:300px; overflow-y:auto; }
+.log-line { padding:2px 0; color:#9cf; }
+.log-line.error { color:#ff6b6b; }
+.log-line.success { color:#00ff88; }
+</style>
+</head><body>
+
+<div class="topbar">
+  <h1>🗂 Worlds CMS</h1>
+  <a href="world-creator.html">+ Create New World</a>
+  <a href="v2.html">Map Editor</a>
+  <div class="spacer"></div>
+  <button class="bootstrap" onclick="bootstrapStandard()">🌱 Bootstrap standard characters</button>
+</div>
+
+<div class="container">
+  <div id="view-gallery">
+    <div id="gallery" class="gallery"></div>
+    <div id="empty" class="empty" style="display:none">
+      <h2>No worlds yet</h2>
+      <p>Create your first world using the + button in the top bar.</p>
+    </div>
+  </div>
+
+  <div id="view-detail" style="display:none">
+    <div class="detail-header">
+      <button class="back-btn" onclick="showGallery()">← Back to gallery</button>
+      <h2 id="detail-title"></h2>
+      <button class="back-btn" onclick="openInMapEditor()">🗺 Open in map editor</button>
+      <button class="danger-btn" onclick="deleteWorld()">🗑 Delete world</button>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="tilesets">Tilesets</div>
+      <div class="tab" data-tab="buildings">Buildings</div>
+      <div class="tab" data-tab="characters">Characters</div>
+      <div class="tab" data-tab="info">Info</div>
+    </div>
+
+    <div id="tab-tilesets" class="tab-content active">
+      <div id="tileset-editors"></div>
+    </div>
+    <div id="tab-buildings" class="tab-content">
+      <div id="buildings-grid" class="asset-grid"></div>
+    </div>
+    <div id="tab-characters" class="tab-content">
+      <div id="characters-grid" class="asset-grid"></div>
+    </div>
+    <div id="tab-info" class="tab-content">
+      <dl id="info-grid" class="info-grid"></dl>
+      <div id="log" style="display:none; margin-top:16px"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CACHE_VER = 'v7_';
+const BASE_PATH = '../village-templates';
+const AGENT_URL = 'http://localhost:8766';
+
+let currentWorld = null;
+
+// ============================================================
+// Gallery
+// ============================================================
+function loadWorlds() {
+  const keys = JSON.parse(localStorage.getItem('agent_tilesets') || '[]');
+  return keys.map(key => {
+    const chainRaw = localStorage.getItem('agent_chain_' + key);
+    const chain = chainRaw ? JSON.parse(chainRaw) : null;
+    const buildingsRaw = localStorage.getItem('agent_buildings_' + key);
+    const buildings = buildingsRaw ? JSON.parse(buildingsRaw) : null;
+    const charsRaw = localStorage.getItem('agent_characters_' + key);
+    const characters = charsRaw ? JSON.parse(charsRaw) : null;
+    return { key, chain, buildings, characters };
+  });
+}
+
+function renderGallery() {
+  const worlds = loadWorlds();
+  const gallery = document.getElementById('gallery');
+  const empty = document.getElementById('empty');
+  gallery.innerHTML = '';
+  if (worlds.length === 0) {
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  for (const w of worlds) {
+    const card = document.createElement('div');
+    card.className = 'world-card';
+    const themeText = w.chain?.tiers?.[1] || w.key;
+    const keys = w.chain?.keys || [w.key, w.key, w.key];
+    card.innerHTML = `
+      <h3>🤖 ${w.key.slice(0, 30)}...</h3>
+      <div class="theme">${themeText}</div>
+      <div class="thumbs">
+        ${keys.map(k => `<div class="thumb"><img src="${BASE_PATH}/variants/${k}.png?v=${Date.now()}" /></div>`).join('')}
+      </div>
+      <div class="badges">
+        <span class="badge">3 tilesets</span>
+        ${w.buildings?.list?.length ? `<span class="badge">${w.buildings.list.length} buildings</span>` : ''}
+        ${w.characters?.list?.length ? `<span class="badge">${w.characters.list.length} characters</span>` : ''}
+      </div>
+    `;
+    card.onclick = () => showDetail(w);
+    gallery.appendChild(card);
+  }
+}
+
+// ============================================================
+// Detail view
+// ============================================================
+function showGallery() {
+  document.getElementById('view-gallery').style.display = 'block';
+  document.getElementById('view-detail').style.display = 'none';
+  currentWorld = null;
+  renderGallery();
+}
+
+function showDetail(world) {
+  currentWorld = world;
+  document.getElementById('view-gallery').style.display = 'none';
+  document.getElementById('view-detail').style.display = 'block';
+  document.getElementById('detail-title').textContent = world.chain?.tiers?.[1] || world.key;
+
+  // Tilesets tab
+  const editors = document.getElementById('tileset-editors');
+  editors.innerHTML = '';
+  const keys = world.chain?.keys || [world.key];
+  const tiers = world.chain?.tiers || [];
+  keys.forEach((k, i) => {
+    const editor = document.createElement('div');
+    editor.className = 'tileset-editor';
+    const lowerDesc = tiers[i] || '';
+    const upperDesc = tiers[i + 1] || '';
+    editor.innerHTML = `
+      <h3>Tileset ${i + 1}: ${lowerDesc} ↔ ${upperDesc}</h3>
+      <div class="meta">Key: <code>${k}</code></div>
+      <div class="toolbar">
+        <button onclick="resetTileset('${k}', this)">↺ Reset to auto-detected</button>
+        <button onclick="window.open('tile-configurator.html?tileset=${encodeURIComponent(k)}', '_blank')">🔧 Open standalone configurator</button>
+      </div>
+      <iframe src="tile-configurator.html?tileset=${encodeURIComponent(k)}" id="frame-${k}"></iframe>
+    `;
+    editors.appendChild(editor);
+  });
+
+  // Buildings
+  renderAssetGrid('buildings-grid', world.buildings, 'No buildings generated for this world.');
+  renderAssetGrid('characters-grid', world.characters, 'No characters generated for this world.');
+
+  // Info
+  const info = document.getElementById('info-grid');
+  info.innerHTML = `
+    <dt>Primary key</dt><dd>${world.key}</dd>
+    <dt>Tier 0 (path)</dt><dd>${tiers[0] || '—'}</dd>
+    <dt>Tier 1 (main)</dt><dd>${tiers[1] || '—'}</dd>
+    <dt>Tier 2 (elevated)</dt><dd>${tiers[2] || '—'}</dd>
+    <dt>Tier 3 (peak)</dt><dd>${tiers[3] || '—'}</dd>
+    <dt>Tileset keys</dt><dd>${keys.join('<br>')}</dd>
+    <dt>Buildings dir</dt><dd>${world.buildings?.dir || '—'}</dd>
+    <dt>Characters dir</dt><dd>${world.characters?.dir || '—'}</dd>
+  `;
+}
+
+function renderAssetGrid(gridId, info, emptyMsg) {
+  const grid = document.getElementById(gridId);
+  grid.innerHTML = '';
+  if (!info || !info.list || info.list.length === 0) {
+    grid.innerHTML = `<div class="empty">${emptyMsg}</div>`;
+    return;
+  }
+  for (const name of info.list) {
+    const el = document.createElement('div');
+    el.className = 'asset';
+    el.innerHTML = `
+      <img src="${BASE_PATH}/${info.dir}/${name}.png" onerror="this.style.opacity='0.3'" />
+      <div class="name">${name}</div>
+    `;
+    grid.appendChild(el);
+  }
+}
+
+// Tab switching
+document.querySelectorAll('.tab').forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('tab-' + t.dataset.tab).classList.add('active');
+  };
+});
+
+// ============================================================
+// Actions
+// ============================================================
+function resetTileset(key, btn) {
+  const origKey = 'wang_map_' + CACHE_VER + key + '_original';
+  const orig = localStorage.getItem(origKey);
+  if (!orig) {
+    alert('No original snapshot available for this tileset. The original is saved when the world is first created by the agent.');
+    return;
+  }
+  if (!confirm('Reset tileset ' + key + ' to auto-detected WANG_MAP? This will discard any manual edits.')) return;
+  localStorage.setItem('wang_map_' + CACHE_VER + key, orig);
+  // Reload iframe
+  const frame = document.getElementById('frame-' + key);
+  if (frame) frame.src = frame.src; // force reload
+  btn.textContent = '↺ Reset done';
+  setTimeout(() => { btn.textContent = '↺ Reset to auto-detected'; }, 1500);
+}
+
+function deleteWorld() {
+  if (!currentWorld) return;
+  if (!confirm('Delete world "' + currentWorld.key + '" from the library? (PNG files remain on disk)')) return;
+  const key = currentWorld.key;
+  // Remove from agent_tilesets
+  const list = JSON.parse(localStorage.getItem('agent_tilesets') || '[]').filter(k => k !== key);
+  localStorage.setItem('agent_tilesets', JSON.stringify(list));
+  // Remove chain, buildings, characters, wang_maps
+  localStorage.removeItem('agent_chain_' + key);
+  localStorage.removeItem('agent_buildings_' + key);
+  localStorage.removeItem('agent_characters_' + key);
+  const chainKeys = currentWorld.chain?.keys || [key];
+  for (const ck of chainKeys) {
+    localStorage.removeItem('wang_map_' + CACHE_VER + ck);
+    localStorage.removeItem('wang_map_' + CACHE_VER + ck + '_original');
+  }
+  showGallery();
+}
+
+function openInMapEditor() {
+  if (!currentWorld) return;
+  const k = currentWorld.key;
+  const keys = currentWorld.chain?.keys || [k, k, k];
+  const qs = new URLSearchParams({
+    tileset: k,
+    tileset1: keys[0], tileset2: keys[1], tileset3: keys[2],
+  });
+  window.location.href = 'v2.html?' + qs.toString();
+}
+
+async function bootstrapStandard() {
+  if (!confirm('Generate 10 standard characters via PixelLab? This takes ~5-10 minutes and uses API credits. Characters will be saved for reuse in all future worlds.')) return;
+  const logEl = document.getElementById('log');
+  logEl.style.display = 'block';
+  logEl.innerHTML = '';
+  const log = (t, cls='') => { const d = document.createElement('div'); d.className = 'log-line' + (cls?' '+cls:''); d.textContent = t; logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight; };
+  // Switch to info tab so log is visible
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+  const infoTab = document.querySelector('[data-tab="info"]');
+  if (infoTab) infoTab.classList.add('active');
+  document.getElementById('tab-info').classList.add('active');
+
+  try {
+    const resp = await fetch(AGENT_URL + '/bootstrap-standard-characters', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: '{}',
+    });
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n'); buf = lines.pop();
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const obj = JSON.parse(line);
+          const msg = obj.msg || '';
+          if (msg.startsWith('ERROR')) log(msg, 'error');
+          else if (msg === 'Done!') log('SUCCESS! Standard library ready.', 'success');
+          else log(msg);
+        } catch(e) { log(line); }
+      }
+    }
+  } catch(e) {
+    log('FAILED: ' + e.message, 'error');
+  }
+}
+
+// Initial load
+renderGallery();
+</script>
+</body></html>

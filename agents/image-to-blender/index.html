@@ -1,0 +1,74 @@
+---
+layout: default
+title: Image-to-Blender Detection Agent
+---
+
+<h1>🔍 Image-to-Blender Detection Agent</h1>
+<p><em>CV-based element detection from a GUI PNG → 3D Blender scene with each element as a separate mesh</em></p>
+
+<h2>What it does</h2>
+<p>Takes any VST GUI PNG (output from ChatGPT, Gemini, a real plugin screenshot, or a decomposition sheet) and auto-detects the interactive elements — knobs (big + small), rectangular controls (sliders, buttons, piano keys), keyboard strips — by layered OpenCV analysis. Exports a single JSON spec which a Blender script consumes to build each element as a separate, precisely-positioned 3D object aligned with the chassis PNG underneath.</p>
+
+<h2>Why this matters</h2>
+<p>Previous attempts (freehand sketch-over-image, Blender-only procedural, AI image→3D APIs) all failed for different reasons: imprecise coords, hallucinated controls, single merged meshes. This agent solves the <strong>coordinate accuracy</strong> problem deterministically using computer vision, and leaves creative/style work to the upstream GUI-design prompts.</p>
+
+<h2>Files</h2>
+<ul>
+  <li><a href="detect.py">detect.py</a> — OpenCV detection (Hough circles + contours + keyboard strip detection). Outputs a JSON spec + debug PNG overlay.</li>
+  <li><a href="apply.py">apply.py</a> — Blender-side builder. <code>apply_spec('/path/to/spec.json', chassis_png='/path/to/chassis.png')</code> sets up an image-plane chassis and builds all detected elements as separate meshes on top.</li>
+</ul>
+
+<h2>Detection stages</h2>
+<ol>
+  <li><strong>Hough circles — knob band (r 22-55px)</strong>: main rotary controls</li>
+  <li><strong>Hough circles — small band (r 8-22px)</strong>: EQ nodes, tiny buttons (excludes positions near bigger knobs to avoid cap double-detection)</li>
+  <li><strong>Canny + contours</strong>: rectangular controls classified by aspect ratio into slider / horizontal button / square button candidates</li>
+  <li><strong>Brightness-threshold strip</strong>: detects the bottom keyboard region and its bounds</li>
+</ol>
+
+<h2>Usage</h2>
+<pre><code># 1. Detect
+python3 detect.py path/to/chassis.png --out path/to/spec.json
+
+# 2. Apply in Blender (scripting tab or via mcp-blender)
+exec(open('apply.py').read())
+apply_spec('path/to/spec.json', chassis_png='path/to/chassis.png')
+</code></pre>
+
+<h2>Output format</h2>
+<pre><code>{
+  "image": "chassis.png", "width": 1619, "height": 971,
+  "knobs":         [{"cx": 176, "cy": 294, "r": 49}, ...],
+  "small_circles": [{"cx": 1512, "cy": 792, "r": 28}, ...],
+  "rectangles":    [{"x": 218, "y": 270, "w": 40, "h": 250, "kind": "vertical_slider_candidate"}, ...],
+  "keyboard_strip":{"x1": 40, "y1": 810, "x2": 1250, "y2": 955}
+}
+</code></pre>
+
+<h2>Position in the full pipeline</h2>
+<ol>
+  <li><a href="../moodboard-generator/">Moodboard Generator</a> — extract style DNA (optional)</li>
+  <li><a href="../vst-gui-pipeline/">VST GUI Pipeline</a> — ChatGPT generates the full redesigned GUI PNG</li>
+  <li><strong>THIS AGENT</strong> — analyze the PNG, extract element positions as JSON</li>
+  <li><a href="../blender-redesign/">Blender Redesign</a> / Blender ops — build the 3D scene from the JSON</li>
+  <li><a href="../gui-frame-tool/">GUI Frame Tool</a> — manual fine-tuning of layout if needed</li>
+</ol>
+
+<h2>Tunable parameters</h2>
+<p>In <code>detect.py</code>:</p>
+<ul>
+  <li><strong>Knob band</strong>: <code>minRadius=22, maxRadius=55</code> — widen if your knobs are larger</li>
+  <li><strong>Hough sensitivity</strong>: <code>param2</code> (lower = more false positives, higher = fewer detections)</li>
+  <li><strong>Header/footer exclusion</strong>: <code>70 &lt; cy &lt; 810</code> — adjust for your chassis proportions</li>
+  <li><strong>Keyboard strip brightness threshold</strong>: <code>170</code> — raise for darker keyboard beds</li>
+</ul>
+
+<h2>Known limitations</h2>
+<ul>
+  <li>Decorative circles (logo rings, ornaments) can leak into the knob set — prune manually or add stricter size filters</li>
+  <li>Contour detection over-produces rectangles on heavily-textured chassis; may need a masked ROI pass</li>
+  <li>Piano key count is assumed 14 white — override <code>num_white</code> in <code>apply.py</code> for different ranges</li>
+  <li>Does not yet handle: arc segments, concentric ring structures, text labels, color-coded states</li>
+</ul>
+
+<p><a href="../">← Back to Agents</a></p>

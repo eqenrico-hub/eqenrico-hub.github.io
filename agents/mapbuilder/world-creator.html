@@ -71,7 +71,36 @@ button:disabled { opacity:0.5; cursor:not-allowed; }
     </div>
   </div>
 
+  <label>Characters</label>
+  <div class="radio-group">
+    <label class="radio-label">
+      <input type="radio" name="characters" value="none" checked />
+      <span>No characters</span>
+    </label>
+    <label class="radio-label">
+      <input type="radio" name="characters" value="standard" />
+      <span>Standard 10 characters (warrior, mage, archer, rogue, merchant, guard, cleric, blacksmith, noble, peasant) — reuses pre-generated library</span>
+    </label>
+    <label class="radio-label">
+      <input type="radio" name="characters" value="custom" />
+      <span>Generate 10 custom characters based on prompt (slow, ~5–10 min)</span>
+    </label>
+  </div>
+
+  <div id="customCharactersPanel" style="display:none; margin-top:10px;">
+    <label for="charactersContext" style="font-size:11px;">Character context / description (optional)</label>
+    <input type="text" id="charactersContext" placeholder="e.g. cyberpunk street gang, or comma-separated list of 10 characters" />
+  </div>
+
+  <label style="display:flex; align-items:center; gap:8px; margin-top:14px; cursor:pointer;">
+    <input type="checkbox" id="withAnimations" />
+    <span style="font-size:12px; color:#ccc;">With animations (agent picks 5-8 fitting template animations per character based on world context — e.g. drinking for healing potion, fireball for attack)</span>
+  </label>
+
   <button id="createBtn">Create World</button>
+  <div style="margin-top:8px; font-size:11px; text-align:center;">
+    <a href="worlds-cms.html" style="color:#888;">→ View Worlds CMS</a>
+  </div>
 
   <div class="log" id="log" style="display:none"></div>
 </div>
@@ -89,6 +118,13 @@ document.querySelectorAll('input[name="buildings"]').forEach(r => {
   r.onchange = () => {
     const show = document.querySelector('input[name="buildings"]:checked').value === 'custom';
     document.getElementById('customBuildingsPanel').style.display = show ? 'block' : 'none';
+  };
+});
+// Show/hide custom characters panel
+document.querySelectorAll('input[name="characters"]').forEach(r => {
+  r.onchange = () => {
+    const show = document.querySelector('input[name="characters"]:checked').value === 'custom';
+    document.getElementById('customCharactersPanel').style.display = show ? 'block' : 'none';
   };
 });
 
@@ -113,12 +149,15 @@ document.getElementById('createBtn').onclick = async () => {
 
   const buildingsMode = document.querySelector('input[name="buildings"]:checked').value;
   const buildingsContext = document.getElementById('buildingsContext').value.trim();
+  const charactersMode = document.querySelector('input[name="characters"]:checked').value;
+  const charactersContext = document.getElementById('charactersContext').value.trim();
+  const withAnimations = document.getElementById('withAnimations').checked;
 
   try {
     const resp = await fetch(AGENT_URL, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ prompt, buildingsMode, buildingsContext }),
+      body: JSON.stringify({ prompt, buildingsMode, buildingsContext, charactersMode, charactersContext, withAnimations }),
     });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
 
@@ -170,6 +209,31 @@ document.getElementById('createBtn').onclick = async () => {
           dir: result.buildings_dir,
           list: result.buildings,
         }));
+      }
+      // Save the characters set (if any)
+      if (result.characters_dir && result.characters && result.characters.length) {
+        localStorage.setItem('agent_characters_' + result.tileset_key, JSON.stringify({
+          dir: result.characters_dir,
+          list: result.characters,
+        }));
+      }
+      // Save animations metadata (if any)
+      if (result.animations_dir && result.animations && Object.keys(result.animations).length) {
+        localStorage.setItem('agent_animations_' + result.tileset_key, JSON.stringify({
+          dir: result.animations_dir,
+          map: result.animations,
+        }));
+      }
+      // Save the WORLD_CONTEXT — single source of truth for this world
+      if (result.context) {
+        localStorage.setItem('agent_context_' + result.tileset_key, JSON.stringify(result.context));
+      }
+      // Save _original WANG_MAPs for undo support
+      for (let i = 0; i < result.tileset_keys.length; i++) {
+        const origKey = 'wang_map_' + CACHE_VER + result.tileset_keys[i] + '_original';
+        if (!localStorage.getItem(origKey)) {
+          localStorage.setItem(origKey, JSON.stringify(result.wang_maps[i]));
+        }
       }
       // Open map generator with all 3 tileset keys
       setTimeout(() => {

@@ -487,6 +487,10 @@ let state = {
   isPainting: false,
   panStart: null,
   scrollStart: null,
+  // Character
+  player: null, // { x, y (fractional tile coords of feet), dir, name, img, moving, targetX, targetY }
+  playerMoveSpeed: 6, // tiles per second
+  lastFrameTime: 0,
 };
 
 const canvas = document.getElementById('mapCanvas');
@@ -612,6 +616,22 @@ async function discoverAssets() {
       } catch(e) { console.warn('bad agent_buildings entry', e); }
     }
 
+    // Check for agent-generated characters
+    const cInfoRaw = localStorage.getItem('agent_characters_' + key);
+    let charactersList = null, charactersDir = null, characterImgs = null;
+    if (cInfoRaw) {
+      try {
+        const cInfo = JSON.parse(cInfoRaw);
+        charactersDir = cInfo.dir;
+        charactersList = cInfo.list;
+        characterImgs = {};
+        for (const name of cInfo.list) {
+          const cImg = await loadImage(`${BASE_PATH}/${charactersDir}/${name}.png`);
+          if (cImg) characterImgs[name] = cImg;
+        }
+      } catch(e) { console.warn('bad agent_characters entry', e); }
+    }
+
     // Load chain info (3-tier tilesets) if available
     const chainRaw = localStorage.getItem('agent_chain_' + key);
     let chainKeys = [key, key, key]; // default: use primary for all 3
@@ -635,7 +655,7 @@ async function discoverAssets() {
       chainMaps.push(cached ? JSON.parse(cached) : null);
     }
 
-    // Create per-tileset world entry so each agent tileset has its own buildings
+    // Create per-tileset world entry so each agent tileset has its own buildings + characters
     const worldKey = 'agent-' + key;
     WORLDS[worldKey] = {
       name: '🤖 ' + key.replace('agent-', '').slice(0, 20),
@@ -643,15 +663,68 @@ async function discoverAssets() {
       wangMaps: {},
       buildings: buildingsList || WORLDS['shadow-keep'].buildings,
       buildingImgs: customBuildingImgs || WORLDS['shadow-keep'].buildingImgs,
+      characters: charactersList || [],
+      characterImgs: characterImgs || {},
       roadTileset: WORLDS['shadow-keep'].roadTileset,
-      // 3-tier chain
-      chainImgs,    // [tileset1_img, tileset2_img, tileset3_img]
-      chainMaps,    // [wang_map1, wang_map2, wang_map3]
+      chainImgs,
+      chainMaps,
       chainKeys,
     };
     const wm = getWangMapForTileset(img, key);
     if (wm) WORLDS[worldKey].wangMaps[key] = wm;
   }
+}
+
+// ============================================================
+// CHARACTER CONTOUR DETECTION
+// ============================================================
+// Analyze a sprite image and compute the "base hitbox" — the bottom bounding
+// rectangle of non-transparent pixels in the bottom 40% of the sprite.
+// This is used for collision. Cached by image src.
+const _contourCache = new Map();
+function computeBaseHitbox(img) {
+  if (_contourCache.has(img.src)) return _contourCache.get(img.src);
+  const cv = document.createElement('canvas');
+  cv.width = img.width; cv.height = img.height;
+  const c = cv.getContext('2d');
+  try {
+    c.drawImage(img, 0, 0);
+    const data = c.getImageData(0, 0, img.width, img.height).data;
+    const baseTop = Math.floor(img.height * 0.55); // look at bottom 45%
+    let minX = img.width, maxX = 0, maxY = 0, found = false;
+    for (let y = baseTop; y < img.height; y++) {
+      for (let x = 0; x < img.width; x++) {
+        if (data[(y * img.width + x) * 4 + 3] > 40) {
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y > maxY) maxY = y;
+          found = true;
+        }
+      }
+    }
+    const hb = found
+      ? { x: minX / img.width, y: baseTop / img.height, w: (maxX - minX + 1) / img.width, h: (maxY - baseTop + 1) / img.height }
+      : { x: 0.1, y: 0.6, w: 0.8, h: 0.4 };
+    _contourCache.set(img.src, hb);
+    return hb;
+  } catch(e) {
+    // Canvas tainted or other error — fall back to a sensible default
+    const hb = { x: 0.1, y: 0.6, w: 0.8, h: 0.4 };
+    _contourCache.set(img.src, hb);
+    return hb;
+  }
+}
+
+// Extract one frame from a 4-direction sprite sheet.
+// PixelLab returns a horizontal strip: [south, west, east, north] (4 cols).
+// Returns { sx, sy, sw, sh } for drawing that direction's frame.
+const DIR_ORDER = ['south', 'west', 'east', 'north'];
+function characterFrame(img, dir) {
+  const idx = Math.max(0, DIR_ORDER.indexOf(dir));
+  // Assume 4 horizontal frames of equal width
+  const frames = 4;
+  const sw = Math.floor(img.width / frames);
+  return { sx: idx * sw, sy: 0, sw, sh: img.height };
 }
 
 // ============================================================
@@ -1002,7 +1075,18 @@ function generateMap() {
     enforceLevelConstraint(terrainGrid, cW, cH);
   }
 
+  // Keep center clear for player spawn: remove any slot overlapping the center
+  const ccx = Math.floor(mapW / 2), ccy = Math.floor(mapH / 2);
+  state.buildingSlots = state.buildingSlots.filter(s =>
+    !(s.x - 1 <= ccx && s.x + s.w + 1 > ccx && s.y - 1 <= ccy && s.y + s.h + 1 > ccy)
+  );
+  // Flatten center area to level 1
+  for (let y = ccy - 1; y <= ccy + 1; y++)
+    for (let x = ccx - 1; x <= ccx + 1; x++)
+      if (y >= 0 && y < cH && x >= 0 && x < cW) terrainGrid[y][x] = 1;
+
   fitToWindow();
+  spawnPlayer();
 }
 
 function generateRandomBuildings() {
@@ -1017,6 +1101,13 @@ function generateRandomBuildings() {
   for (let i = 0; i < emptySlots.length; i++) {
     emptySlots[i].building = shuffled[i % shuffled.length];
   }
+  // Ensure no building occupies the center spawn area
+  const cx = Math.floor(state.mapW / 2), cy = Math.floor(state.mapH / 2);
+  state.buildingSlots = state.buildingSlots.filter(s =>
+    !(s.x <= cx && s.x + s.w > cx && s.y <= cy && s.y + s.h > cy)
+  );
+  // Re-spawn player if blocked
+  if (!state.player || isBlocked(state.player.x, state.player.y)) spawnPlayer();
   render();
 }
 
@@ -1174,38 +1265,77 @@ function render() {
     }
   }
 
-  // Draw building slots
+  // Build Y-sorted render list: buildings + character
+  // Each entry has a "footY" (in pixels) — the visual ground line where the
+  // sprite "stands". Lower footY = drawn first (further away). Higher footY = drawn last.
+  const world = WORLDS[state.currentWorld];
+  const bScale = (+document.getElementById('buildingScale').value || 100) / 100;
+  const sortList = [];
+
   for (const slot of state.buildingSlots) {
     const sx = slot.x * ts * z, sy = slot.y * ts * z;
     const sw = slot.w * ts * z, sh = slot.h * ts * z;
-
-    if (slot.building) {
-      // Draw building image — bottom-aligned, horizontally centered, scaled
-      const world = WORLDS[state.currentWorld];
-      const bImg = world.buildingImgs?.[slot.building];
-      if (bImg) {
-        const scale = (+document.getElementById('buildingScale').value || 100) / 100;
-        const bw = sw * scale;
-        const bh = sh * scale;
-        const bx = sx + (sw - bw) / 2; // centered horizontally
-        const by = sy + sh - bh;        // bottom-aligned
-        ctx.drawImage(bImg, bx, by, bw, bh);
-      }
+    const bImg = slot.building ? world.buildingImgs?.[slot.building] : null;
+    const bw = sw * bScale, bh = sh * bScale;
+    const bx = sx + (sw - bw) / 2;
+    const by = sy + sh - bh;
+    // footY = bottom of the building hitbox (use contour if available)
+    let footY = sy + sh; // default: bottom of slot
+    if (bImg) {
+      const hb = computeBaseHitbox(bImg);
+      footY = by + hb.y * bh + hb.h * bh;
     }
+    sortList.push({ type: 'slot', slot, sx, sy, sw, sh, bImg, bx, by, bw, bh, footY });
+  }
 
-    // Draw slot border
-    ctx.strokeStyle = slot.building ? '#00ff8866' : '#ffffff44';
-    ctx.lineWidth = 2;
-    ctx.setLineDash(slot.building ? [] : [4, 4]);
-    ctx.strokeRect(sx + 1, sy + 1, sw - 2, sh - 2);
-    ctx.setLineDash([]);
+  if (state.player) {
+    const p = state.player;
+    const px = p.x * ts * z;
+    const py = p.y * ts * z;
+    const img = p.img;
+    let pw = ts * z, ph = ts * z;
+    if (img) {
+      const frame = characterFrame(img, p.dir);
+      pw = frame.sw * z * (ts / Math.max(frame.sw, 1)) * 0.9;
+      ph = frame.sh * z * (ts / Math.max(frame.sw, 1)) * 0.9;
+    }
+    // feet Y = player's y (which is where feet sit) in pixels
+    const footY = py + ph * 0.95;
+    sortList.push({ type: 'player', px, py, pw, ph, img, dir: p.dir, footY });
+  }
 
-    // Label
-    if (!slot.building) {
-      ctx.fillStyle = '#ffffff88';
-      ctx.font = `${10 * z}px sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.fillText('Drop Building', sx + sw / 2, sy + sh / 2 + 4 * z);
+  // Sort by footY ascending so lower footY draws first
+  sortList.sort((a, b) => a.footY - b.footY);
+
+  for (const e of sortList) {
+    if (e.type === 'slot') {
+      const { slot, sx, sy, sw, sh, bImg, bx, by, bw, bh } = e;
+      if (bImg) ctx.drawImage(bImg, bx, by, bw, bh);
+      // Draw slot border
+      ctx.strokeStyle = slot.building ? '#00ff8866' : '#ffffff44';
+      ctx.lineWidth = 2;
+      ctx.setLineDash(slot.building ? [] : [4, 4]);
+      ctx.strokeRect(sx + 1, sy + 1, sw - 2, sh - 2);
+      ctx.setLineDash([]);
+      if (!slot.building) {
+        ctx.fillStyle = '#ffffff88';
+        ctx.font = `${10 * z}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText('Drop Building', sx + sw / 2, sy + sh / 2 + 4 * z);
+      }
+    } else if (e.type === 'player') {
+      const { px, py, pw, ph, img, dir } = e;
+      // Render centered-horizontally on (px, py); feet at py + ph
+      const drawX = px - pw / 2;
+      const drawY = py - ph;
+      if (img) {
+        const fr = characterFrame(img, dir);
+        ctx.drawImage(img, fr.sx, fr.sy, fr.sw, fr.sh, drawX, drawY, pw, ph);
+      } else {
+        // Fallback: colored rectangle
+        ctx.fillStyle = '#00ff88';
+        ctx.fillRect(drawX, drawY, pw, ph);
+      }
     }
   }
 
@@ -1221,6 +1351,136 @@ function render() {
     }
   }
 }
+
+// ============================================================
+// CHARACTER / PLAYER SYSTEM
+// ============================================================
+function getBuildingHitboxTileRect(slot, bImg) {
+  // Returns the bounding rectangle (in tile coords) where the character CAN'T walk.
+  if (!bImg) return null;
+  const hb = computeBaseHitbox(bImg); // normalized 0-1 relative to image
+  const bScale = (+document.getElementById('buildingScale').value || 100) / 100;
+  const slotPixelW = slot.w;   // in tiles
+  const slotPixelH = slot.h;
+  // The building image is drawn at (sx, sy+sh-bh) with bw=sw*scale, bh=sh*scale
+  // So in tile coords:
+  const bw = slotPixelW * bScale;
+  const bh = slotPixelH * bScale;
+  const bx = slot.x + (slotPixelW - bw) / 2;
+  const by = slot.y + slotPixelH - bh;
+  return {
+    x: bx + hb.x * bw,
+    y: by + hb.y * bh,
+    w: hb.w * bw,
+    h: hb.h * bh,
+  };
+}
+
+function isBlocked(tx, ty) {
+  // tx, ty are fractional tile coords of the character's feet point
+  const { mapW, mapH, terrainGrid } = state;
+  if (tx < 0 || ty < 0 || tx >= mapW || ty >= mapH) return true;
+  // Terrain level — character can walk on level 0 & 1, but NOT on level 2+
+  const ix = Math.floor(tx), iy = Math.floor(ty);
+  const maxLevel = Math.max(
+    terrainGrid[iy]?.[ix] || 0,
+    terrainGrid[iy]?.[ix+1] || 0,
+    terrainGrid[iy+1]?.[ix] || 0,
+    terrainGrid[iy+1]?.[ix+1] || 0,
+  );
+  if (maxLevel >= 2) return true;
+  // Building hitboxes
+  const world = WORLDS[state.currentWorld];
+  for (const slot of state.buildingSlots) {
+    if (!slot.building) continue;
+    const bImg = world.buildingImgs?.[slot.building];
+    const hb = getBuildingHitboxTileRect(slot, bImg);
+    if (!hb) continue;
+    if (tx >= hb.x && tx <= hb.x + hb.w && ty >= hb.y && ty <= hb.y + hb.h) return true;
+  }
+  return false;
+}
+
+function spawnPlayer() {
+  const world = WORLDS[state.currentWorld];
+  const chars = world?.characters || [];
+  const charImgs = world?.characterImgs || {};
+  if (chars.length === 0 || Object.keys(charImgs).length === 0) {
+    state.player = null;
+    return;
+  }
+  const name = chars.find(n => charImgs[n]) || chars[0];
+  const img = charImgs[name];
+  // Find a safe spawn: center, then spiral out if blocked
+  const cx = Math.floor(state.mapW / 2);
+  const cy = Math.floor(state.mapH / 2);
+  for (let r = 0; r < 20; r++) {
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        const tx = cx + dx + 0.5, ty = cy + dy + 0.5;
+        if (!isBlocked(tx, ty)) {
+          state.player = { x: tx, y: ty, dir: 'south', name, img, moving: false, targetX: tx, targetY: ty };
+          return;
+        }
+      }
+    }
+  }
+}
+
+let _keysDown = {};
+window.addEventListener('keydown', e => {
+  if (!state.player) return;
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d','W','A','S','D'].includes(e.key)) {
+    _keysDown[e.key.toLowerCase()] = true;
+    e.preventDefault();
+  }
+});
+window.addEventListener('keyup', e => {
+  _keysDown[e.key.toLowerCase()] = false;
+});
+
+function playerStep(dt) {
+  if (!state.player) return false;
+  const p = state.player;
+  let moved = false;
+  if (p.moving) {
+    // Continue moving toward targetX, targetY
+    const dx = p.targetX - p.x, dy = p.targetY - p.y;
+    const d = Math.sqrt(dx * dx + dy * dy);
+    const step = state.playerMoveSpeed * dt;
+    if (d < step) {
+      p.x = p.targetX; p.y = p.targetY; p.moving = false;
+    } else {
+      p.x += (dx / d) * step; p.y += (dy / d) * step;
+    }
+    moved = true;
+  }
+  if (!p.moving) {
+    // Check for new input
+    let nx = p.targetX, ny = p.targetY, ndir = p.dir;
+    if (_keysDown['arrowup'] || _keysDown['w']) { ny -= 1; ndir = 'north'; }
+    else if (_keysDown['arrowdown'] || _keysDown['s']) { ny += 1; ndir = 'south'; }
+    else if (_keysDown['arrowleft'] || _keysDown['a']) { nx -= 1; ndir = 'west'; }
+    else if (_keysDown['arrowright'] || _keysDown['d']) { nx += 1; ndir = 'east'; }
+    if (nx !== p.targetX || ny !== p.targetY) {
+      p.dir = ndir;
+      if (!isBlocked(nx, ny)) {
+        p.targetX = nx; p.targetY = ny; p.moving = true;
+        moved = true;
+      }
+    }
+  }
+  return moved;
+}
+
+function animLoop(t) {
+  const dt = Math.min(0.1, (t - state.lastFrameTime) / 1000);
+  state.lastFrameTime = t;
+  const moved = playerStep(dt);
+  if (moved) render();
+  requestAnimationFrame(animLoop);
+}
+requestAnimationFrame(t => { state.lastFrameTime = t; requestAnimationFrame(animLoop); });
 
 function isRoad(x, y) {
   const { terrainGrid, mapW, mapH } = state;

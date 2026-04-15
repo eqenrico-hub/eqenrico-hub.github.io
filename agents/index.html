@@ -7,6 +7,17 @@ title: Agents
 
 <p class="intro">Autonomous tools that orchestrate multi-step workflows — calling APIs, analyzing results, retrying on failure, and delivering finished outputs.</p>
 
+<div style="background:#1a1a1a; border:1px solid #333; border-radius:8px; padding:14px 18px; margin:1rem 0 2rem;">
+  <h3 style="margin:0 0 10px; color:#c9a86b; font-size:13px; letter-spacing:1px;">VST GUI DESIGN — AGENT FLOW</h3>
+  <p style="color:#aaa; font-size:12px; line-height:1.6; margin:0;">
+    1. <a href="moodboard-generator/" style="color:#00d4ff;">Moodboard</a> (optional — extract style DNA)
+    → 2. <a href="vst-gui-pipeline/" style="color:#00d4ff;">VST GUI Pipeline</a> (ChatGPT generates redesigned GUI PNG)
+    → 3. <a href="image-to-blender/" style="color:#00d4ff;">Image-to-Blender</a> (OpenCV detection → JSON)
+    → 4. <a href="blender-redesign/" style="color:#00d4ff;">Blender Redesign</a> (coord-table → 3D geometry)
+    → 5. <a href="gui-frame-tool/" style="color:#00d4ff;">GUI Frame Tool</a> (manual fine-tuning)
+  </p>
+</div>
+
 <style>
   .agent-grid { display: grid; gap: 1.5rem; margin-top: 2rem; }
   .agent-card {
@@ -34,6 +45,27 @@ title: Agents
 </style>
 
 <div class="agent-grid">
+
+  <div class="agent-card">
+    <h2>🔍 Image-to-Blender Detection</h2>
+    <p class="desc">
+      CV-based element detection from a GUI PNG. Auto-finds knobs
+      (multiple radius bands), rectangular controls (sliders, buttons,
+      piano keys), and keyboard strips via Hough circles + Canny contours.
+      Exports a JSON spec, Blender script rebuilds each element as a
+      separate mesh precisely aligned with the chassis PNG underneath.
+      Solves the coordinate-accuracy problem deterministically.
+    </p>
+    <div class="stack">
+      <span class="tag">Python</span>
+      <span class="tag">OpenCV</span>
+      <span class="tag">Blender bpy</span>
+      <span class="tag">Hough circles</span>
+    </div>
+    <div class="links">
+      <a href="image-to-blender/">Details &amp; scripts →</a>
+    </div>
+  </div>
 
   <div class="agent-card">
     <h2>🎛️ VST GUI Design Pipeline</h2>

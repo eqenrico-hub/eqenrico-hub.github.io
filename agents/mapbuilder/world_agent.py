@@ -10,9 +10,7 @@ from PIL import Image
 import requests
 
 PIXELLAB_URL = "https://api.pixellab.ai/mcp"
-PIXELLAB_TOKEN = os.environ.get("PIXELLAB_TOKEN", "")  # export PIXELLAB_TOKEN=... before running
-if not PIXELLAB_TOKEN:
-    print("WARNING: PIXELLAB_TOKEN env var not set. PixelLab calls will fail.", file=__import__('sys').stderr)
+PIXELLAB_TOKEN = os.environ.get("PIXELLAB_TOKEN", "")
 TEMPLATES_DIR = os.environ.get("TEMPLATES_DIR", os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates", "variants"))
 MAX_RETRIES = 2
 POLL_INTERVAL = 10
@@ -266,6 +264,168 @@ def create_building(description, size=128):
         return m.group(0)
     raise RuntimeError(f"No object_id in response: {text[:300]}")
 
+# --------------------------------------------------------------------
+# Character generation via create_character
+# --------------------------------------------------------------------
+STANDARD_CHARACTERS = [
+    ("warrior", "medieval warrior with sword and shield"),
+    ("mage", "robed mage with staff and pointed hat"),
+    ("archer", "ranger with bow and quiver, green cloak"),
+    ("rogue", "hooded rogue with daggers, dark leather"),
+    ("merchant", "traveling merchant with bag and coin purse"),
+    ("guard", "city guard with spear and metal helmet"),
+    ("cleric", "cleric with holy symbol and white robes"),
+    ("blacksmith", "muscular blacksmith with hammer and apron"),
+    ("noble", "elegant noble in fine clothing"),
+    ("peasant", "simple peasant in brown clothes"),
+]
+
+def derive_character_prompts(world_prompt, context, explicit_list):
+    """Decide what 10 characters to generate, similar to derive_building_prompts."""
+    if explicit_list:
+        items = [x.strip() for x in explicit_list.split(",") if x.strip()]
+        if len(items) >= 3:
+            return [(f"c{i}_" + items[i][:16].replace(" ", "_"), items[i]) for i in range(min(10, len(items)))]
+    flavor = context if context else world_prompt
+    result = []
+    for name, desc in STANDARD_CHARACTERS:
+        flavored = f"{desc}, {flavor} style" if flavor else desc
+        result.append((name, flavored))
+    return result
+
+def create_character(description, name=None, n_directions=4):
+    """Queue a character creation job. Returns character_id."""
+    import re
+    args = {
+        "description": description,
+        "n_directions": n_directions,
+        "mode": "standard",
+        "body_type": "humanoid",
+    }
+    if name:
+        args["name"] = name
+    resp = mcp_call("tools/call", {"name": "create_character", "arguments": args}, req_id=20)
+    content = resp.get("result", {}).get("content", [])
+    text = "".join(c.get("text", "") for c in content if c.get("type") == "text")
+    m = re.search(r"Character ID:\**\s*`?([0-9a-f-]{36})`?", text)
+    if m: return m.group(1)
+    m = re.search(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", text)
+    if m: return m.group(0)
+    raise RuntimeError(f"No character_id in response: {text[:300]}")
+
+# --------------------------------------------------------------------
+# Animation picker — uses the full WORLD_CONTEXT to choose fitting animations
+# --------------------------------------------------------------------
+# Template animations available (humanoid, cheap — 1 gen/direction):
+TEMPLATE_ANIMATIONS_HUMANOID = [
+    "walking", "running-4-frames", "breathing-idle", "fight-stance-idle-8-frames",
+    "cross-punch", "lead-jab", "high-kick", "roundhouse-kick", "flying-kick",
+    "fireball", "drinking", "picking-up", "pushing", "throw-object",
+    "jumping-1", "two-footed-jump", "running-jump", "running-slide",
+    "crouching", "crouched-walking", "sad-walk", "scary-walk",
+    "taking-punch", "falling-back-death", "getting-up", "backflip",
+    "surprise-uppercut", "pull-heavy-object", "leg-sweep",
+]
+
+# Mapping of common user intents to template animations
+INTENT_TO_TEMPLATE = {
+    "walk": "walking", "run": "running-4-frames", "idle": "breathing-idle",
+    "attack": "cross-punch", "punch": "cross-punch", "jab": "lead-jab",
+    "kick": "high-kick", "roundhouse": "roundhouse-kick",
+    "fireball": "fireball", "spell": "fireball", "cast": "fireball", "magic": "fireball",
+    "heal": "drinking", "potion": "drinking", "drink": "drinking", "healing potion": "drinking", "mana potion": "drinking",
+    "shield": "fight-stance-idle-8-frames", "defend": "fight-stance-idle-8-frames", "block": "taking-punch",
+    "pick": "picking-up", "grab": "picking-up",
+    "push": "pushing", "pull": "pull-heavy-object", "throw": "throw-object",
+    "jump": "jumping-1", "leap": "two-footed-jump",
+    "crouch": "crouching", "sneak": "crouched-walking",
+    "die": "falling-back-death", "death": "falling-back-death",
+    "dance": "backflip",  # rough
+    "flip": "backflip",
+}
+
+def pick_animations_for_character(world_context, character_name, character_desc, count=6):
+    """Given WORLD_CONTEXT + this character, return a list of (animation_id, action_label).
+    The action_label is a short English phrase that represents what the animation will do in-game
+    (e.g. 'healing potion', 'nature spell'). This is purely for UX labels — the actual animation
+    is a template pick.
+    Strategy: pick base movement (walk, run, idle) + context-derived combat/magic + context-derived utility.
+    """
+    # Always include baseline
+    picks = [
+        ("walking", "walk"),
+        ("running-4-frames", "run"),
+        ("breathing-idle", "idle"),
+    ]
+    theme = world_context.get("prompt", "").lower()
+    char = (character_name + " " + character_desc).lower()
+    combined = theme + " " + char
+
+    # Context-driven combat/magic
+    if any(w in combined for w in ["mage", "wizard", "druid", "cleric", "sorcerer", "witch", "shaman"]):
+        picks.append(("fireball", "nature spell" if "druid" in char else "cast spell"))
+        picks.append(("drinking", "mana potion"))
+    elif any(w in combined for w in ["warrior", "fighter", "knight", "guard", "soldier"]):
+        picks.append(("cross-punch", "attack"))
+        picks.append(("fight-stance-idle-8-frames", "defend"))
+        picks.append(("drinking", "healing potion"))
+    elif any(w in combined for w in ["archer", "ranger", "rogue", "assassin"]):
+        picks.append(("throw-object", "throw dagger"))
+        picks.append(("crouched-walking", "sneak"))
+        picks.append(("drinking", "healing potion"))
+    elif any(w in combined for w in ["merchant", "noble", "peasant", "cleric"]):
+        picks.append(("picking-up", "gather item"))
+        picks.append(("drinking", "potion"))
+    else:
+        # Generic
+        picks.append(("cross-punch", "attack"))
+        picks.append(("drinking", "potion"))
+
+    # Add a jump if theme suggests adventure / mountains
+    if any(w in combined for w in ["mountain", "peak", "cliff", "rocky", "ruins", "cave"]):
+        picks.append(("two-footed-jump", "jump"))
+
+    # Deduplicate and trim
+    seen = set(); out = []
+    for aid, label in picks:
+        if aid in seen: continue
+        seen.add(aid); out.append((aid, label))
+        if len(out) >= count: break
+    return out
+
+def create_animation(character_id, template_id):
+    """Queue a template animation job. Returns animation_id."""
+    import re
+    args = {"character_id": character_id, "template_animation_id": template_id}
+    resp = mcp_call("tools/call", {"name": "animate_character", "arguments": args}, req_id=30)
+    content = resp.get("result", {}).get("content", [])
+    text = "".join(c.get("text", "") for c in content if c.get("type") == "text")
+    m = re.search(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", text)
+    if m: return m.group(0)
+    raise RuntimeError(f"No animation_id in response: {text[:300]}")
+
+def poll_character(char_id, on_progress=None):
+    """Poll for a character until completed. Returns PNG bytes (sprite sheet)."""
+    import re, base64
+    start = time.time()
+    while time.time() - start < POLL_TIMEOUT:
+        resp = mcp_call("tools/call", {"name": "get_character", "arguments": {"character_id": char_id}}, req_id=21)
+        content = resp.get("result", {}).get("content", [])
+        text = ""
+        image_b64 = None
+        for c in content:
+            if c.get("type") == "text": text += c.get("text", "")
+            elif c.get("type") == "image" and c.get("data"): image_b64 = c["data"]
+        if image_b64:
+            return base64.b64decode(image_b64)
+        if "being generated" in text.lower() or "processing" in text.lower() or "queued" in text.lower():
+            pct_m = re.search(r"(\d+)%", text)
+            if on_progress: on_progress(f"Character {char_id[:8]}: {pct_m.group(1) if pct_m else '?'}%")
+            time.sleep(10)
+            continue
+        time.sleep(10)
+    raise RuntimeError(f"Character {char_id} did not complete")
+
 def poll_building(object_id, on_progress=None):
     """Poll for a map object until completed. Returns PNG bytes."""
     import re, base64
@@ -421,7 +581,48 @@ class AgentHandler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(200); self._set_cors(); self.end_headers()
 
+    def _bootstrap_standard(self):
+        """Generate the 10 standard characters once and save to standard-characters/."""
+        self.send_response(200)
+        self.send_header("Content-Type", "application/x-ndjson")
+        self._set_cors(); self.end_headers()
+        def log(msg, **extra):
+            line = {"msg": msg, **extra}
+            self.wfile.write((json.dumps(line) + "\n").encode()); self.wfile.flush()
+        std_dir = os.path.join(TEMPLATES_DIR, "..", "standard-characters")
+        os.makedirs(std_dir, exist_ok=True)
+        log(f"Bootstrapping standard characters to {std_dir}")
+        try:
+            generated = []
+            skipped = []
+            ids = []
+            for name, desc in STANDARD_CHARACTERS:
+                path = os.path.join(std_dir, f"{name}.png")
+                if os.path.isfile(path):
+                    skipped.append(name); log(f"  skip {name} (exists)"); continue
+                try:
+                    cid = create_character(desc, name=name, n_directions=4)
+                    ids.append((name, cid))
+                    log(f"  queued {name} → {cid[:8]}")
+                except Exception as e:
+                    log(f"  FAILED to queue {name}: {e}")
+            for name, cid in ids:
+                try:
+                    png = poll_character(cid, on_progress=lambda m: log(m))
+                    path = os.path.join(std_dir, f"{name}.png")
+                    with open(path, "wb") as f: f.write(png)
+                    generated.append(name)
+                    log(f"  ✓ {name} saved")
+                except Exception as e:
+                    log(f"  ✗ {name} failed: {e}")
+            log("Done!", generated=generated, skipped=skipped)
+        except Exception as e:
+            import traceback
+            log(f"ERROR: {e}", traceback=traceback.format_exc())
+
     def do_POST(self):
+        if self.path == "/bootstrap-standard-characters":
+            self._bootstrap_standard(); return
         if self.path != "/create-world":
             self.send_response(404); self._set_cors(); self.end_headers(); return
         length = int(self.headers.get("Content-Length", 0))
@@ -429,6 +630,9 @@ class AgentHandler(BaseHTTPRequestHandler):
         prompt = body.get("prompt", "").strip()
         buildings_mode = body.get("buildingsMode", "standard")  # standard / custom / none
         buildings_context = body.get("buildingsContext", "").strip()
+        characters_mode = body.get("charactersMode", "none")  # standard / custom / none
+        characters_context = body.get("charactersContext", "").strip()
+        with_animations = bool(body.get("withAnimations", False))
         if not prompt:
             self.send_response(400); self._set_cors(); self.end_headers()
             self.wfile.write(b'{"error":"prompt required"}'); return
@@ -523,13 +727,105 @@ class AgentHandler(BaseHTTPRequestHandler):
                     except Exception as e:
                         log(f"  ✗ {name} failed: {e}")
 
+            # Central WORLD_CONTEXT — single source of truth passed to any
+            # autonomous decision (animation picker, future sub-systems).
+            WORLD_CONTEXT = {
+                "prompt": prompt,
+                "tiers": [tier0, tier1, tier2, tier3],
+                "buildings_mode": buildings_mode,
+                "buildings_context": buildings_context,
+                "characters_mode": characters_mode,
+                "characters_context": characters_context,
+                "with_animations": with_animations,
+            }
+
+            # Characters generation (optional)
+            characters_out = {}
+            characters_dir = None
+            character_ids_map = {}  # name -> character_id (needed for animations)
+            if characters_mode != "none":
+                log(f"--- Characters phase (mode: {characters_mode}) ---")
+                characters_dir = os.path.join(TEMPLATES_DIR, "..", f"agent-characters-{primary_key}")
+                os.makedirs(characters_dir, exist_ok=True)
+                std_dir = os.path.join(TEMPLATES_DIR, "..", "standard-characters")
+                if characters_mode == "standard" and os.path.isdir(std_dir):
+                    import shutil
+                    for name, _desc in STANDARD_CHARACTERS:
+                        src = os.path.join(std_dir, f"{name}.png")
+                        if os.path.isfile(src):
+                            dst = os.path.join(characters_dir, f"{name}.png")
+                            shutil.copy(src, dst)
+                            characters_out[name] = dst
+                            log(f"  ✓ {name} (from standard library)")
+                    # Note: standard-library characters can't be re-animated (no character_id)
+                    if with_animations:
+                        log(f"  NOTE: animations not available for standard characters. Use 'Generate custom' to animate.")
+                else:
+                    # custom (or standard-without-library — degrade to custom)
+                    char_plan = derive_character_prompts(prompt, characters_context, characters_context if "," in characters_context else "")
+                    log(f"Generating {len(char_plan)} characters via PixelLab. This takes several minutes...")
+                    char_ids = []
+                    for name, desc in char_plan:
+                        try:
+                            cid = create_character(desc, name=name, n_directions=4)
+                            char_ids.append((name, desc, cid))
+                            log(f"  queued {name}: '{desc[:60]}' → {cid[:8]}")
+                        except Exception as e:
+                            log(f"  FAILED to queue {name}: {e}")
+                    char_descs = {name: desc for name, desc, _ in char_ids}
+                    for name, desc, cid in char_ids:
+                        try:
+                            png = poll_character(cid, on_progress=lambda m: log(m))
+                            path = os.path.join(characters_dir, f"{name}.png")
+                            with open(path, "wb") as f: f.write(png)
+                            characters_out[name] = path
+                            character_ids_map[name] = cid
+                            log(f"  ✓ {name} complete")
+                        except Exception as e:
+                            log(f"  ✗ {name} failed: {e}")
+
+            # Animations (optional — requires custom characters with known character_ids)
+            animations_out = {}
+            animations_dir = None
+            if with_animations and character_ids_map:
+                log(f"--- Animations phase — picking template animations per character based on WORLD_CONTEXT ---")
+                animations_dir = os.path.join(TEMPLATES_DIR, "..", f"agent-animations-{primary_key}")
+                os.makedirs(animations_dir, exist_ok=True)
+                for cname, cid in character_ids_map.items():
+                    cdesc = char_descs.get(cname, cname)
+                    picks = pick_animations_for_character(WORLD_CONTEXT, cname, cdesc, count=6)
+                    log(f"  {cname}: {[p[1] for p in picks]}")
+                    anim_ids = []
+                    for tpl_id, label in picks:
+                        try:
+                            aid = create_animation(cid, tpl_id)
+                            anim_ids.append((label, tpl_id, aid))
+                            log(f"    queued '{label}' ({tpl_id}) → {aid[:8]}")
+                        except Exception as e:
+                            log(f"    ✗ '{label}' failed to queue: {e}")
+                    # Polls — animation sheets are attached to the character. We re-poll the character.
+                    # PixelLab returns character with all animations embedded after processing.
+                    try:
+                        png = poll_character(cid, on_progress=lambda m: log(m))
+                        full_path = os.path.join(animations_dir, f"{cname}_animated.png")
+                        with open(full_path, "wb") as f: f.write(png)
+                        animations_out[cname] = [lbl for lbl, _, _ in anim_ids]
+                        log(f"  ✓ {cname} animations saved")
+                    except Exception as e:
+                        log(f"  ✗ {cname} animations poll failed: {e}")
+
             log("Done!",
                 tileset_key=primary_key,
                 tileset_keys=tileset_keys,
                 wang_maps=wang_maps,
                 tiers=[tier0, tier1, tier2, tier3],
+                context=WORLD_CONTEXT,
                 buildings=list(buildings_out.keys()),
-                buildings_dir=os.path.basename(buildings_dir) if buildings_dir else None)
+                buildings_dir=os.path.basename(buildings_dir) if buildings_dir else None,
+                characters=list(characters_out.keys()),
+                characters_dir=os.path.basename(characters_dir) if characters_dir and characters_out else None,
+                animations=animations_out,
+                animations_dir=os.path.basename(animations_dir) if animations_dir else None)
         except Exception as e:
             import traceback
             log(f"ERROR: {e}", traceback=traceback.format_exc())
