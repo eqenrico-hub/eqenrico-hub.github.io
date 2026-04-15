@@ -1,0 +1,67 @@
+---
+layout: default
+title: VST GUI Design Pipeline
+---
+
+<h1>🎛️ VST GUI Design Pipeline</h1>
+<p><em>3-prompt ChatGPT workflow: style transfer → element redesign → decomposition</em></p>
+
+<h2>What it does</h2>
+<p>A structured workflow for redesigning a VST plugin GUI using ChatGPT (or Gemini). Three sequential prompts, all meant to run in the <strong>same conversation</strong> so the style DNA from the first prompt propagates to everything downstream.</p>
+
+<h2>The 3 prompts</h2>
+
+<h3>1️⃣ Full GUI generation</h3>
+<p><a href="01_full_gui_prompt.txt">01_full_gui_prompt.txt</a></p>
+<p>Input: (1) screenshot of your current plugin in a DAW (functional layout only — style is rough) + (2+) screenshots of VSTs whose aesthetic you want to borrow. Output: a full plugin window in the reference style with YOUR layout preserved.</p>
+
+<h3>2️⃣ Hero element redesign (novel geometry)</h3>
+<p><a href="02_element_redesign_prompt.txt">02_element_redesign_prompt.txt</a></p>
+<p>After step 1 succeeds, use this to get a SINGLE signature control radically reinvented in the same style. Explicitly forbids the "concentric rings" default and prompts ChatGPT with concrete creative directions (compass, stained-glass, planetary, ritual artifact, chord-wheel, etc.).</p>
+<p>Input: (1) full GUI from step 1 + (2) your rough concept diagram of the element (for parameter list only, NOT geometry).</p>
+
+<h3>3️⃣ Full decomposition</h3>
+<p><a href="03_decompose_prompt.txt">03_decompose_prompt.txt</a></p>
+<p>Input: full GUI from step 1. Output: reference sheet PNG with every interactive element isolated at consistent scale on a neutral background — used to rebuild each piece cleanly in Blender with separate meshes.</p>
+
+<h2>Workflow</h2>
+<pre><code>Open ChatGPT, new chat
+─────────────────────────
+Msg 1: upload Ableton screenshot + style refs → paste 01 prompt → receive full GUI
+Msg 2: upload full GUI + element concept      → paste 02 prompt → receive novel hero
+(repeat Msg 2 for other elements as needed)
+Msg 3: upload full GUI                        → paste 03 prompt → receive decomposition
+─────────────────────────
+Send full GUI + hero + decomposition to Claude for Blender rebuild</code></pre>
+
+<h2>Why this beats a single prompt</h2>
+<ul>
+  <li><strong>Split attention</strong>: ChatGPT hallucinates when asked to juggle "generate GUI + coord table + decomposition" in one turn.</li>
+  <li><strong>Style carries through the conversation</strong>: output 1 becomes style reference for output 2 and 3.</li>
+  <li><strong>Hero element gets its own dedicated prompt</strong> with anti-default instructions. Without this, ChatGPT always falls back to concentric rings — the opposite of "hero design."</li>
+  <li><strong>Decomposition preserves element boundaries</strong>: isolated elements at consistent scale → clean inputs for Blender separate-mesh rebuild.</li>
+</ul>
+
+<h2>When this is useful</h2>
+<ul>
+  <li>Any VST GUI redesign where you have a working layout but want a fresh aesthetic.</li>
+  <li>When Blender procedural shaders hit their quality ceiling and you want photoreal-mood reference.</li>
+  <li>As design-direction exploration before committing to a specific visual language.</li>
+</ul>
+
+<h2>Known failure modes + fixes</h2>
+<ul>
+  <li><strong>Gemini returns <code>IMAGE_FAILED</code></strong>: quota issue. Wait 30-60 min or switch to ChatGPT.</li>
+  <li><strong>Style transfer weak</strong>: upload 3-4 style refs instead of 1. Model averages the signal.</li>
+  <li><strong>Default concentric rings</strong>: use Prompt 02, it forbids them explicitly.</li>
+  <li><strong>Hallucinated controls</strong>: restate "use ONLY what's in IMAGE 1" at the top of the prompt.</li>
+</ul>
+
+<h2>Related agents</h2>
+<ul>
+  <li><a href="../moodboard-generator/">Moodboard Generator</a> — standalone style-DNA extraction (optional exploration step, skip in main pipeline)</li>
+  <li><a href="../blender-redesign/">Blender Redesign Agent</a> — section-scoped agent for Blender layout changes</li>
+  <li><a href="../gui-frame-tool/">GUI Frame Tool</a> — 2D shape editor with symmetry + snap-to-edges</li>
+</ul>
+
+<p><a href="../">← Back to Agents</a></p>

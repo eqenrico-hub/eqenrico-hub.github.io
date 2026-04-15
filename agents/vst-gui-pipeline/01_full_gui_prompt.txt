@@ -1,0 +1,35 @@
+STEP 1 OF 2 — GENERATE FULL VST DESIGN
+
+You are a senior VST plugin UI designer (Arturia / FabFilter / Baby Audio / Output / Teenage Engineering / Soundtoys caliber).
+
+I am attaching MULTIPLE IMAGES:
+
+- IMAGE 1: a screenshot of my plugin "Band Ritual" as it currently appears inside Ableton Live. This is the FUNCTIONAL LAYOUT I want to preserve — which controls exist, where they sit, what parameters they represent. The current visual styling is rough and should NOT be preserved — treat it as a functional blueprint only.
+
+- IMAGE 2 (and subsequent images): STYLE REFERENCE(S) — VSTs whose AESTHETIC I want to borrow. Use their palette, materials, lighting, typography, decorative language, surface treatment.
+  CRITICAL: Take ONLY the visual "skin" from these references. DO NOT copy their layout, components, knob shapes, or any specific controls from them. My design's MECHANICS come from IMAGE 1 — style comes from the references.
+
+TASK:
+
+Produce a single full-plugin-window mockup: Band Ritual redesigned from scratch, functional layout from IMAGE 1, aesthetic 100% from the style references.
+
+REQUIREMENTS — preserve ALL of these from IMAGE 1:
+- Every control visible in the screenshot (giga knob with nested rings + KEY center, MIX slider, band visualizer, main knob row of 7 auxiliary knobs, EQ/tone-sculpt bottom section with power button, complement button, small knobs, header bar with bypass + title + preset + save + close).
+- Spatial layout (same regions).
+- Parameter counts (12 keys + LIN/LOG, 15 scales, 7 degrees, 6 chord types, etc.).
+- The giga knob's multi-ring nested concept (center + concentric rotating rings).
+
+REQUIREMENTS — take ALL of these from the style references:
+- Every color, material, texture, lighting, typography, decorative element.
+- Knob/ring surface treatment, slider thumb look, chassis background.
+- Decorative flourishes (rivets, engraving, glyphs, patina, etc.) — if the references use them.
+
+STRICT CONSTRAINTS:
+- Do NOT invent any controls not shown in IMAGE 1.
+- Do NOT copy any layout/component/decoration from the style references — style only.
+- Do NOT revert to a "default plugin designer" aesthetic — stick tightly to the reference style.
+- Flat 2D top-down camera only (no 3D perspective).
+- All controls clearly interactive (knobs rotatable, sliders draggable, buttons clickable).
+- ~1800×1080 aspect ratio (standard plugin window).
+
+OUTPUT: one complete plugin window mockup PNG. No reasoning, no captions, no commentary. Just the image.

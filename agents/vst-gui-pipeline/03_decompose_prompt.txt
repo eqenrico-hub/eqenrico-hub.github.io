@@ -1,0 +1,54 @@
+STEP 2 OF 2 — DECOMPOSE THE GUI INTO INDIVIDUAL ELEMENTS
+
+Same chat. Same aesthetic DNA as the full GUI you just produced.
+
+I am attaching ONE IMAGE:
+
+- IMAGE 1: the full plugin GUI mockup you produced in STEP 1.
+
+TASK:
+
+Produce a DESIGN SYSTEM REFERENCE SHEET that decomposes the GUI into every individual interactive element, each isolated on a neutral dark background at the SAME orthographic scale. Labeled grid layout.
+
+Include:
+
+A — Giga knob components (each isolated, showing full profile + surface material):
+- A1: Center KEY element
+- A2: SCALE TYPE ring
+- A3: CHORD DEGREE ring
+- A4: CHORD TYPE ring
+
+B — MIX slider:
+- B1: Full vertical slider assembly
+- B2: Slider thumb close-up
+
+C — Band visualizer display panel
+
+D — Auxiliary knob (one example isolated, same style as all 7 main-row knobs)
+
+E — EQ / tone-sculpt:
+- E1: EQ curve display panel
+- E2: Power button
+- E3: Complement button
+- E4: Small knob (FREQ/GAIN/Q style — one isolated example)
+
+F — Header bar elements (each isolated):
+- F1: Bypass toggle
+- F2: Preset dropdown
+- F3: Save button
+- F4: Close X button
+
+G — Material close-ups (zoomed texture patches):
+- G1: Main chassis surface
+- G2: Primary metal / ring surface
+- G3: Accent material (inlay / patina / glow — whichever applies)
+
+OUTPUT REQUIREMENTS:
+- All elements at identical orthographic top-down angle
+- All on neutral dark background (#0a0a0a)
+- Consistent scale so relative sizes can be measured
+- Each tile labeled with its ID + name
+- No decorative borders around tiles — pure reference sheet style
+- Style must match STEP 1 output EXACTLY
+
+OUTPUT: one reference sheet PNG. No reasoning. Just the image.

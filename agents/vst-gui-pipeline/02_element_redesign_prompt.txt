@@ -1,0 +1,51 @@
+ELEMENT REDESIGN — HERO CONTROL, SAME STYLE AS FULL GUI, NOVEL GEOMETRY
+
+You are the same senior VST plugin designer who just produced the full Band Ritual window. Continue in the exact same aesthetic.
+
+This element you're about to redesign is the MAIN HERO CONTROL of the plugin — the signature feature users see first. It deserves genuine visual ambition, not a default "multi-ring knob" solution.
+
+I am attaching MULTIPLE IMAGES:
+
+- IMAGE 1: the FULL GUI you previously produced for Band Ritual. This defines the AUTHORITATIVE STYLE — every color, material, typography, decorative motif, lighting, surface treatment. Match tightly.
+
+- IMAGE 2: my rough concept diagram for this control. It shows one concentric-rings interpretation. **DO NOT reproduce this geometry.** IMAGE 2 is ONLY for the parameter list — not the shape, not the layout, not the interaction metaphor.
+
+PARAMETERS THIS CONTROL MUST EXPOSE (from IMAGE 2, in case it's hard to read):
+- KEY (12 musical keys C–B + 2 modes LIN / LOG = 14 values)
+- SCALE TYPE (15 scales: Major, Minor, Dorian, Phrygian, Lydian, Mixolydian, Locrian, Harmonic Minor, Melodic Minor, Major Pentatonic, Minor Pentatonic, Whole Tone, Diminished, Blues, Chromatic)
+- CHORD DEGREE (7 values: i, ii, iii, iv, v, vi, vii)
+- CHORD TYPE (6 values: Triad, 7th, sus2, sus4, Power, add9)
+
+TASK:
+
+Reinvent how these four parameters are presented into a SINGLE cohesive hero control. Think like a senior UX designer tackling a blank slate — ignore IMAGE 2's shape entirely and propose something genuinely original.
+
+EXPLICITLY FORBIDDEN:
+- Stacked concentric rings / kebab-wrap silhouette.
+- The "each parameter gets its own circular rotating ring around a common center" pattern.
+- Anything that resembles IMAGE 2's concentric-circles layout.
+- Generic "analog rotary knob with numbers around it" plugin default.
+
+CREATIVE DIRECTIONS TO CONSIDER (pick one or invent better):
+- A musical-compass / astrolabe with overlapping markers at different angular scales
+- A stained-glass rose window where each parameter is one segment of the mandala
+- A planetary model: central key-body orbited by smaller satellites each representing one parameter
+- A ritual artifact sculpted from one material, with physically distinct interaction zones carved into it
+- A spectral display where parameters visibly affect a waveform/curve/shape rendered in the control itself
+- A piano-key + chord-pad hybrid specific to music theory interaction
+- A chord-wheel like Schillinger or Circle of Fifths visualized natively
+- An interactive sheet-music-like staff where notes/chords light up
+
+CORE DESIGN PRINCIPLES:
+- All 4 parameters must be reachable and readable simultaneously.
+- Interaction must be OBVIOUS — user looks at the control and immediately understands "I rotate that, I tap those, I drag this."
+- Density without clutter: show current values + neighbor options, not the full list all the time if it clutters.
+- Hierarchy: indicate which parameter is currently being focused / last-touched.
+- Match IMAGE 1's exact palette, material, lighting, and decorative language. Element must look as if cut from that GUI.
+
+REQUIREMENTS:
+- Isolated on a neutral dark background (#0a0a0a)
+- Flat 2D top-down camera (no 3D perspective)
+- 1200×1200 or 1400×1400 square format
+
+OUTPUT: one isolated-element PNG of your novel hero control. No reasoning, no captions, no commentary. Just the image.
