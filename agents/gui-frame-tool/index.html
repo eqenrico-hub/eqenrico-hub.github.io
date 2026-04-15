@@ -246,9 +246,31 @@ svg.addEventListener('mousedown', (e) => {
   document.addEventListener('mouseup', onUp);
 });
 
+function detectCorners(pts, angleThresholdDeg = 30) {
+  // Returns array of [theta, r] for each corner detected in the raw path
+  // Corner = angle between incoming and outgoing segments > threshold
+  const corners = [];
+  for (let i = 1; i < pts.length - 1; i++) {
+    const pa = pts[i-1], pb = pts[i], pc = pts[i+1];
+    const v1 = [pb[0]-pa[0], pb[1]-pa[1]];
+    const v2 = [pc[0]-pb[0], pc[1]-pb[1]];
+    const a1 = Math.atan2(v1[1], v1[0]);
+    const a2 = Math.atan2(v2[1], v2[0]);
+    let diff = a2 - a1;
+    while (diff >  Math.PI) diff -= 2*Math.PI;
+    while (diff < -Math.PI) diff += 2*Math.PI;
+    if (Math.abs(diff) > (angleThresholdDeg * Math.PI / 180)) {
+      corners.push(i);
+    }
+  }
+  return corners;
+}
+
 function finalizeFreehand(rawPoints) {
   // Simplify first to reduce noise
   let points = rdp(rawPoints, 3);
+  // Detect corners from the SIMPLIFIED path before polar conversion
+  const cornerIndices = detectCorners(points, 30);
 
   const mirrorH = document.getElementById('mirror-h').checked;
   const mirrorV = document.getElementById('mirror-v').checked;
@@ -306,25 +328,57 @@ function finalizeFreehand(rawPoints) {
       partners.forEach(pTheta => sum += sampleR(pTheta));
       averaged[i] = { theta, r: sum / partners.length };
     }
-    // LOW-PASS FILTER on the radius array to kill drawing wobble
-    // Circular (wrap-around) Gaussian smoothing
-    const sigma = 5;   // samples — higher = smoother
+    // Map raw-path corners → angular positions (post-centroid, post-symmetrization domain)
+    // For each corner index in simplified points, compute its theta and r relative to centroid
+    const cornerAngles = new Set();
+    cornerIndices.forEach(idx => {
+      const p = points[idx];
+      let theta = Math.atan2(p[1]-cy, p[0]-cx);
+      // Mirror the angle across symmetry axes too — corners must be preserved in ALL mirrored copies
+      const thetas = [theta];
+      if (mirrorH) thetas.push(Math.PI - theta);
+      if (mirrorV) thetas.push(-theta);
+      if (mirrorH && mirrorV) thetas.push(Math.PI + theta);
+      thetas.forEach(t => {
+        // Find nearest sample index
+        let idx0 = 0, bestD = Infinity;
+        for (let i = 0; i < N; i++) {
+          let d = Math.abs(averaged[i].theta - t);
+          if (d > Math.PI) d = 2*Math.PI - d;
+          if (d < bestD) { bestD = d; idx0 = i; }
+        }
+        cornerAngles.add(idx0);
+      });
+    });
+
+    // ADAPTIVE Gaussian smoothing — skip smoothing across corners
+    // Kernel doesn't reach past corner positions (truncated at corner)
+    const sigma = 5;
     const kRadius = Math.ceil(sigma * 3);
-    const kernel = [];
-    let kSum = 0;
-    for (let k = -kRadius; k <= kRadius; k++) {
-      const w = Math.exp(-(k*k)/(2*sigma*sigma));
-      kernel.push(w); kSum += w;
-    }
     const radii = averaged.map(s => s.r);
     const smoothed = new Array(N);
     for (let i = 0; i < N; i++) {
-      let sum = 0;
-      for (let k = -kRadius; k <= kRadius; k++) {
-        const j = ((i + k) % N + N) % N;  // wrap around
-        sum += radii[j] * kernel[k + kRadius];
+      if (cornerAngles.has(i)) {
+        // Preserve corners exactly — no smoothing
+        smoothed[i] = radii[i];
+        continue;
       }
-      smoothed[i] = sum / kSum;
+      let sum = 0, wSum = 0;
+      for (let k = -kRadius; k <= kRadius; k++) {
+        const j = ((i + k) % N + N) % N;
+        // Check if a corner sits BETWEEN i and j (going the short way)
+        let blocked = false;
+        const step = Math.sign(k) || 1;
+        for (let m = 1; m < Math.abs(k); m++) {
+          const check = ((i + m*step) % N + N) % N;
+          if (cornerAngles.has(check)) { blocked = true; break; }
+        }
+        if (blocked) continue;  // kernel truncated by corner
+        const w = Math.exp(-(k*k)/(2*sigma*sigma));
+        sum += radii[j] * w;
+        wSum += w;
+      }
+      smoothed[i] = sum / wSum;
     }
     // Check variance — if nearly constant radius, snap to perfect circle
     const meanR = smoothed.reduce((a,b)=>a+b,0) / N;
