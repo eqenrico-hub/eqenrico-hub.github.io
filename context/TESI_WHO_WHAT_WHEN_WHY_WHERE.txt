@@ -1,0 +1,100 @@
+TESI PhD — WHO WHAT WHEN WHY WHERE
+Enrico Quaglia, XXXIX ciclo, SECS-P/07, UniGe
+2026-04-17
+
+================================================================
+WHO — Chi
+================================================================
+
+Chi fa la ricerca: Enrico Quaglia, dottorando in Management and Security (SECS-P/07), Universita' di Genova. Supervisor: Prof.ssa R.P. Dameri (smart city, digital innovation). Co-supervisor: Prof.ssa E. Bonollo (economia aziendale, ragioneria pubblica).
+
+Chi sono i soggetti studiati: le pubbliche amministrazioni locali italiane — in particolare i comuni — nel loro ruolo di produttori e utilizzatori di informazione strutturata per la direzione dell'ente.
+
+================================================================
+WHAT — Cosa
+================================================================
+
+Cosa studia la tesi: fra le diverse tipologie di strumenti che producono indicatori strutturati sulla PA locale, la tesi seleziona due famiglie con dominanza empiricamente riscontrabile — l'una obbligatoria per legge per tutti i comuni (D.lgs. 150/2009), l'altra legata alla diffusione delle iniziative smart city (42% dei comuni rispondenti ha avviato progetti, Osservatorio PoliMI 2024) — studiate in letterature separate che non dialogano:
+
+(1) Le URBAN DASHBOARD (UD) — strumenti di visualizzazione e rappresentazione sintetica della citta' attraverso indicatori, nati dalla tradizione smart city e urban studies. Non regolati, base progettuale (iniziative ICT). Dichiarano funzione di supporto decisionale ma la letteratura mostra che l'efficacia per la PA locale e' "largely unknown" (Paper II, intro).
+
+(2) I SISTEMI DI CONTROLLO E MISURAZIONE DELLE PERFORMANCE (PM) — strumenti istituzionalizzati di programmazione, monitoraggio, controllo e valutazione, ancorati al ciclo DUP/Piano della Performance. Base normativa (D.lgs. 150/2009). Utenza prevalentemente interna (dirigenza, OIV).
+
+PERCHE' studiarle insieme: la letteratura UD dice che l'efficacia delle UD per la PA e' sconosciuta (Kitchin 2016, Paper II intro). La letteratura PM ha formulato condizioni sistematiche per l'efficacia dell'informazione di performance (Kroll 2015, 25 studi empirici) — ma solo in contesti PM, mai verificate per le UD. Paper II trova CSF dalle UD INDIPENDENTEMENTE — e convergono con le condizioni PM. Nessuno ha notato questa convergenza perche' le due letterature non dialogano. La tesi la documenta.
+
+Cosa produce la tesi — tre contributi empirici:
+- Paper I (Cap. 2): tassonomia di 86 UD su 3 dimensioni (funzioni, utenti, domini) via PRISMA SLR. Single-authored. Risultato: 43% decision-making, 89.5% PA come utente, partecipazione cittadina marginale (38/86).
+- Paper II (Cap. 3): gap analysis di 21 UD implementate su 19 CSF derivati dalla letteratura UD. Co-autori Dameri, Bruzzone. Accepted Springer ItAIS 2025. Risultato: 3/21 bottom-up, 6/21 temporal depth, 10/21 autorevolezza, 10/21 benchmarking.
+- Paper III (Cap. 4): progettazione di un sistema di controllo e misurazione delle performance dell'economia circolare urbana per il Comune di Genova. Co-autrice Dameri. In sottomissione a Management Control. Risultato: modello a due livelli Comune-azienda / Comune-governo-territorio, matrice 2x3, 54 indicatori su dati gia' disponibili (DUP, ISTAT, ARPAL).
+
+Cosa argomenta la tesi: la funzione direzionale di un sistema informativo a indicatori nella PA locale dipende da un INSIEME di condizioni progettuali e istituzionali — integrazione nel ciclo programmatorio, autorevolezza delle fonti, profondita' temporale, benchmarking — nessuna delle quali e' da sola sufficiente. Le due famiglie illuminano queste condizioni da prospettive complementari: le UD mostrano cosa succede quando le condizioni mancano; il sistema PM mostra come possano essere incorporate nel design.
+
+Cosa NON argomenta: NON dice che le UD sono sistemi di controllo di gestione (§4.1). NON dice che le UD dovrebbero diventare PM systems. NON dimostra che il sistema Cap. 4 funziona (non e' stato testato).
+
+================================================================
+WHEN — Quando
+================================================================
+
+Periodo del dottorato: ciclo XXXIX, chiusura formale ottobre 2026.
+
+Cronologia dei paper:
+- Paper I (86 UD taxonomy): in fase di revisione finale.
+- Paper II (21 UD CSF): accepted, Springer ItAIS 2025.
+- Paper III (CE Genova): in corso di sottomissione a Management Control.
+
+Cronoprogramma della tesi:
+- Aprile 2026: invio proposta a supervisor e co-supervisor.
+- Maggio-Giugno 2026: stesura Cap. 1 (quadro teorico) con integrazione letteratura EA italiana (Borgonovi, Anselmi, Mussari, Deidda Gagliardo). Revisione Capp. 2-3.
+- Luglio-Agosto 2026: finalizzazione Cap. 4 + sottomissione. Stesura Cap. 5 (conclusioni + sezione FOI/transparency passiva).
+- Settembre 2026: traduzione inglese (requisito CV Management & Security).
+- Ottobre 2026: deposito e discussione.
+
+================================================================
+WHY — Perche'
+================================================================
+
+Perche' queste due famiglie:
+(1) PARADIGMI DOMINANTI — PM obbligatorio per legge (D.lgs. 150/2009, esteso a tutti i comuni). UD diffuse via smart city (42% dei comuni rispondenti ha avviato progetti smart city nel 2024, Osservatorio PoliMI).
+(2) GAP BIBLIOGRAFICO — due letterature separate che non dialogano: UD in urban studies (Kitchin, Mattern, Mannaro), PM in ragioneria pubblica e public management accounting (Borgonovi, Bouckaert, Arnaboldi, Steccolini). Nessuno studio le ha analizzate congiuntamente. La letteratura ha usato "dashboard" in due accezioni che non dialogano (Edwards & Thomas 2005 come PM; Kitchin 2015 come governance urbana).
+(3) PROBLEMA PRATICO — le PA investono in entrambe senza disporre di un quadro analitico che individui le condizioni di efficacia direzionale in modo trasversale.
+
+Perche' il confronto ha senso (nonostante siano strumenti diversi):
+- NON perche' sono uguali — sono disciplinarmente distinti (§4.1).
+- Perche' entrambi DICHIARANO di produrre rappresentazione strutturata della PA locale attraverso indicatori (Level 3).
+- Le condizioni per l'efficacia riguardano l'USO dell'informazione, non lo strumento — se due strumenti producono informazione per le stesse decisioni, le condizioni d'uso sono comparabili.
+- Paper II trova CSF dalle UD INDIPENDENTEMENTE da Kroll — e convergono con le condizioni note dalla letteratura PM. La convergenza non e' imposta, e' trovata.
+
+Perche' servono TUTTI E TRE i paper:
+- Paper I (tassonomia) = MAPPA il campo. Senza: non sai cosa studi.
+- Paper II (CSF) = DIAGNOSTICA quali condizioni mancano. Senza: non sai cosa non funziona.
+- Paper III (design) = PROGETTA incorporando le condizioni. Senza: non sai come rispondere.
+- Mappa + diagnosi + design = framework completo.
+
+Perche' Kroll non e' il framework portante:
+- Kroll 2015 (meta-review 92 studi) studia "performance information use" nel settore pubblico — concettualmente il sovrainsieme.
+- I suoi 25 studi empirici sono tutti da contesti PM (government agencies). Nessuno da contesti UD.
+- Nella proposta Kroll e' UNA fonte di posizionamento al §2.2 — non il backbone della tesi.
+- La tesi regge anche senza Kroll: Paper II trova gap, Paper III progetta senza quei gap, convergenza = finding.
+
+Perche' le condizioni non rendono le UD dei PM systems:
+- Alcune condizioni sono TRASFERIBILI senza cambiare natura (temporal depth, benchmarking, autorevolezza — una UD puo' migliorarle restando UD).
+- Una condizione — integrazione nel ciclo programmatorio — e' COSTITUTIVA dei PM: una UD che la acquisisce diventa di fatto parte del framework PM.
+- La distinzione UD/PM e' di ORIGINE e FORMA ISTITUZIONALE, non di condizioni soddisfatte.
+
+================================================================
+WHERE — Dove
+================================================================
+
+Dove si colloca disciplinarmente: SECS-P/07 (Economia Aziendale). L'ente locale e' studiato come "azienda pubblica locale" nel paradigma fondativo dell'EA italiana (Zappa 1927, Borgonovi 2020): ordine economico di istituti socio-economici, filtrato per efficienza, efficacia, economicita'.
+
+Dove si colloca nel dibattito scientifico: nell'evoluzione paradigmatica PA -> NPM -> NPG (Hood 1991, Osborne 2006/2010, Pollitt & Bouckaert 2011) e nel dibattito sulle condizioni di uso dell'informazione di performance (Kroll 2015, Taylor 2009, Van Dooren et al. 2015, Micheli & Pavlov 2020).
+
+Dove si colloca nel framework a 3 livelli:
+- Livello 1 = tutto il sistema informativo dell'ente (troppo ampio).
+- Livello 2 = sottoinsieme concepito per supportare decisioni direzionali e/o ciclo programmatorio. Le UD stanno qui per natura.
+- Livello 3 = sottoinsieme che usa indicatori strutturati. I PM ci stanno pienamente. Le UD vi si collocano in quanto DICHIARANO questa funzione — ma se la esercitano e' l'oggetto dell'indagine.
+- Il framework riprende il principio di stratificazione di Anthony (1965) applicato ai sistemi informativi dell'ente locale.
+
+Dove si colloca geograficamente: PA locale italiana. Caso empirico: Comune di Genova (Paper III, economia circolare, progetto C-City). Contesto smart city italiano (Osservatorio PoliMI 2024).
+
+Dove si colloca la linea parallela FOI: Universite' Libre de Bruxelles (ULB-CEPAP). Transparency passiva (risposta a richieste FOI) come controparte della transparency attiva (pubblicazione proattiva via dashboard e PM). Posizionata come sezione nel Cap. 5.

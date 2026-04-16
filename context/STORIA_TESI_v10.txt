@@ -1,0 +1,13 @@
+STORIA DELLA TESI v10 — aggiornata dopo riscrittura §2.4
+
+1. Le PA locali italiane usano due famiglie di strumenti per produrre informazione strutturata attraverso indicatori: le urban dashboard (matrice smart city, non regolate) e i sistemi di controllo e misurazione delle performance (matrice aziendalistica, obbligo D.lgs. 150/2009). La letteratura ha utilizzato il termine "dashboard" in due tradizioni che non dialogano — governance urbana (Kitchin) e performance management (Yigitbasioglu, Edwards) — e nessuno studio le ha confrontate come forme alternative di risposta allo stesso bisogno informativo direzionale.
+
+2. La funzione direzionale di un sistema informativo nella PA locale dipende da un INSIEME di condizioni — integrazione nel ciclo programmatorio, autorevolezza delle fonti, profondita' temporale, benchmarking — nessuna delle quali e' da sola sufficiente.
+
+3. Il Cap. 2 mappa l'universo delle UD su 86 articoli e rileva che il decision-making e' dichiarato come funzione prevalente (43%) ma la partecipazione dei cittadini e' marginale (38/86 come end-user). Il Cap. 3 scende alle 21 UD implementate e trova che autorevolezza (10/21), temporal depth (6/21), benchmarking (10/21) e bottom-up (3/21) sono ricorrentemente sotto-implementati.
+
+4. Il Cap. 4 progetta un sistema di controllo per l'economia circolare urbana di Genova che incorpora per design le condizioni istituzionali — ancoraggio al DUP, dati istituzionali, benchmarking fra 11 citta' — ma opera come strumento interno, non accessibile alla cittadinanza. Il contributo originale e' il modello a due livelli Comune-azienda / Comune-governo-del-territorio.
+
+5. Le due famiglie illuminano le condizioni di efficacia da prospettive complementari: le UD dichiarano funzione direzionale e garantiscono accessibilita' pubblica e copertura multi-dominio, ma difettano delle condizioni istituzionali; il sistema PM incorpora le condizioni istituzionali ma non affronta accessibilita'. La partecipazione dei cittadini e' sotto-implementata da ENTRAMBE le famiglie.
+
+6. Le condizioni di efficacia che emergono non sono proprieta' di una sola famiglia ma della categoria: definiscono cosa serve perche' un sistema informativo basato su indicatori strutturati — qualunque sia la sua origine disciplinare — passi dalla funzione direzionale dichiarata alla funzione direzionale esercitata.
