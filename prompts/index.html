@@ -1,0 +1,87 @@
+---
+layout: default
+title: Prompts
+---
+
+<h1>Prompts</h1>
+
+<p class="intro">Reusable prompts for AI-assisted workflows — quality checks, reviews, and structured analysis tasks.</p>
+
+<style>
+  .prompt-grid { display: grid; gap: 1.5rem; margin-top: 2rem; }
+  .prompt-card {
+    background: #1a1a1a; border: 1px solid #333; border-radius: 10px;
+    padding: 1.5rem; transition: border-color 0.2s;
+  }
+  .prompt-card:hover { border-color: #00d4ff; }
+  .prompt-card h2 {
+    margin: 0 0 0.5rem 0; color: #00d4ff; font-size: 1.4rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .prompt-card .desc { color: #ccc; line-height: 1.6; }
+  .prompt-card .use-case {
+    display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 1rem;
+  }
+  .prompt-card .tag {
+    font-size: 0.75rem; padding: 0.2rem 0.6rem; background: #2a2a2a;
+    border-radius: 10px; color: #888;
+  }
+  .prompt-copy {
+    background: #111; border: 1px solid #333; border-radius: 8px;
+    padding: 1rem; margin-top: 1rem; position: relative;
+  }
+  .prompt-copy pre {
+    color: #ccc; font-size: 0.8rem; line-height: 1.5; white-space: pre-wrap;
+    margin: 0; max-height: 300px; overflow-y: auto;
+  }
+  .copy-btn {
+    position: absolute; top: 8px; right: 8px; background: #333;
+    border: none; color: #00d4ff; padding: 4px 10px; border-radius: 4px;
+    cursor: pointer; font-size: 0.75rem;
+  }
+  .copy-btn:hover { background: #444; }
+</style>
+
+<div class="prompt-grid">
+
+  <div class="prompt-card">
+    <h2>📋 Consistency Check</h2>
+    <p class="desc">
+      Systematic coherence review for academic documents. Checks 8 axes: table-text alignment, citation-bibliography cross-reference, thesis-chapter consistency, definition-usage coherence, claim-source verification, decision-timeline alignment, terminology consistency, and overclaim detection. Reports findings by severity (red/yellow/green).
+    </p>
+    <div class="use-case">
+      <span class="tag">Academic papers</span>
+      <span class="tag">Thesis proposals</span>
+      <span class="tag">Reports</span>
+      <span class="tag">Any structured document</span>
+    </div>
+    <div class="prompt-copy">
+      <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('pre').textContent).then(()=>{this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)})">Copy</button>
+<pre>Read the ENTIRE document I'm about to share and perform a SYSTEMATIC COHERENCE CHECK on these 8 axes. For each problem found, report: [location in document], problematic sentence, reason for incoherence, proposed fix.
+
+1. TABLES vs TEXT: Do names, categories, or classifications in any table match what the body text says about them? Are all names/items in tables cited in the text and present in the bibliography?
+
+2. CITATIONS vs BIBLIOGRAPHY: Does every in-text citation (Author Year) have a corresponding bibliography entry? Does every bibliography entry appear at least once in the text? Are there orphan citations or orphan references?
+
+3. THESIS STATEMENT vs SECTIONS: Is the main argument/thesis statement consistent with how individual sections/chapters describe their contribution? If the thesis says "multiple conditions matter", no section should say "only one condition matters." Check every section description against the thesis statement.
+
+4. DEFINITIONS vs USAGE: Are key terms and categories defined in one place and used consistently throughout? If a definition says "A and/or B", later text should not assume "A and B". If a definition says "X declares Y", later text should not say "X is Y."
+
+5. CLAIMS vs SOURCES: Does every factual assertion (percentages, data, "the literature shows that...") have a citation? Does the cited source ACTUALLY support THAT specific claim? Flag any claim that is stronger than what the cited source says.
+
+6. DECISIONS vs TIMELINE: Are decisions stated in the text (e.g., "section X will be placed in chapter Y") consistent with what the timeline/schedule says? There should be no "decision to be made" about something already decided, and vice versa.
+
+7. TERMINOLOGY CONSISTENCY: Is the same concept always called by the same term? List any cases where synonyms are used interchangeably (e.g., "directional function" vs "decisional function" vs "directional support") and flag whether the alternation is intentional or a slip.
+
+8. OVERCLAIM CHECK: For every sentence containing "all", "always", "never", "none", "proves that", "demonstrates that", "precisely because", "the only" — verify if the claim is supported by the cited evidence or if it is stronger than what the data shows. Flag any overclaim with the specific evidence gap.
+
+Report findings grouped by severity:
+- RED: incoherences that would be caught by a reviewer and undermine credibility
+- YELLOW: weaknesses that a careful reader notices but that don't break the argument
+- GREEN: minor observations (terminology, style) that could be improved but are not critical
+
+At the end, provide a VERDICT: is the document internally coherent enough to submit, or does it need fixes first?</pre>
+    </div>
+  </div>
+
+</div>

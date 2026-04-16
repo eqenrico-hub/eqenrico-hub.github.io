@@ -16,6 +16,14 @@ title: Home
 </div>
 
 <div class="section">
+  <h2>Prompts</h2>
+  <div class="app-placeholder">
+    <p>Reusable prompts for AI-assisted workflows</p>
+    <a href="{{ '/prompts/' | relative_url }}" class="todo-link">Browse Prompts &rarr;</a>
+  </div>
+</div>
+
+<div class="section">
   <h2>Notes</h2>
   <ul class="notes-list">
     {% assign sorted_notes = site.notes | sort: "order" %}
