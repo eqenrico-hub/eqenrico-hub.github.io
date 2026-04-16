@@ -47,7 +47,7 @@ title: Prompts
   <div class="prompt-card">
     <h2>📋 Consistency Check</h2>
     <p class="desc">
-      Systematic coherence review for academic documents. Checks 8 axes: table-text alignment, citation-bibliography cross-reference, thesis-chapter consistency, definition-usage coherence, claim-source verification, decision-timeline alignment, terminology consistency, and overclaim detection. Reports findings by severity (red/yellow/green).
+      Systematic coherence review for academic documents. v2: 16 axes across 4 groups — structural coherence (8), deep checks learned from real review sessions (6), and citation strength (2). Covers: table-text alignment, citation cross-reference, thesis-chapter consistency, definition-usage coherence, claim-source verification, decision-timeline alignment, terminology consistency, overclaim detection, page number plausibility, retrofit detection, classification coherence, semantic overclaim, missing content, unexplained jargon, citation density vs claim weight, and citation recency. Reports by severity (red/yellow/green).
     </p>
     <div class="use-case">
       <span class="tag">Academic papers</span>
@@ -57,7 +57,9 @@ title: Prompts
     </div>
     <div class="prompt-copy">
       <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('pre').textContent).then(()=>{this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)})">Copy</button>
-<pre>Read the ENTIRE document I'm about to share and perform a SYSTEMATIC COHERENCE CHECK on these 8 axes. For each problem found, report: [location in document], problematic sentence, reason for incoherence, proposed fix.
+<pre>Read the ENTIRE document I'm about to share and perform a SYSTEMATIC COHERENCE CHECK on these 16 axes. For each problem found, report: [location in document], problematic sentence, reason for incoherence, proposed fix.
+
+=== STRUCTURAL COHERENCE (axes 1-8) ===
 
 1. TABLES vs TEXT: Do names, categories, or classifications in any table match what the body text says about them? Are all names/items in tables cited in the text and present in the bibliography?
 
@@ -74,6 +76,28 @@ title: Prompts
 7. TERMINOLOGY CONSISTENCY: Is the same concept always called by the same term? List any cases where synonyms are used interchangeably (e.g., "directional function" vs "decisional function" vs "directional support") and flag whether the alternation is intentional or a slip.
 
 8. OVERCLAIM CHECK: For every sentence containing "all", "always", "never", "none", "proves that", "demonstrates that", "precisely because", "the only" — verify if the claim is supported by the cited evidence or if it is stronger than what the data shows. Flag any overclaim with the specific evidence gap.
+
+=== DEEP CHECKS — learned from real review sessions (axes 9-14) ===
+
+9. PAGE NUMBER PLAUSIBILITY: For every citation with a specific page number (e.g., "Author 2020, p. 219"), verify that the page number is plausible for the source. A journal article of 20 pages cannot have p. 219. A book chapter of 30 pages cannot have p. 500. Flag any page number that is impossible or suspicious given the source type.
+
+10. RETROFIT DETECTION: Does the argumentative arc imply a causal/temporal sequence between parts of the work (e.g., "Chapter 2 reveals problem X, therefore Chapter 3 designs solution Y")? If the work consists of independently written papers reorganized into a thesis, flag any language that implies one paper was designed IN RESPONSE to another's findings.
+
+11. CLASSIFICATION COHERENCE: If the document proposes a classification framework (levels, categories, typologies), does every element classified actually satisfy the criteria of its category? Are there elements discussed later that fall OUTSIDE the categories but are treated as if they belong?
+
+12. SEMANTIC OVERCLAIM: Beyond axis 8's strong-word check, look for claims using SOFT language but empirically broader than the data supports. Compare every generalization against actual percentages/data cited elsewhere in the document.
+
+13. MISSING CONTENT CHECK: What would a reader EXPECT to find in this type of document that is NOT present? Check against conventions of the document's stated genre (thesis proposal, research paper, report).
+
+14. UNEXPLAINED JARGON: Identify technical terms used WITHOUT explanation. If the same term is explained in one place but used unexplained in another place a reader might encounter FIRST, flag the inconsistency.
+
+=== CITATION STRENGTH (axes 15-16) ===
+
+15. CITATION DENSITY vs CLAIM WEIGHT: For every GENERAL, FOUNDATIONAL, or BOLD claim ("the literature has shown...", "it is widely recognized...", "the main challenge is..."), count supporting citations. A foundational claim with only 1 citation is under-supported — a reviewer expects 2-3 minimum. Flag: [claim] — [N] citation(s) — weight: [foundational/specific/minor].
+
+16. CITATION RECENCY vs CLAIM CURRENCY: For claims about the CURRENT state of a field ("today...", "recent research shows...", "the field has moved toward..."), check if the supporting citation is recent enough. A claim about "today" supported only by a 2008 source is weak. Flag claims about current conditions supported exclusively by sources older than 10 years.
+
+=== REPORTING ===
 
 Report findings grouped by severity:
 - RED: incoherences that would be caught by a reviewer and undermine credibility
