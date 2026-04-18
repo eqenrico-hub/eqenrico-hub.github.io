@@ -59,6 +59,7 @@ title: PNG State Aligner
     </div>
     <div class="size-info" id="matchStatus">—</div>
     <button id="btnFit" style="margin-top:6px;">Resize B → A (uniform)</button>
+    <button id="btnLoadDefaults" style="margin-top:6px; background: #3a2a4a;">Load Band Ritual defaults</button>
     <div class="hint">Uniform scale only — keeps aspect ratio, no distortion.</div>
 
     <h2>2. View mode</h2>
@@ -160,6 +161,26 @@ function loadFile(input, key) {
 }
 loadFile(document.getElementById('fileA'), 'imgA');
 loadFile(document.getElementById('fileB'), 'imgB');
+
+document.getElementById('btnLoadDefaults').addEventListener('click', async () => {
+  const loadImg = (url, key) => new Promise((res) => {
+    const im = new Image();
+    im.crossOrigin = 'anonymous';
+    im.onload = () => { state[key] = im; res(); };
+    im.onerror = () => { console.error('failed', url); res(); };
+    im.src = url;
+  });
+  await Promise.all([
+    loadImg('sample_data/png_a_unpressed.png', 'imgA'),
+    loadImg('sample_data/png_b_pressed.png', 'imgB'),
+  ]);
+  updateStatus(); render();
+});
+
+// Auto-load on page init if no upload yet
+window.addEventListener('load', () => {
+  setTimeout(() => document.getElementById('btnLoadDefaults').click(), 50);
+});
 
 document.getElementById('btnFit').addEventListener('click', () => {
   if (!state.imgA || !state.imgB) return;
