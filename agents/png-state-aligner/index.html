@@ -67,6 +67,11 @@ title: PNG State Aligner
       <input type="file" id="fileB" accept="image/png">
       <div class="size-info" id="sizeB">—</div>
     </div>
+    <div class="file-row">
+      <label>PNG_C (alt clicked state, optional)</label>
+      <input type="file" id="fileC" accept="image/png">
+      <div class="size-info" id="sizeC">—</div>
+    </div>
     <div class="size-info" id="matchStatus">—</div>
     <button id="btnFit" style="margin-top:6px;">Resize B → A (uniform)</button>
     <button id="btnLoadDefaults" style="margin-top:6px; background: #3a2a4a;">Load Band Ritual defaults</button>
@@ -127,7 +132,7 @@ title: PNG State Aligner
 
 <script>
 const state = {
-  imgA: null, imgB: null, imgBResized: null,
+  imgA: null, imgB: null, imgBResized: null, imgC: null, imgCResized: null,
   mode: 'A', tool: 'view',
   opacity: 0.5, threshold: 25, zoom: 1.0,
   panX: 0, panY: 0, swipeX: 0.5,
@@ -173,6 +178,7 @@ function fmtSize(im) { return im ? `${im.naturalWidth}×${im.naturalHeight}  asp
 function updateStatus() {
   document.getElementById('sizeA').textContent = state.imgA ? fmtSize(state.imgA) : '—';
   document.getElementById('sizeB').textContent = state.imgB ? fmtSize(state.imgB) + (state.imgBResized ? `  (resized to ${state.imgBResized.width}×${state.imgBResized.height})` : '') : '—';
+  document.getElementById('sizeC').textContent = state.imgC ? fmtSize(state.imgC) + (state.imgCResized ? `  (resized to ${state.imgCResized.width}×${state.imgCResized.height})` : '') : '—';
   const status = document.getElementById('matchStatus');
   if (state.imgA && state.imgB) {
     const effB = state.imgBResized || { width: state.imgB.naturalWidth, height: state.imgB.naturalHeight };
@@ -193,6 +199,7 @@ function loadFile(input, key) {
 }
 loadFile(document.getElementById('fileA'), 'imgA');
 loadFile(document.getElementById('fileB'), 'imgB');
+loadFile(document.getElementById('fileC'), 'imgC');
 
 document.getElementById('collapseBtn').addEventListener('click', () => {
   document.getElementById('app').classList.toggle('collapsed');
@@ -220,14 +227,15 @@ window.addEventListener('load', () => {
 });
 
 document.getElementById('btnFit').addEventListener('click', () => {
-  if (!state.imgA || !state.imgB) return;
-  const tmp = document.createElement('canvas');
-  tmp.width = state.imgA.naturalWidth;
-  tmp.height = state.imgA.naturalHeight;
-  const tctx = tmp.getContext('2d');
-  tctx.imageSmoothingEnabled = true; tctx.imageSmoothingQuality = 'high';
-  tctx.drawImage(state.imgB, 0, 0, tmp.width, tmp.height);
-  state.imgBResized = tmp;
+  if (!state.imgA) return;
+  const w = state.imgA.naturalWidth, h = state.imgA.naturalHeight;
+  const mk = (src) => {
+    const t = document.createElement('canvas'); t.width = w; t.height = h;
+    const c = t.getContext('2d'); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
+    c.drawImage(src, 0, 0, w, h); return t;
+  };
+  if (state.imgB) state.imgBResized = mk(state.imgB);
+  if (state.imgC) state.imgCResized = mk(state.imgC);
   updateStatus(); render();
 });
 
@@ -474,6 +482,8 @@ function refreshRegions() {
     const shapeLabel = r.shape === 'circle' ? '○' : '▭';
     const disabled = r.locked ? 'disabled' : '';
     const lockLabel = r.locked ? '🔒 ' : '';
+    const src = r.source || 'B';
+    const sox = r.srcOffX || 0, soy = r.srcOffY || 0;
     div.innerHTML = `
       <div class="rname">${lockLabel}<input type="text" value="${r.name}" data-id="${r.id}" class="rename" ${disabled}></div>
       <div class="rcoords">
@@ -482,11 +492,23 @@ function refreshRegions() {
         <div><label>w</label><input type="number" class="cw" data-id="${r.id}" value="${r.w}" ${disabled}></div>
         <div><label>h</label><input type="number" class="ch" data-id="${r.id}" value="${r.h}" ${disabled}></div>
       </div>
+      ${r.locked ? '' : `
+      <div class="rcoords" title="Source crop offset (nudge where pixels are sampled from inside source PNG without moving the overlay)">
+        <div><label>src</label>
+          <select class="csrc" data-id="${r.id}" style="width:100%; font-size:10px; padding:2px; background:#111; color:var(--fg); border:1px solid #333; border-radius:3px;">
+            <option value="B" ${src==='B'?'selected':''}>B</option>
+            <option value="C" ${src==='C'?'selected':''}>C</option>
+          </select>
+        </div>
+        <div><label>sx off</label><input type="number" class="csox" data-id="${r.id}" value="${sox}" step="1"></div>
+        <div><label>sy off</label><input type="number" class="csoy" data-id="${r.id}" value="${soy}" step="1"></div>
+        <div><label></label><button class="rclearoff" data-id="${r.id}" title="Reset source offsets" style="width:100%; font-size:10px; padding:2px;">↺</button></div>
+      </div>`}
       <div class="rbtns">
         ${r.locked ? `<button class="runlock" data-id="${r.id}" title="Unlock">Unlock</button>` : `
         <button class="rselect" data-id="${r.id}">Select</button>
         <button class="rshape" data-id="${r.id}" title="Toggle shape rect↔circle">${shapeLabel}</button>
-        <button class="rchange ${r.pressed?'change-on':''}" data-id="${r.id}" title="Overlay pressed state from PNG_B">Change</button>
+        <button class="rchange ${r.pressed?'change-on':''}" data-id="${r.id}" title="Overlay pressed state">Change</button>
         <button class="rlock" data-id="${r.id}" title="Lock">Lock</button>
         <button class="danger rdelete" data-id="${r.id}">Delete</button>`}
       </div>`;
@@ -546,6 +568,29 @@ function refreshRegions() {
     pushUndo(); r.locked = false;
     refreshRegions(); render();
   }));
+  list.querySelectorAll('.csrc').forEach(i => i.addEventListener('change', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (!r) return;
+    pushUndo(); r.source = e.target.value;
+    render();
+  }));
+  ['csox','csoy'].forEach(cls => {
+    list.querySelectorAll('.' + cls).forEach(i => i.addEventListener('change', e => {
+      const r = state.regions.find(x => x.id === +e.target.dataset.id);
+      if (!r) return;
+      pushUndo();
+      const v = Math.round(+e.target.value);
+      if (cls === 'csox') r.srcOffX = v;
+      if (cls === 'csoy') r.srcOffY = v;
+      render();
+    }));
+  });
+  list.querySelectorAll('.rclearoff').forEach(i => i.addEventListener('click', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (!r) return;
+    pushUndo(); r.srcOffX = 0; r.srcOffY = 0;
+    refreshRegions(); render();
+  }));
   document.getElementById('stats').textContent = `${state.regions.length} region${state.regions.length!==1?'s':''}`;
 }
 
@@ -576,21 +621,23 @@ function render() {
 
   if (state.mode === 'A') {
     if (state.imgA) ctx.drawImage(state.imgA, 0, 0, dw, dh);
-    // Overlay pressed regions from B, clipped to each region shape
-    const BsrcP = state.imgBResized || state.imgB;
-    if (BsrcP) {
-      state.regions.filter(r => r.pressed).forEach(r => {
-        const rx = r.x * state.scale, ry = r.y * state.scale;
-        const rw = r.w * state.scale, rh = r.h * state.scale;
-        ctx.save();
-        ctx.beginPath();
-        if (r.shape === 'circle') ctx.ellipse(rx + rw/2, ry + rh/2, rw/2, rh/2, 0, 0, Math.PI*2);
-        else ctx.rect(rx, ry, rw, rh);
-        ctx.clip();
-        ctx.drawImage(BsrcP, 0, 0, dw, dh);
-        ctx.restore();
-      });
-    }
+    state.regions.filter(r => r.pressed).forEach(r => {
+      const src = (r.source === 'C') ? (state.imgCResized || state.imgC) : (state.imgBResized || state.imgB);
+      if (!src) return;
+      const rx = r.x * state.scale, ry = r.y * state.scale;
+      const rw = r.w * state.scale, rh = r.h * state.scale;
+      const srcW = src.naturalWidth || src.width;
+      const srcH = src.naturalHeight || src.height;
+      const sx = r.x + (r.srcOffX || 0);
+      const sy = r.y + (r.srcOffY || 0);
+      ctx.save();
+      ctx.beginPath();
+      if (r.shape === 'circle') ctx.ellipse(rx + rw/2, ry + rh/2, rw/2, rh/2, 0, 0, Math.PI*2);
+      else ctx.rect(rx, ry, rw, rh);
+      ctx.clip();
+      ctx.drawImage(src, sx, sy, r.w, r.h, rx, ry, rw, rh);
+      ctx.restore();
+    });
   } else if (state.mode === 'B') {
     if (Bsrc) ctx.drawImage(Bsrc, 0, 0, dw, dh);
   } else if (state.mode === 'overlay') {
@@ -700,23 +747,27 @@ document.getElementById('btnExportAll').addEventListener('click', async () => {
   }
   const zip = new window.JSZip();
   for (const r of state.regions) {
+    const src = (r.source === 'C') ? (state.imgCResized || state.imgC) : (state.imgBResized || state.imgB);
+    if (!src) continue;
     const c = document.createElement('canvas');
     c.width = r.w; c.height = r.h;
     const cctx = c.getContext('2d');
+    const sx = r.x + (r.srcOffX || 0);
+    const sy = r.y + (r.srcOffY || 0);
     if (r.shape === 'circle') {
       cctx.save();
       cctx.beginPath();
       cctx.ellipse(r.w/2, r.h/2, r.w/2, r.h/2, 0, 0, Math.PI * 2);
       cctx.clip();
-      cctx.drawImage(Bsrc, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+      cctx.drawImage(src, sx, sy, r.w, r.h, 0, 0, r.w, r.h);
       cctx.restore();
     } else {
-      cctx.drawImage(Bsrc, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+      cctx.drawImage(src, sx, sy, r.w, r.h, 0, 0, r.w, r.h);
     }
     const blob = await new Promise(res => c.toBlob(res, 'image/png'));
     const fname = `${r.name}.png`;
     zip.file(fname, blob);
-    manifest.regions.push({ id: r.id, name: r.name, shape: r.shape || 'rect', x: r.x, y: r.y, w: r.w, h: r.h, crop_file: fname });
+    manifest.regions.push({ id: r.id, name: r.name, shape: r.shape || 'rect', x: r.x, y: r.y, w: r.w, h: r.h, source: r.source || 'B', src_off_x: r.srcOffX || 0, src_off_y: r.srcOffY || 0, crop_file: fname });
   }
   zip.file('manifest.json', JSON.stringify(manifest, null, 2));
   const content = await zip.generateAsync({ type: 'blob' });
