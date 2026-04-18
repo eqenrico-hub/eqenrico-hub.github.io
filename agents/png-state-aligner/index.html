@@ -7,7 +7,7 @@ title: PNG State Aligner
   body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); font-family: -apple-system, system-ui, sans-serif; overflow: hidden; }
   #app { display: grid; grid-template-columns: 320px 1fr; height: 100vh; }
   #sidebar { background: var(--panel); padding: 14px; overflow-y: auto; border-right: 1px solid #333; }
-  #stage { position: relative; overflow: hidden; background: #000; display: flex; align-items: center; justify-content: center; }
+  #stage { position: relative; overflow: hidden; background: #000; }
   h1 { font-size: 16px; margin: 0 0 8px 0; color: var(--accent); }
   h2 { font-size: 12px; margin: 16px 0 6px 0; color: #bbb; text-transform: uppercase; letter-spacing: 0.05em; }
   label { display: block; font-size: 11px; margin: 3px 0 2px 0; color: #aaa; }
@@ -29,7 +29,7 @@ title: PNG State Aligner
   #canvasWrap.grabbing { cursor: grabbing; }
   #canvasWrap.drawing { cursor: crosshair; }
   canvas { display: block; image-rendering: pixelated; position: absolute; top: 0; left: 0; }
-  #stageInner { position: relative; }
+  #stageInner { position: absolute; left: 50%; top: 50%; transform-origin: center center; }
   .hint { font-size: 10px; color: #777; margin-top: 6px; line-height: 1.35; }
   .swipe-line { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); pointer-events: none; box-shadow: 0 0 8px var(--accent); }
   kbd { background: #333; padding: 1px 5px; border-radius: 3px; font-family: monospace; font-size: 10px; }
@@ -250,14 +250,22 @@ function setTool(t) {
   canvasWrap.classList.toggle('drawing', t === 'draw');
 }
 
-canvasWrap.addEventListener('wheel', e => {
+document.getElementById('stage').addEventListener('wheel', e => {
   e.preventDefault();
-  const delta = -Math.sign(e.deltaY) * 0.1;
+  const delta = -Math.sign(e.deltaY) * 0.12;
   state.zoom = Math.max(0.25, Math.min(8, state.zoom * (1 + delta)));
   document.getElementById('zoom').value = Math.round(state.zoom * 100);
   document.getElementById('zoomVal').textContent = Math.round(state.zoom * 100) + '%';
   render();
 }, { passive: false });
+
+// Pan via click-drag anywhere on the stage, not just on the image
+document.getElementById('stage').addEventListener('mousedown', e => {
+  if (e.target.id !== 'stage') return; // only when clicking on black area
+  state.dragging = true;
+  canvasWrap.classList.add('grabbing');
+  state.dragStart = { x: e.clientX - state.panX, y: e.clientY - state.panY };
+});
 
 // --- Mouse interaction: routed by tool ---
 function canvasMouseCoord(e) {
@@ -429,7 +437,7 @@ function render() {
   canvas.height = overlay.height = dh;
   canvasWrap.style.width = useW + 'px';
   canvasWrap.style.height = dh + 'px';
-  canvasWrap.style.transform = `translate(${state.panX}px, ${state.panY}px)`;
+  canvasWrap.style.transform = `translate(calc(-50% + ${state.panX}px), calc(-50% + ${state.panY}px))`;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   octx.clearRect(0, 0, overlay.width, overlay.height);
