@@ -21,7 +21,7 @@ The SHARE4MED electronic Governance Dashboard is characterised by four elements:
 - **A — Cross-border / inter-municipal scope.** It serves a coalition of Mediterranean municipalities across the northern and southern shore, not a single city or a single country.
 - **B — Multi-thematic breadth.** It integrates governance, environment / Mission Ocean 2030, and economic-development indicators in one platform.
 - **C — Strategic KPI framework.** It is target-driven (distance to Mission Ocean 2030), not plain descriptive statistics.
-- **D — Coalition governance decision-support layer.** It is a space in which a named group of municipalities decides together — not a one-way consultable benchmark portal.
+- **D — Coalition governance layer.** It is a shared operational space in which a named group of municipalities works together on a shared plan toward shared targets — not a one-way consultable benchmark portal. *Note: D is a derived analytical criterion introduced for this benchmark, not a feature of Paper 1's 24-feature taxonomy. My first wording was "coalition governance decision-support layer"; I corrected to "coalition governance layer" after verifying that the SHARE4MED application form does not use "decision-support" language, though functionally the platform fulfils a decision-making-support role in Revina's (2021) taxonomy.*
 
 Does the reviewed urban-dashboard literature already describe a platform combining all four? And if not, which of these components is literature-attested and which is genuinely new for SHARE4MED?
 
@@ -41,7 +41,7 @@ Does the reviewed urban-dashboard literature already describe a platform combini
 
 | Combination | Existing urban dashboards realising it | What is still missing for SHARE4MED |
 |---|---|---|
-| **A + B** | Eurostat Urban Audit / City Statistics; Regions and Cities Illustrated (Eurostat) | no target framework, no coalition decision-support |
+| **A + B** | Eurostat Urban Audit / City Statistics; Regions and Cities Illustrated (Eurostat) | no target framework, no coalition layer |
 | **A + C** | ROCK (EU H2020, Cultural Heritage, 3 pilot cities + 32 partners / 13 countries); Trafair (EU, 6 cities incl. Modena IT + Santiago de Compostela ES, traffic + air quality); ARCH (EU H2020, 4 cities, disaster risk + cultural heritage) | single-domain thematic focus, per-city instances without a coalition layer |
 | **B + C** | Kourtit & Nijkamp 2018 — the Stockholm Pentagon / XXQ / CSF → ~70 KPI cascade | single-city, multi-city benchmark is literature-only |
 | **A + B + C** | OECD Regions and Cities Atlas + OECD Local SDGs sibling; OECD SDG Distance Indicators; Arup City Resilience Index | no coalition decision layer, thin coverage of Southern-Mediterranean partner countries |
@@ -58,6 +58,18 @@ Four *deployed* multi-city platforms are suitable development benchmarks — ETT
 
 Several other papers are **methodology references** for specific design decisions: the Adjusted Mazziotta-Pareto composite method (Lazar 2022), the target-distance wheel chart (OECD Local SDGs), the hierarchical resilience cascade (Arup CRI), the third-party-rating-as-KPI-backbone pattern (Ferdinand 2016), the KPI funnel (Borsari 2023), the critical-theory caveats on dashboards as socio-technical assemblages (Kitchin 2016).
 
+### Distribution findings on the 47 comparable cases
+
+Some concrete distribution facts from the 47 SHARE4MED-profile-matching cases (computed directly from the coded dataset):
+
+- **End users.** Public administrators and policymakers appear in **98%** of the comparable cases, citizens in 79%, business / research users in 68%. **30 out of 47** cases serve all three user classes — which is exactly SHARE4MED's design.
+- **Thematic domains.** Environment and Energy is present in **87%**, Governance and Urban planning in 85%, Economic development in 66%. **26 out of 47** cases cover the full Governance + Environment + Economy triad — again SHARE4MED's choice.
+- **Functional goals.** Strategic Decision-Making is the dominant functional profile (**68%**) against Operational (4%); Information and Knowledge Management is present in 79%; Project Management is absent (0%).
+- **Citizen participation.** Only **43%** of comparable cases include co-design / citizen participation features — so adding an explicit participatory layer is a way to *differentiate positively*.
+- **Advanced analytics / AI.** Only **4%** of cases include either predictive analytics or AI data processing — so these are neither a peer-norm gap nor an obvious must-have; deferring them is safe, including them would be a deliberate differentiator.
+
+These findings ground the "what kind of dashboard SHARE4MED should be" conversation in a distribution observed on the 47-case comparable set, not in opinion.
+
 ### What SHARE4MED adds
 
 The *coalition* element **D** — a genuinely multi-actor decision workspace for a named group of municipalities with shared targets — is the piece the reviewed literature does not document. Combined with the Southern-Mediterranean geographic scope that OECD and Eurostat do not cover at sub-national granularity, this makes SHARE4MED a **literature-informed integration in a configuration the reviewed corpus has not yet tested** — not an invention from scratch, but not a replication either.
@@ -66,9 +78,9 @@ The *coalition* element **D** — a genuinely multi-actor decision workspace for
 
 This is a concrete test of a claim that is too often asserted and too rarely demonstrated: that a systematic taxonomy of urban dashboards has *predictive* value — that it can, given a proposed new platform, tell you which of its components are already solved and which are genuinely novel. For the 47 candidates this filter produced, the answer is sharp: **three of the four SHARE4MED components are attested in separate and adjacent ways**, and **the fourth is where the actual design work lives**. The taxonomy does not just describe a landscape; it maps where the gaps are.
 
-## Files produced (local to the working copy)
+## Files produced (local, not public)
 
-`SHARE4MED_profile.md` (reference profile), `priority_ranking.md` (abstract-based priority list), `reports/L1…L23` (full-PDF reviews), `reports/O1…O6` (URL inspections), `SHARE4MED_benchmark_synthesis.md` (the consolidated deliverable that will feed the WP4 literature-context section of the proposal).
+`SHARE4MED_profile.md` (reference profile), `priority_ranking.md` (abstract-based priority list), `reports/L1…L23` (full-PDF reviews), `reports/O1…O6` (URL inspections), `SHARE4MED_benchmark_synthesis_IT.md` (Italian consolidated synthesis), `SHARE4MED_Proposta_Contributo_ETT_IT.md` (short Italian proposal document handed to the ETT team).
 
 ## References
 
