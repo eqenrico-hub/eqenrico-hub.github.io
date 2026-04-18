@@ -109,8 +109,8 @@ title: PNG State Aligner
     <h2>4. Import / Export</h2>
     <button id="btnImportShapesJson" style="background: #3a2a4a;">Import shapes.json (GUI Frame Tool)</button>
     <button id="btnExportAll">Export crops bundle (.zip)</button>
-    <button id="btnImportJson">Import manifest.json</button>
-    <input type="file" id="fileJson" accept=".json" style="display:none">
+    <button id="btnImportJson">Import bundle.zip or manifest.json</button>
+    <input type="file" id="fileJson" accept=".json,.zip" style="display:none">
     <div class="hint">Each region → 1 PNG cropped from B at native resolution. JSON manifest maps each region to {name, bbox, crop_file}.</div>
 
     <h2>Shortcuts</h2>
@@ -793,9 +793,24 @@ document.getElementById('btnExportAll').addEventListener('click', async () => {
 document.getElementById('btnImportJson').addEventListener('click', () => document.getElementById('fileJson').click());
 document.getElementById('fileJson').addEventListener('change', async e => {
   const f = e.target.files[0]; if (!f) return;
-  const txt = await f.text();
-  const m = JSON.parse(txt);
-  importShapesData(m);
+  if (f.name.toLowerCase().endsWith('.zip')) {
+    if (!window.JSZip) {
+      await new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+        s.onload = res; s.onerror = rej; document.head.appendChild(s);
+      });
+    }
+    const zip = await window.JSZip.loadAsync(f);
+    const manifestFile = zip.file('manifest.json');
+    if (!manifestFile) { alert('manifest.json not found inside zip'); e.target.value = ''; return; }
+    const txt = await manifestFile.async('string');
+    importShapesData(JSON.parse(txt));
+  } else {
+    const txt = await f.text();
+    importShapesData(JSON.parse(txt));
+  }
+  e.target.value = ''; // allow re-selecting the same file
 });
 
 function importShapesData(m) {
@@ -834,7 +849,17 @@ function importShapesData(m) {
   }
   if (Array.isArray(m.regions)) {
     pushUndo();
-    const regs = m.regions.map(r => ({ id: state.nextId++, name: r.name, shape: r.shape || 'rect', pressed: false, locked: !!r.locked, x: r.x, y: r.y, w: r.w, h: r.h }));
+    const regs = m.regions.map(r => ({
+      id: state.nextId++,
+      name: r.name,
+      shape: r.shape || 'rect',
+      pressed: false,
+      locked: !!r.locked,
+      source: r.source || 'B',
+      srcOffX: r.src_off_x || r.srcOffX || 0,
+      srcOffY: r.src_off_y || r.srcOffY || 0,
+      x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.w), h: Math.round(r.h),
+    }));
     lockBiggestRect(regs);
     state.regions = regs;
     refreshRegions(); render();
