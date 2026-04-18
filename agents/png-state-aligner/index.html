@@ -231,11 +231,17 @@ document.getElementById('btnLoadDefaults').addEventListener('click', async () =>
   await Promise.all([
     loadImg('sample_data/png_a_unpressed.png', 'imgA'),
     loadImg('sample_data/png_b_pressed.png', 'imgB'),
+    loadImg('sample_data/png_c_eq_off.png', 'imgC'),
   ]);
-  updateStatus(); render();
+  updateStatus();
+  // Auto-import the default manifest so all regions + source=C for circle_30 are pre-set
+  try {
+    const r = await fetch('sample_data/default_manifest.json');
+    if (r.ok) importShapesData(await r.json());
+  } catch (e) { console.warn('default manifest not loaded', e); }
+  render();
 });
 
-// Auto-load on page init if no upload yet
 window.addEventListener('load', () => {
   setTimeout(() => document.getElementById('btnLoadDefaults').click(), 50);
 });
