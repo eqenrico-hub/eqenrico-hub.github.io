@@ -75,7 +75,17 @@
     <label><input type="checkbox" id="mirror-d" checked> D (8-fold)</label>
     <label><input type="checkbox" id="snap-primitive"> Snap→Circle/Rect</label>
   </div>
-  <div class="tip">Click a button, then click on image (Rect/Circle/Ring/Arc/Poly) OR click-drag a freehand shape (Freehand). On release, Freehand auto-mirrors per checkboxes above.</div>
+  <div class="tip">Click a shape button, then <b>click-drag</b> to draw (PowerPoint-style bbox). Hold <b>Alt</b> = from center · <b>Shift</b> = lock square/circle.<br>
+  <b>Move:</b> drag body · Shift=lock axis · Alt=skip snap-guides<br>
+  <b>Resize:</b> drag the 8 yellow handles · Shift+corner = lock aspect ratio<br>
+  <b>Guides:</b> click <span style="color:#6cf">＋ Guide H</span> / <span style="color:#6cf">＋ Guide V</span> to add personal rulers (not exported in JSON)<br>
+  <b>Shortcuts:</b> Cmd+Z undo · Cmd+Shift+Z redo · Cmd+C/V copy/paste · Cmd+D duplicate · Cmd+X cut · Delete · Arrows nudge · Shift+Arrows nudge 10px · Esc deselect</div>
+  <div style="display:flex; gap:4px; margin-top:4px; flex-wrap:wrap;">
+    <button id="addGuideHBtn" class="sec" style="font-size:11px">＋ Guide H</button>
+    <button id="addGuideVBtn" class="sec" style="font-size:11px">＋ Guide V</button>
+    <button id="addGuideLineBtn" class="sec" style="font-size:11px">✎ Guide (draw line)</button>
+    <button id="clearGuidesBtn" class="sec" style="font-size:11px">✕ Clear guides</button>
+  </div>
 
   <h3 style="margin-top:10px">Selected shape</h3>
   <div id="selected-info">(none)</div>
@@ -83,6 +93,12 @@
   <button id="deleteBtn" class="sec" style="margin-top:4px">Delete selected</button>
   <button id="snapEdgesBtn" class="sec" style="margin-top:4px">⚡ Snap to Image Edges</button>
   <div class="tip">Pulls each point of selected shape to nearest high-contrast edge in the PNG beneath (search radius 30px).</div>
+
+  <h3 style="margin-top:10px">Texture <span id="tex-sel-count" style="color:#6cf;font-size:11px"></span></h3>
+  <div class="tip">Click shape (shift-click = multi). Pick a texture below to apply to all selected. Texture assignment is saved per shape in JSON (<code>texture_id</code>).</div>
+  <div id="tex-current" style="display:flex;gap:6px;align-items:center;margin:4px 0;font-size:11px;color:#aaa"></div>
+  <div id="tex-library" style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:4px"></div>
+  <div class="tip" style="margin-top:4px">Alt-drag on stage = define custom texture patch from any PNG area.</div>
 
   <h3 style="margin-top:10px">All shapes</h3>
   <div id="shape-list"></div>
@@ -99,9 +115,109 @@ const state = {
   bgNaturalH: 0,
   shapes: [],
   selectedId: null,
+  selectedIds: new Set(),  // multi-select (shift-click). selectedId = primary focus.
   nextId: 1,
   placeMode: null,  // 'rect' | 'circle' | 'ring' | 'arc' | 'polygon' | null
+  guides: [],       // [{ id, axis:'h'|'v', pos }] — personal rulers, not exported
+  nextGuideId: 1,
+  textureLibrary: [],  // user-defined texture patches (rects on PNG)
+  nextTexId: 1,
 };
+
+// Predefined texture library — generic VST GUI patches. Extended at runtime with user custom crops.
+const PRESET_TEXTURES = [
+  { id: 'own_area',       name: 'OWN AREA',         preset: true, description: 'sample from shape\'s own position (default)' },
+  { id: 'knob_small',     name: 'Knob small',       preset: true, sx: 820, sy: 444, sw: 100, sh: 100 },
+  { id: 'knob_giga',      name: 'Knob giga',        preset: true, sx: 58,  sy: 175, sw: 240, sh: 240 },
+  { id: 'wood_brown',     name: 'Wood brown',       preset: true, sx: 750, sy: 30,  sw: 100, sh: 40 },
+  { id: 'dropdown_light', name: 'Dropdown light',   preset: true, sx: 50,  sy: 670, sw: 100, sh: 40 },
+  { id: 'dropdown_dark',  name: 'Dropdown dark',    preset: true, sx: 1295,sy: 45,  sw: 100, sh: 40 },
+  { id: 'display_dark',   name: 'Display dark',     preset: true, sx: 600, sy: 180, sw: 200, sh: 100 },
+  { id: 'keyboard_white', name: 'Keyboard white',   preset: true, sx: 400, sy: 860, sw: 160, sh: 80 },
+  { id: 'chassis_grain',  name: 'Chassis grain',    preset: true, sx: 500, sy: 75,  sw: 130, sh: 40 },
+];
+
+function getSelectedShapes() {
+  // Primary selection + multi-select union, deduplicated
+  const ids = new Set(state.selectedIds);
+  if (state.selectedId) ids.add(state.selectedId);
+  return state.shapes.filter(s => ids.has(s.id));
+}
+
+// =========================== UNDO/REDO HISTORY ===========================
+const MAX_HISTORY = 50;
+const history = { past: [], future: [] };
+let clipboard = null;
+
+function snapshot() {
+  return JSON.stringify({
+    shapes: state.shapes, nextId: state.nextId, selectedId: state.selectedId,
+    guides: state.guides, nextGuideId: state.nextGuideId,
+    textureLibrary: state.textureLibrary, nextTexId: state.nextTexId,
+  });
+}
+function restoreSnapshot(s) {
+  const d = JSON.parse(s);
+  state.shapes = d.shapes;
+  state.nextId = d.nextId;
+  state.selectedId = d.selectedId;
+  state.selectedIds.clear();
+  state.guides = d.guides || [];
+  state.nextGuideId = d.nextGuideId || 1;
+  state.textureLibrary = d.textureLibrary || [];
+  state.nextTexId = d.nextTexId || 1;
+  render();
+}
+function pushHistory() {
+  history.past.push(snapshot());
+  if (history.past.length > MAX_HISTORY) history.past.shift();
+  history.future = [];
+}
+function undo() {
+  if (history.past.length === 0) { status.textContent = 'Nothing to undo'; return; }
+  history.future.push(snapshot());
+  restoreSnapshot(history.past.pop());
+  status.textContent = `Undo (${history.past.length} left)`;
+}
+function redo() {
+  if (history.future.length === 0) { status.textContent = 'Nothing to redo'; return; }
+  history.past.push(snapshot());
+  restoreSnapshot(history.future.pop());
+  status.textContent = `Redo (${history.future.length} left)`;
+}
+function copySelected() {
+  const s = state.shapes.find(x => x.id === state.selectedId);
+  if (!s) return;
+  clipboard = JSON.parse(JSON.stringify(s));
+  status.textContent = `Copied: ${s.name}`;
+}
+function pasteClipboard() {
+  if (!clipboard) { status.textContent = 'Clipboard empty'; return; }
+  pushHistory();
+  const c = JSON.parse(JSON.stringify(clipboard));
+  c.id = state.nextId++;
+  c.name = (c.name || 'shape') + '_copy';
+  // Offset by 20px so it's visible
+  if (c.type === 'rect') { c.x += 20; c.y += 20; }
+  else if (['circle','ring','arc'].includes(c.type)) { c.cx += 20; c.cy += 20; }
+  else if (c.type === 'polygon') { c.points = c.points.map(p => [p[0]+20, p[1]+20]); }
+  state.shapes.push(c);
+  state.selectedId = c.id;
+  render();
+  status.textContent = `Pasted: ${c.name}`;
+}
+function duplicateSelected() {
+  if (!state.selectedId) return;
+  copySelected();
+  pasteClipboard();
+}
+function deleteSelected() {
+  if (!state.selectedId) return;
+  pushHistory();
+  state.shapes = state.shapes.filter(s => s.id !== state.selectedId);
+  state.selectedId = null;
+  render();
+}
 
 // Each shape: { id, type, name, comment, ... type-specific params (in natural image pixels) }
 // rect: {x, y, w, h}
@@ -179,52 +295,201 @@ document.getElementById('bgInput').onchange = (e) => {
 };
 
 // =========================== COORDINATE HELPERS ===========================
+// Use SVG's native coordinate transform — bulletproof, handles any zoom/scroll/scale.
+// This is how professional tools (Figma, Illustrator, draw.io, etc.) convert mouse→viewBox.
 function imgPosFromEvent(e) {
-  const rect = stage.getBoundingClientRect();
-  const xDisp = e.clientX - rect.left;
-  const yDisp = e.clientY - rect.top;
-  const scaleX = state.bgNaturalW / rect.width;
-  const scaleY = state.bgNaturalH / rect.height;
-  return [xDisp * scaleX, yDisp * scaleY];
+  const pt = svg.createSVGPoint();
+  pt.x = e.clientX;
+  pt.y = e.clientY;
+  const ctm = svg.getScreenCTM();
+  if (!ctm) return [0, 0];
+  const local = pt.matrixTransform(ctm.inverse());
+  return [local.x, local.y];
 }
 
-// =========================== SHAPE CREATION ===========================
+// =========================== SHAPE CREATION (CLICK-DRAG) ===========================
+let justCreatedShape = false;  // suppress the bg-click deselect that fires after mouseup
+
 document.querySelectorAll('#new-shape-bar button').forEach(btn => {
   btn.onclick = () => {
     const type = btn.dataset.type;
     state.placeMode = type;
     document.querySelectorAll('#new-shape-bar button').forEach(b => b.classList.toggle('active', b===btn));
-    status.textContent = `Click on image to place ${type}`;
+    status.textContent = type === 'polygon'
+      ? `Click on image to drop polygon (then drag green vertices to reshape)`
+      : `Click-drag on image to draw ${type} — preview updates while dragging`;
   };
 });
 
-svg.addEventListener('click', (e) => {
-  if (!state.placeMode || !state.bgNaturalW || state.placeMode === 'freehand') return;
-  const [x, y] = imgPosFromEvent(e);
-  const id = state.nextId++;
-  const name = `${state.placeMode}_${id}`;
-  let s;
-  if (state.placeMode === 'rect') s = {id,type:'rect',name,comment:'',x:x-40, y:y-20, w:80, h:40};
-  if (state.placeMode === 'circle') s = {id,type:'circle',name,comment:'',cx:x, cy:y, r:40};
-  if (state.placeMode === 'ring') s = {id,type:'ring',name,comment:'',cx:x, cy:y, r_in:40, r_out:70};
-  if (state.placeMode === 'arc') s = {id,type:'arc',name,comment:'',cx:x, cy:y, r_in:60, r_out:100, angle_start_deg:-60, angle_end_deg:60};
-  if (state.placeMode === 'polygon') s = {id,type:'polygon',name,comment:'',points:[[x-30,y-30],[x+30,y-30],[x+30,y+30],[x-30,y+30]]};
-  state.shapes.push(s);
-  state.selectedId = id;
-  state.placeMode = null;
-  document.querySelectorAll('#new-shape-bar button').forEach(b => b.classList.remove('active'));
-  render();
-});
-
-// =========================== FREEHAND + MIRROR ===========================
+// Unified mousedown handler for all shape creation
 let freehandPoints = null;
 let freehandPreviewEl = null;
 
 svg.addEventListener('mousedown', (e) => {
-  if (state.placeMode !== 'freehand' || !state.bgNaturalW) return;
+  // Alt-drag: capture a custom texture patch from any PNG area (no shape creation needed)
+  if (e.altKey && state.bgNaturalW && e.target === svg) {
+    e.preventDefault();
+    e.stopPropagation();
+    startCustomTextureDrag(imgPosFromEvent(e));
+    return;
+  }
+  if (!state.placeMode || !state.bgNaturalW) return;
+  if (e.target !== svg) return;  // let existing shape handlers fire
   e.preventDefault();
-  freehandPoints = [imgPosFromEvent(e)];
-  // Preview polyline
+  e.stopPropagation();
+  const startPos = imgPosFromEvent(e);
+
+  if (state.placeMode === 'freehand') {
+    startFreehandDraw(startPos);
+  } else if (state.placeMode === 'polygon') {
+    dropPolygonAt(startPos);
+  } else if (state.placeMode === 'guide_line') {
+    startDrawLineGuide(startPos);
+  } else {
+    startDragCreate(startPos, state.placeMode);
+  }
+});
+
+// PowerPoint/Figma model: click=one corner of bbox, release=opposite corner.
+// Hold Alt/Option to draw from center. Hold Shift to constrain to square/circle.
+function startDragCreate(startPos, type) {
+  const [sx, sy] = startPos;
+  const ns = 'http://www.w3.org/2000/svg';
+  let previewEl = null;
+
+  function ensurePreview() {
+    if (previewEl) return;
+    if (type === 'rect') previewEl = document.createElementNS(ns, 'rect');
+    else if (type === 'circle') previewEl = document.createElementNS(ns, 'ellipse');
+    else previewEl = document.createElementNS(ns, 'path');  // ring, arc
+    previewEl.setAttribute('fill', 'rgba(255,200,80,0.22)');
+    previewEl.setAttribute('stroke', '#ff6');
+    previewEl.setAttribute('stroke-width', 3);
+    previewEl.setAttribute('stroke-dasharray', '6,4');
+    previewEl.style.pointerEvents = 'none';
+    svg.appendChild(previewEl);
+  }
+
+  // Given two corners + modifier keys, return bbox {x, y, w, h, cx, cy}
+  function bboxFromDrag(mx, my, altCenter, shiftLock) {
+    let x1 = sx, y1 = sy, x2 = mx, y2 = my;
+    if (altCenter) {
+      // Click point is CENTER, release is corner → bbox is symmetric around click
+      const dx = mx - sx, dy = my - sy;
+      x1 = sx - dx; y1 = sy - dy;
+      x2 = sx + dx; y2 = sy + dy;
+    }
+    let x = Math.min(x1, x2), y = Math.min(y1, y2);
+    let w = Math.abs(x2 - x1), h = Math.abs(y2 - y1);
+    if (shiftLock) {
+      // Constrain to square — use the smaller dimension
+      const side = Math.min(w, h);
+      // Keep anchor logic natural
+      if (altCenter) {
+        x = sx - side/2; y = sy - side/2; w = side; h = side;
+      } else {
+        // expand toward drag direction
+        const signX = mx >= sx ? 1 : -1;
+        const signY = my >= sy ? 1 : -1;
+        x = signX > 0 ? sx : sx - side;
+        y = signY > 0 ? sy : sy - side;
+        w = side; h = side;
+      }
+    }
+    return { x, y, w, h, cx: x + w/2, cy: y + h/2 };
+  }
+
+  function updatePreview(mx, my, evt) {
+    ensurePreview();
+    const alt = evt.altKey, shift = evt.shiftKey;
+    const b = bboxFromDrag(mx, my, alt, shift);
+    if (type === 'rect') {
+      previewEl.setAttribute('x', b.x);
+      previewEl.setAttribute('y', b.y);
+      previewEl.setAttribute('width', b.w);
+      previewEl.setAttribute('height', b.h);
+    } else if (type === 'circle') {
+      // Ellipse inscribed in bbox (like PowerPoint oval). Shift already made it square.
+      previewEl.setAttribute('cx', b.cx);
+      previewEl.setAttribute('cy', b.cy);
+      previewEl.setAttribute('rx', b.w/2);
+      previewEl.setAttribute('ry', b.h/2);
+    } else if (type === 'ring') {
+      const r_out = Math.min(b.w, b.h) / 2;
+      const r_in = r_out * 0.65;
+      previewEl.setAttribute('d', ringPathD(b.cx, b.cy, r_in, r_out));
+      previewEl.setAttribute('fill-rule', 'evenodd');
+    } else if (type === 'arc') {
+      const r_out = Math.min(b.w, b.h) / 2;
+      const r_in = r_out * 0.65;
+      previewEl.setAttribute('d', arcPathD(b.cx, b.cy, r_in, r_out, -60, 60));
+    }
+  }
+
+  function onMove(me) {
+    const [mx, my] = imgPosFromEvent(me);
+    updatePreview(mx, my, me);
+  }
+
+  function onUp(me) {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    if (previewEl) { svg.removeChild(previewEl); previewEl = null; }
+    const [mx, my] = imgPosFromEvent(me);
+    const b = bboxFromDrag(mx, my, me.altKey, me.shiftKey);
+
+    // Too-small drag = cancel
+    if (b.w < 4 && b.h < 4) {
+      clearPlaceMode();
+      status.textContent = `Cancelled — drag further to create`;
+      return;
+    }
+
+    pushHistory();
+    const id = state.nextId++;
+    let s;
+    if (type === 'rect') {
+      s = { id, type, name:`rect_${id}`, comment:'', x:b.x, y:b.y, w:b.w, h:b.h };
+    } else if (type === 'circle') {
+      const r = (b.w + b.h) / 4;
+      s = { id, type, name:`circle_${id}`, comment:'', cx:b.cx, cy:b.cy, r };
+    } else if (type === 'ring') {
+      const r_out = Math.min(b.w, b.h) / 2;
+      s = { id, type, name:`ring_${id}`, comment:'', cx:b.cx, cy:b.cy, r_in: r_out * 0.65, r_out };
+    } else if (type === 'arc') {
+      const r_out = Math.min(b.w, b.h) / 2;
+      s = { id, type, name:`arc_${id}`, comment:'', cx:b.cx, cy:b.cy, r_in: r_out * 0.65, r_out, angle_start_deg:-60, angle_end_deg:60 };
+    }
+    state.shapes.push(s);
+    state.selectedId = id;
+    justCreatedShape = true;
+    clearPlaceMode();
+    render();
+  }
+
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
+function clearPlaceMode() {
+  state.placeMode = null;
+  document.querySelectorAll('#new-shape-bar button').forEach(b => b.classList.remove('active'));
+}
+
+function dropPolygonAt(pos) {
+  const [x, y] = pos;
+  pushHistory();
+  const id = state.nextId++;
+  state.shapes.push({ id, type:'polygon', name:`polygon_${id}`, comment:'',
+    points:[[x-30,y-30],[x+30,y-30],[x+30,y+30],[x-30,y+30]] });
+  state.selectedId = id;
+  justCreatedShape = true;
+  clearPlaceMode();
+  render();
+}
+
+function startFreehandDraw(startPos) {
+  freehandPoints = [startPos];
   freehandPreviewEl = document.createElementNS('http://www.w3.org/2000/svg','polyline');
   freehandPreviewEl.setAttribute('stroke', '#ff6');
   freehandPreviewEl.setAttribute('stroke-width', 3);
@@ -239,15 +504,32 @@ svg.addEventListener('mousedown', (e) => {
     document.removeEventListener('mouseup', onUp);
     if (freehandPreviewEl) svg.removeChild(freehandPreviewEl);
     freehandPreviewEl = null;
-    if (freehandPoints.length < 3) { freehandPoints = null; return; }
+    if (freehandPoints.length < 3) { freehandPoints = null; clearPlaceMode(); return; }
     finalizeFreehand(freehandPoints);
     freehandPoints = null;
-    state.placeMode = null;
-    document.querySelectorAll('#new-shape-bar button').forEach(b => b.classList.remove('active'));
+    justCreatedShape = true;
+    clearPlaceMode();
   };
   document.addEventListener('mousemove', onMove);
   document.addEventListener('mouseup', onUp);
-});
+}
+
+// SVG path helpers
+function ringPathD(cx, cy, r_in, r_out) {
+  return `M ${cx-r_out} ${cy} A ${r_out} ${r_out} 0 1 0 ${cx+r_out} ${cy} A ${r_out} ${r_out} 0 1 0 ${cx-r_out} ${cy} Z M ${cx-r_in} ${cy} A ${r_in} ${r_in} 0 1 1 ${cx+r_in} ${cy} A ${r_in} ${r_in} 0 1 1 ${cx-r_in} ${cy} Z`;
+}
+function arcPathD(cx, cy, r_in, r_out, angStart, angEnd) {
+  const a1 = (angStart - 90) * Math.PI / 180;
+  const a2 = (angEnd - 90) * Math.PI / 180;
+  const sweep = angEnd - angStart;
+  const large = Math.abs(sweep) > 180 ? 1 : 0;
+  const dir = sweep > 0 ? 1 : 0;
+  const x1o = cx + Math.cos(a1)*r_out, y1o = cy + Math.sin(a1)*r_out;
+  const x2o = cx + Math.cos(a2)*r_out, y2o = cy + Math.sin(a2)*r_out;
+  const x1i = cx + Math.cos(a1)*r_in, y1i = cy + Math.sin(a1)*r_in;
+  const x2i = cx + Math.cos(a2)*r_in, y2i = cy + Math.sin(a2)*r_in;
+  return `M ${x1o} ${y1o} A ${r_out} ${r_out} 0 ${large} ${dir} ${x2o} ${y2o} L ${x2i} ${y2i} A ${r_in} ${r_in} 0 ${large} ${1-dir} ${x1i} ${y1i} Z`;
+}
 
 function detectCorners(pts, angleThresholdDeg = 30) {
   // Returns array of [theta, r] for each corner detected in the raw path
@@ -406,6 +688,7 @@ function finalizeFreehand(rawPoints) {
     const relDev = maxDev / meanR;
     if (relDev < 0.06) {
       // Basically a circle — output perfect circle
+      pushHistory();
       const id = state.nextId++;
       state.shapes.push({ id, type:'circle', name:`circle_${id}`, comment:'', cx, cy, r: meanR });
       state.selectedId = id;
@@ -420,6 +703,7 @@ function finalizeFreehand(rawPoints) {
   if (snap) {
     const snapped = snapToPrimitive(points);
     if (snapped) {
+      pushHistory();
       const id = state.nextId++;
       snapped.id = id;
       snapped.name = `${snapped.type}_${id}`;
@@ -432,6 +716,7 @@ function finalizeFreehand(rawPoints) {
   }
 
   // Keep as polygon
+  pushHistory();
   const id = state.nextId++;
   state.shapes.push({
     id, type:'polygon', name:`freehand_${id}`, comment:'', points
@@ -538,14 +823,143 @@ function snapToPrimitive(points) {
 // =========================== RENDER ===========================
 function render() {
   svg.innerHTML = '';
+  drawGuideRulers();
   state.shapes.forEach(s => drawShape(s));
   renderList();
   renderParams();
+  renderTexturePanel();
+}
+
+function drawGuideRulers() {
+  const ns = 'http://www.w3.org/2000/svg';
+  state.guides.forEach(g => {
+    const line = document.createElementNS(ns, 'line');
+    if (g.axis === 'h') {
+      line.setAttribute('x1', 0); line.setAttribute('x2', state.bgNaturalW || 10000);
+      line.setAttribute('y1', g.pos); line.setAttribute('y2', g.pos);
+      line.style.cursor = 'ns-resize';
+    } else if (g.axis === 'v') {
+      line.setAttribute('y1', 0); line.setAttribute('y2', state.bgNaturalH || 10000);
+      line.setAttribute('x1', g.pos); line.setAttribute('x2', g.pos);
+      line.style.cursor = 'ew-resize';
+    } else if (g.axis === 'line') {
+      // Free diagonal/arbitrary line — extend both ends slightly for easier grabbing
+      const [x1, y1] = g.p1, [x2, y2] = g.p2;
+      const dx = x2 - x1, dy = y2 - y1;
+      const len = Math.hypot(dx, dy) || 1;
+      const ex = (dx / len) * 40, ey = (dy / len) * 40;
+      line.setAttribute('x1', x1 - ex); line.setAttribute('y1', y1 - ey);
+      line.setAttribute('x2', x2 + ex); line.setAttribute('y2', y2 + ey);
+      line.style.cursor = 'move';
+    }
+    line.setAttribute('stroke', '#5ab0ff');
+    line.setAttribute('stroke-width', 1.3);
+    line.setAttribute('stroke-dasharray', '8,4');
+    line.addEventListener('mousedown', (e) => startDragGuide(e, g));
+    svg.appendChild(line);
+    // Label
+    const lbl = document.createElementNS(ns, 'text');
+    lbl.setAttribute('fill', '#5ab0ff'); lbl.setAttribute('font-size', '11');
+    lbl.setAttribute('stroke', '#000'); lbl.setAttribute('stroke-width', '3');
+    lbl.setAttribute('paint-order', 'stroke');
+    lbl.style.pointerEvents = 'none';
+    if (g.axis === 'h') {
+      lbl.setAttribute('x', 8); lbl.setAttribute('y', g.pos - 4);
+      lbl.textContent = `H @ ${Math.round(g.pos)}`;
+    } else if (g.axis === 'v') {
+      lbl.setAttribute('x', g.pos + 4); lbl.setAttribute('y', 14);
+      lbl.textContent = `V @ ${Math.round(g.pos)}`;
+    } else {
+      const mx = (g.p1[0] + g.p2[0]) / 2, my = (g.p1[1] + g.p2[1]) / 2;
+      const angle = Math.atan2(g.p2[1]-g.p1[1], g.p2[0]-g.p1[0]) * 180 / Math.PI;
+      lbl.setAttribute('x', mx + 6); lbl.setAttribute('y', my - 6);
+      lbl.textContent = `Line ${angle.toFixed(0)}°`;
+    }
+    svg.appendChild(lbl);
+  });
+}
+
+function startDragGuide(e, g) {
+  e.stopPropagation(); e.preventDefault();
+  pushHistory();
+  const [sx, sy] = imgPosFromEvent(e);
+  const origP1 = g.p1 ? [...g.p1] : null;
+  const origP2 = g.p2 ? [...g.p2] : null;
+  const origPos = g.pos;
+  function onMove(me) {
+    const [mx, my] = imgPosFromEvent(me);
+    if (g.axis === 'h') g.pos = origPos + (my - sy);
+    else if (g.axis === 'v') g.pos = origPos + (mx - sx);
+    else if (g.axis === 'line') {
+      const dx = mx - sx, dy = my - sy;
+      g.p1 = [origP1[0] + dx, origP1[1] + dy];
+      g.p2 = [origP2[0] + dx, origP2[1] + dy];
+    }
+    render();
+  }
+  function up() { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', up); }
+  document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', up);
+}
+
+function addGuide(axis) {
+  pushHistory();
+  const pos = axis === 'h' ? (state.bgNaturalH / 2) : (state.bgNaturalW / 2);
+  state.guides.push({ id: state.nextGuideId++, axis, pos });
+  status.textContent = `Added ${axis === 'h' ? 'horizontal' : 'vertical'} guide (drag to reposition)`;
+  render();
+}
+document.getElementById('addGuideHBtn').onclick = () => addGuide('h');
+document.getElementById('addGuideVBtn').onclick = () => addGuide('v');
+document.getElementById('addGuideLineBtn').onclick = () => {
+  state.placeMode = 'guide_line';
+  status.textContent = 'Click-drag on image to draw a free guide line';
+};
+document.getElementById('clearGuidesBtn').onclick = () => {
+  if (state.guides.length === 0) return;
+  pushHistory();
+  state.guides = [];
+  render();
+};
+
+// Free-line guide drawing
+function startDrawLineGuide(startPos) {
+  const [sx, sy] = startPos;
+  const ns = 'http://www.w3.org/2000/svg';
+  const preview = document.createElementNS(ns, 'line');
+  preview.setAttribute('x1', sx); preview.setAttribute('y1', sy);
+  preview.setAttribute('x2', sx); preview.setAttribute('y2', sy);
+  preview.setAttribute('stroke', '#5ab0ff');
+  preview.setAttribute('stroke-width', 1.5);
+  preview.setAttribute('stroke-dasharray', '6,4');
+  preview.style.pointerEvents = 'none';
+  svg.appendChild(preview);
+  function onMove(me) {
+    const [mx, my] = imgPosFromEvent(me);
+    preview.setAttribute('x2', mx); preview.setAttribute('y2', my);
+  }
+  function onUp(me) {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    svg.removeChild(preview);
+    const [mx, my] = imgPosFromEvent(me);
+    if (Math.hypot(mx - sx, my - sy) < 5) {
+      status.textContent = 'Line too short — cancelled';
+      clearPlaceMode();
+      return;
+    }
+    pushHistory();
+    state.guides.push({ id: state.nextGuideId++, axis: 'line', p1: [sx, sy], p2: [mx, my] });
+    clearPlaceMode();
+    render();
+    status.textContent = 'Free guide line added';
+  }
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
 }
 
 function drawShape(s) {
   const ns = 'http://www.w3.org/2000/svg';
-  const selected = (s.id === state.selectedId);
+  const selected = (s.id === state.selectedId) || state.selectedIds.has(s.id);
   const stroke = selected ? '#ffee66' : '#ff9b3a';
   const strokeW = selected ? 4 : 3;
   let shape;
@@ -588,7 +1002,7 @@ function drawShape(s) {
   shape.setAttribute('stroke-width', strokeW);
   shape.style.cursor = 'move';
   shape.addEventListener('mousedown', (e) => startDrag(e, s));
-  shape.addEventListener('click', (e) => { e.stopPropagation(); select(s.id); });
+  shape.addEventListener('click', (e) => { e.stopPropagation(); select(s.id, e.shiftKey); });
   svg.appendChild(shape);
 
   // Label
@@ -627,7 +1041,18 @@ function drawHandles(s) {
     svg.appendChild(h);
   }
   if (s.type === 'rect') {
-    addHandle(s.x+s.w, s.y+s.h, 'outer', (e) => startResizeRect(e, s));
+    // 8 handles: 4 corners + 4 midpoints — like PowerPoint/Figma
+    const hs = [
+      {x: s.x,         y: s.y,         a: 'tl'},
+      {x: s.x + s.w/2, y: s.y,         a: 't' },
+      {x: s.x + s.w,   y: s.y,         a: 'tr'},
+      {x: s.x + s.w,   y: s.y + s.h/2, a: 'r' },
+      {x: s.x + s.w,   y: s.y + s.h,   a: 'br'},
+      {x: s.x + s.w/2, y: s.y + s.h,   a: 'b' },
+      {x: s.x,         y: s.y + s.h,   a: 'bl'},
+      {x: s.x,         y: s.y + s.h/2, a: 'l' },
+    ];
+    hs.forEach(h => addHandle(h.x, h.y, 'outer', (e) => startResizeRect(e, s, h.a)));
   } else if (s.type === 'circle') {
     addHandle(s.cx+s.r, s.cy, 'outer', (e) => startResizeCircleR(e, s));
   } else if (s.type === 'ring') {
@@ -649,32 +1074,215 @@ function drawHandles(s) {
 }
 
 // =========================== DRAG / RESIZE ===========================
+// Compute the bbox of any shape for smart guides
+function bboxOf(s) {
+  if (s.type === 'rect') return { x1: s.x, y1: s.y, x2: s.x + s.w, y2: s.y + s.h };
+  if (s.type === 'circle') return { x1: s.cx - s.r, y1: s.cy - s.r, x2: s.cx + s.r, y2: s.cy + s.r };
+  if (s.type === 'ring' || s.type === 'arc') return { x1: s.cx - s.r_out, y1: s.cy - s.r_out, x2: s.cx + s.r_out, y2: s.cy + s.r_out };
+  if (s.type === 'polygon') {
+    const xs = s.points.map(p=>p[0]), ys = s.points.map(p=>p[1]);
+    return { x1: Math.min(...xs), y1: Math.min(...ys), x2: Math.max(...xs), y2: Math.max(...ys) };
+  }
+}
+
+// Given a shape bbox being moved, find alignment snaps to all OTHER shapes.
+// Returns { dx, dy, guidesX, guidesY } where d is additional offset to snap.
+function computeSnap(movingBbox, excludeId, tolPx = 6) {
+  const mb = movingBbox;
+  const mcx = (mb.x1 + mb.x2) / 2, mcy = (mb.y1 + mb.y2) / 2;
+  const movingLines = {
+    x: [{v: mb.x1, kind:'left'}, {v: mcx, kind:'center'}, {v: mb.x2, kind:'right'}],
+    y: [{v: mb.y1, kind:'top'},  {v: mcy, kind:'middle'}, {v: mb.y2, kind:'bottom'}],
+  };
+  let bestDx = 0, bestDistX = tolPx + 1;
+  let bestDy = 0, bestDistY = tolPx + 1;
+  const guidesX = [], guidesY = [];
+  state.shapes.forEach(other => {
+    if (other.id === excludeId) return;
+    const ob = bboxOf(other);
+    const ocx = (ob.x1 + ob.x2) / 2, ocy = (ob.y1 + ob.y2) / 2;
+    const targetsX = [ob.x1, ocx, ob.x2];
+    const targetsY = [ob.y1, ocy, ob.y2];
+    movingLines.x.forEach(m => {
+      targetsX.forEach(t => {
+        const d = t - m.v;
+        if (Math.abs(d) < bestDistX) { bestDistX = Math.abs(d); bestDx = d; }
+        if (Math.abs(d) < tolPx) guidesX.push({ x: t, y1: Math.min(mb.y1, ob.y1), y2: Math.max(mb.y2, ob.y2) });
+      });
+    });
+    movingLines.y.forEach(m => {
+      targetsY.forEach(t => {
+        const d = t - m.v;
+        if (Math.abs(d) < bestDistY) { bestDistY = Math.abs(d); bestDy = d; }
+        if (Math.abs(d) < tolPx) guidesY.push({ y: t, x1: Math.min(mb.x1, ob.x1), x2: Math.max(mb.x2, ob.x2) });
+      });
+    });
+  });
+  // Also snap to personal guide rulers (H, V, and free lines)
+  const lineSnaps = [];
+  state.guides.forEach(g => {
+    if (g.axis === 'v') {
+      movingLines.x.forEach(m => {
+        const d = g.pos - m.v;
+        if (Math.abs(d) < bestDistX) { bestDistX = Math.abs(d); bestDx = d; }
+        if (Math.abs(d) < tolPx) guidesX.push({ x: g.pos, y1: 0, y2: state.bgNaturalH });
+      });
+    } else if (g.axis === 'h') {
+      movingLines.y.forEach(m => {
+        const d = g.pos - m.v;
+        if (Math.abs(d) < bestDistY) { bestDistY = Math.abs(d); bestDy = d; }
+        if (Math.abs(d) < tolPx) guidesY.push({ y: g.pos, x1: 0, x2: state.bgNaturalW });
+      });
+    } else if (g.axis === 'line') {
+      // Perpendicular snap: shape center onto the line
+      const [x1, y1] = g.p1, [x2, y2] = g.p2;
+      const dx_l = x2 - x1, dy_l = y2 - y1;
+      const len = Math.hypot(dx_l, dy_l);
+      if (len < 1) return;
+      const nx = -dy_l / len, ny = dx_l / len;   // unit normal
+      const sd = (mcx - x1) * nx + (mcy - y1) * ny;  // signed perpendicular distance
+      if (Math.abs(sd) < tolPx) {
+        lineSnaps.push({ offX: -sd * nx, offY: -sd * ny, guide: g });
+      }
+    }
+  });
+  if (bestDistX > tolPx) bestDx = 0;
+  if (bestDistY > tolPx) bestDy = 0;
+
+  // Apply line-guide snap if it's closer than the axis-aligned snaps
+  const activeLineSnap = [];
+  if (lineSnaps.length > 0) {
+    lineSnaps.sort((a, b) => Math.hypot(a.offX, a.offY) - Math.hypot(b.offX, b.offY));
+    const ls = lineSnaps[0];
+    const lsDist = Math.hypot(ls.offX, ls.offY);
+    const aaDist = Math.hypot(bestDx, bestDy);
+    if (lsDist < aaDist || aaDist === 0) {
+      bestDx = ls.offX;
+      bestDy = ls.offY;
+      activeLineSnap.push(ls.guide);
+    }
+  }
+  return { dx: bestDx, dy: bestDy, guidesX, guidesY, lineGuides: activeLineSnap };
+}
+
+function drawGuides(guidesX, guidesY, lineGuides) {
+  const ns = 'http://www.w3.org/2000/svg';
+  guidesX.forEach(g => {
+    const line = document.createElementNS(ns, 'line');
+    line.setAttribute('x1', g.x); line.setAttribute('x2', g.x);
+    line.setAttribute('y1', g.y1 - 20); line.setAttribute('y2', g.y2 + 20);
+    line.setAttribute('stroke', '#ff5555');
+    line.setAttribute('stroke-width', 1.5);
+    line.setAttribute('stroke-dasharray', '4,3');
+    line.style.pointerEvents = 'none';
+    svg.appendChild(line);
+  });
+  guidesY.forEach(g => {
+    const line = document.createElementNS(ns, 'line');
+    line.setAttribute('y1', g.y); line.setAttribute('y2', g.y);
+    line.setAttribute('x1', g.x1 - 20); line.setAttribute('x2', g.x2 + 20);
+    line.setAttribute('stroke', '#ff5555');
+    line.setAttribute('stroke-width', 1.5);
+    line.setAttribute('stroke-dasharray', '4,3');
+    line.style.pointerEvents = 'none';
+    svg.appendChild(line);
+  });
+  (lineGuides || []).forEach(g => {
+    const line = document.createElementNS(ns, 'line');
+    const [x1, y1] = g.p1, [x2, y2] = g.p2;
+    const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy) || 1;
+    const ex = (dx / len) * 60, ey = (dy / len) * 60;
+    line.setAttribute('x1', x1 - ex); line.setAttribute('y1', y1 - ey);
+    line.setAttribute('x2', x2 + ex); line.setAttribute('y2', y2 + ey);
+    line.setAttribute('stroke', '#ff5555');
+    line.setAttribute('stroke-width', 2);
+    line.style.pointerEvents = 'none';
+    svg.appendChild(line);
+  });
+}
+
 function startDrag(e, s) {
   e.stopPropagation();
   select(s.id);
+  pushHistory();
   const [sx, sy] = imgPosFromEvent(e);
   const orig = JSON.parse(JSON.stringify(s));
-  function onMove(me) {
-    const [mx, my] = imgPosFromEvent(me);
-    const dx = mx - sx, dy = my - sy;
+  function applyOffset(dx, dy) {
     if (s.type === 'rect') { s.x = orig.x + dx; s.y = orig.y + dy; }
     else if (s.type==='circle'||s.type==='ring'||s.type==='arc') {
       s.cx = orig.cx + dx; s.cy = orig.cy + dy;
     } else if (s.type === 'polygon') {
       s.points = orig.points.map(p => [p[0]+dx, p[1]+dy]);
     }
-    render();
   }
-  function onUp() { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); }
+  function onMove(me) {
+    const [mx, my] = imgPosFromEvent(me);
+    let dx = mx - sx, dy = my - sy;
+    // Shift = constrain to dominant axis (horizontal or vertical only)
+    if (me.shiftKey) {
+      if (Math.abs(dx) > Math.abs(dy)) dy = 0; else dx = 0;
+    }
+    applyOffset(dx, dy);
+    // Smart-guide snap — skipped if Alt held (free move)
+    let snap = { dx: 0, dy: 0, guidesX: [], guidesY: [], lineGuides: [] };
+    if (!me.altKey) {
+      snap = computeSnap(bboxOf(s), s.id, 6);
+      applyOffset(dx + snap.dx, dy + snap.dy);
+    }
+    render();
+    drawGuides(snap.guidesX, snap.guidesY, snap.lineGuides);
+  }
+  function onUp() {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    render();  // clears guides
+  }
   document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp);
 }
 
 function dragHelper(e, onMove) {
   e.stopPropagation(); e.preventDefault();
+  pushHistory();
   function up() { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', up); }
   document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', up);
 }
-function startResizeRect(e, s) { dragHelper(e, (me) => { const [mx,my]=imgPosFromEvent(me); s.w = Math.max(5, mx - s.x); s.h = Math.max(5, my - s.y); render(); }); }
+function startResizeRect(e, s, anchor) {
+  e.stopPropagation(); e.preventDefault();
+  pushHistory();
+  const orig = { x: s.x, y: s.y, w: s.w, h: s.h };
+  const origAspect = orig.w / orig.h;
+  const hasLeft   = anchor.includes('l');
+  const hasRight  = anchor.includes('r');
+  const hasTop    = anchor.includes('t');
+  const hasBottom = anchor.includes('b');
+  function onMove(me) {
+    const [mx, my] = imgPosFromEvent(me);
+    let x = orig.x, y = orig.y, w = orig.w, h = orig.h;
+    if (hasLeft)   { w = orig.x + orig.w - mx; x = mx; }
+    if (hasRight)  { w = mx - orig.x; }
+    if (hasTop)    { h = orig.y + orig.h - my; y = my; }
+    if (hasBottom) { h = my - orig.y; }
+    if (w < 5) { w = 5; if (hasLeft) x = orig.x + orig.w - 5; }
+    if (h < 5) { h = 5; if (hasTop) y = orig.y + orig.h - 5; }
+    // Shift + corner = keep aspect ratio
+    if (me.shiftKey && (hasLeft || hasRight) && (hasTop || hasBottom)) {
+      const target = origAspect;
+      if (w / h > target) {
+        const nw = h * target;
+        if (hasLeft) x += (w - nw);
+        w = nw;
+      } else {
+        const nh = w / target;
+        if (hasTop) y += (h - nh);
+        h = nh;
+      }
+    }
+    s.x = x; s.y = y; s.w = w; s.h = h;
+    render();
+  }
+  function up() { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', up); }
+  document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', up);
+}
 function startResizeCircleR(e, s) { dragHelper(e, (me) => { const [mx,my]=imgPosFromEvent(me); s.r = Math.max(3, Math.hypot(mx-s.cx, my-s.cy)); render(); }); }
 function startResizeRingOuter(e, s) { dragHelper(e, (me) => { const [mx,my]=imgPosFromEvent(me); s.r_out = Math.max(s.r_in+4, Math.hypot(mx-s.cx, my-s.cy)); render(); }); }
 function startResizeRingInner(e, s) { dragHelper(e, (me) => { const [mx,my]=imgPosFromEvent(me); s.r_in = Math.max(0, Math.min(s.r_out-4, Math.hypot(mx-s.cx, my-s.cy))); render(); }); }
@@ -695,14 +1303,153 @@ function startDragPolyPoint(e, s, i) {
 }
 
 // =========================== SIDEBAR ===========================
-function select(id) { state.selectedId = id; render(); }
+function select(id, addToSelection) {
+  if (addToSelection) {
+    if (state.selectedIds.has(id)) state.selectedIds.delete(id);
+    else state.selectedIds.add(id);
+    state.selectedId = id;
+  } else {
+    state.selectedIds.clear();
+    state.selectedIds.add(id);
+    state.selectedId = id;
+  }
+  render();
+}
+
+// =========================== TEXTURE ASSIGNMENT ===========================
+function getAllTextures() {
+  return [...PRESET_TEXTURES, ...state.textureLibrary];
+}
+
+function applyTextureToSelection(texId) {
+  const sel = getSelectedShapes();
+  if (!sel.length) { status.textContent = 'Select shape(s) first.'; return; }
+  pushHistory();
+  sel.forEach(s => {
+    if (texId === 'own_area') delete s.texture_id;
+    else s.texture_id = texId;
+  });
+  status.textContent = `Applied "${texId}" to ${sel.length} shape(s).`;
+  renderTexturePanel();
+  renderList();
+}
+
+function renderTexturePanel() {
+  const lib = document.getElementById('tex-library');
+  const info = document.getElementById('tex-current');
+  const count = document.getElementById('tex-sel-count');
+  if (!lib) return;
+  const sel = getSelectedShapes();
+  count.textContent = sel.length ? `(${sel.length} selected)` : '';
+
+  // Show current texture assigned on primary selection
+  info.innerHTML = '';
+  if (sel.length === 1) {
+    const s = sel[0];
+    const tid = s.texture_id || 'own_area';
+    info.innerHTML = `<span>Current:</span><strong style="color:#6cf">${tid}</strong>`;
+  } else if (sel.length > 1) {
+    const ids = new Set(sel.map(s => s.texture_id || 'own_area'));
+    info.innerHTML = ids.size === 1
+      ? `<span>Current (all ${sel.length}):</span><strong style="color:#6cf">${[...ids][0]}</strong>`
+      : `<span style="color:#fa7">Mixed: ${[...ids].join(', ')}</span>`;
+  } else {
+    info.innerHTML = `<span style="color:#666">No shape selected</span>`;
+  }
+
+  // Texture grid
+  lib.innerHTML = '';
+  const imgNatW = state.bgNaturalW, imgNatH = state.bgNaturalH;
+  const selTexIds = new Set(sel.map(s => s.texture_id || 'own_area'));
+
+  getAllTextures().forEach(t => {
+    const cell = document.createElement('div');
+    cell.style.cssText = `aspect-ratio:1;background:#181818;border:1px solid ${selTexIds.has(t.id) && sel.length ? '#6cf' : '#333'};border-radius:3px;cursor:pointer;position:relative;overflow:hidden;font-size:8px;color:#aaa`;
+    cell.title = t.name + (t.description ? ' — ' + t.description : '');
+    if (t.id === 'own_area') {
+      cell.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;text-align:center;font-size:8px;line-height:1.2">OWN<br>AREA</div>`;
+    } else if (state.bgUrl && t.sx + t.sw <= imgNatW && t.sy + t.sh <= imgNatH) {
+      // Render preview of the cropped texture via an inline canvas
+      const c = document.createElement('canvas');
+      c.width = 48; c.height = 48;
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        c.getContext('2d').drawImage(img, t.sx, t.sy, t.sw, t.sh, 0, 0, 48, 48);
+      };
+      img.src = state.bgUrl;
+      c.style.cssText = 'width:100%;height:100%;display:block';
+      cell.appendChild(c);
+    } else {
+      cell.innerHTML = `<div style="padding:2px;text-align:center">${t.name}</div>`;
+    }
+    // Label overlay
+    const lbl = document.createElement('div');
+    lbl.style.cssText = 'position:absolute;bottom:0;left:0;right:0;background:#000b;color:#ddd;font-size:8px;padding:1px 3px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap';
+    lbl.textContent = t.name;
+    cell.appendChild(lbl);
+    cell.onclick = () => applyTextureToSelection(t.id);
+    lib.appendChild(cell);
+  });
+}
+
+function addCustomTexture(sx, sy, sw, sh) {
+  const name = prompt('Name this custom texture:', 'custom_' + state.nextTexId);
+  if (!name) return;
+  const id = 'custom_' + (state.nextTexId++);
+  state.textureLibrary.push({ id, name, sx, sy, sw, sh, preset: false });
+  renderTexturePanel();
+  status.textContent = `Added custom texture "${name}"`;
+}
+
+function startCustomTextureDrag(startPos) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const preview = document.createElementNS(ns, 'rect');
+  preview.setAttribute('x', startPos[0]); preview.setAttribute('y', startPos[1]);
+  preview.setAttribute('width', 0); preview.setAttribute('height', 0);
+  preview.setAttribute('fill', 'rgba(255, 0, 255, 0.15)');
+  preview.setAttribute('stroke', '#f0f');
+  preview.setAttribute('stroke-width', 2);
+  preview.setAttribute('stroke-dasharray', '4,2');
+  preview.style.pointerEvents = 'none';
+  svg.appendChild(preview);
+  status.textContent = 'Alt-drag: defining custom texture rect…';
+
+  function onMove(me) {
+    const [mx, my] = imgPosFromEvent(me);
+    const x = Math.min(startPos[0], mx);
+    const y = Math.min(startPos[1], my);
+    preview.setAttribute('x', x); preview.setAttribute('y', y);
+    preview.setAttribute('width', Math.abs(mx - startPos[0]));
+    preview.setAttribute('height', Math.abs(my - startPos[1]));
+  }
+  function onUp(me) {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    svg.removeChild(preview);
+    const [mx, my] = imgPosFromEvent(me);
+    const sx = Math.round(Math.min(startPos[0], mx));
+    const sy = Math.round(Math.min(startPos[1], my));
+    const sw = Math.round(Math.abs(mx - startPos[0]));
+    const sh = Math.round(Math.abs(my - startPos[1]));
+    if (sw >= 8 && sh >= 8) {
+      addCustomTexture(sx, sy, sw, sh);
+    } else {
+      status.textContent = 'Custom texture too small (min 8×8).';
+    }
+  }
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
 function renderList() {
   shapeList.innerHTML = '';
   state.shapes.forEach(s => {
     const el = document.createElement('div');
-    el.className = 'shape-item' + (s.id===state.selectedId?' selected':'');
-    el.innerHTML = `<span>${s.id}: ${s.type} — ${s.name}</span><span style="color:#888">${s.comment?'📝':''}</span>`;
-    el.onclick = () => select(s.id);
+    const isSel = (s.id === state.selectedId) || state.selectedIds.has(s.id);
+    el.className = 'shape-item' + (isSel ? ' selected' : '');
+    const texBadge = s.texture_id ? `<span style="color:#6cf;font-size:10px">🎨 ${s.texture_id}</span>` : '';
+    el.innerHTML = `<span>${s.id}: ${s.type} — ${s.name}</span><span style="color:#888">${texBadge} ${s.comment?'📝':''}</span>`;
+    el.onclick = (e) => select(s.id, e.shiftKey);
     shapeList.appendChild(el);
   });
 }
@@ -735,6 +1482,8 @@ function renderParams() {
   }
   params.innerHTML = html;
   params.querySelectorAll('input').forEach(inp => {
+    // Snapshot once when the user starts editing this field
+    inp.onfocus = () => { inp.dataset.snapshotted = '1'; pushHistory(); };
     inp.oninput = () => {
       if (inp.dataset.poly !== undefined) {
         const i = +inp.dataset.poly, xy = +inp.dataset.xy;
@@ -749,11 +1498,7 @@ function renderParams() {
 }
 
 // =========================== DELETE ===========================
-document.getElementById('deleteBtn').onclick = () => {
-  state.shapes = state.shapes.filter(s => s.id !== state.selectedId);
-  state.selectedId = null;
-  render();
-};
+document.getElementById('deleteBtn').onclick = () => deleteSelected();
 
 // =========================== SNAP TO IMAGE EDGES ===========================
 let edgeCanvasCached = null;
@@ -844,6 +1589,7 @@ document.getElementById('snapEdgesBtn').onclick = () => {
   if (!s) { status.textContent = 'Select a shape first'; return; }
   if (!state.bgNaturalW) { status.textContent = 'Load background image first'; return; }
   status.textContent = 'Analyzing edges…';
+  pushHistory();
   setTimeout(() => {
     const mH = document.getElementById('mirror-h').checked;
     const mV = document.getElementById('mirror-v').checked;
@@ -893,10 +1639,13 @@ document.getElementById('snapEdgesBtn').onclick = () => {
 
 // =========================== EXPORT ===========================
 function exportJson() {
+  // Include only non-preset (custom) textures in the exported library — presets are known to downstream
+  const customTextures = state.textureLibrary.filter(t => !t.preset);
   return JSON.stringify({
     bg_image: state.bgUrl ? (state.bgUrl.split('/').pop()) : null,
     bg_width: state.bgNaturalW,
     bg_height: state.bgNaturalH,
+    texture_library: customTextures,
     shapes: state.shapes
   }, null, 2);
 }
@@ -921,21 +1670,81 @@ document.getElementById('jsonInput').onchange = (e) => {
       const d = JSON.parse(r.result);
       state.shapes = d.shapes || [];
       state.nextId = Math.max(0, ...state.shapes.map(s => s.id)) + 1;
+      state.textureLibrary = d.texture_library || [];
+      state.nextTexId = Math.max(1, ...state.textureLibrary.map(t => parseInt((t.id || '').replace(/\D/g, '')) || 0)) + 1;
       render();
     } catch(e) { alert('Invalid JSON'); }
   };
   r.readAsText(f);
 };
 
-// Deselect on bg click
+// Deselect on bg click (but NOT if we just created a shape via drag-release)
 svg.addEventListener('click', (e) => {
-  if (e.target === svg) { state.selectedId = null; render(); }
+  if (justCreatedShape) { justCreatedShape = false; return; }
+  if (e.target === svg && !state.placeMode) { state.selectedId = null; state.selectedIds.clear(); render(); }
 });
 
-// Keyboard: delete selected with Delete/Backspace
+// Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
-  if ((e.key === 'Delete' || e.key === 'Backspace') && state.selectedId && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-    document.getElementById('deleteBtn').click();
+  // Don't hijack shortcuts when typing in text inputs
+  const typing = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
+  const mod = e.metaKey || e.ctrlKey;   // Cmd on Mac, Ctrl on Win/Linux
+
+  // Undo / Redo
+  if (mod && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+    if (typing) return;   // let browser handle native undo in inputs
+    e.preventDefault(); undo(); return;
+  }
+  if (mod && ((e.key.toLowerCase() === 'z' && e.shiftKey) || e.key.toLowerCase() === 'y')) {
+    if (typing) return;
+    e.preventDefault(); redo(); return;
+  }
+
+  // If user is typing in a field, skip the rest
+  if (typing) return;
+
+  // Copy / Cut / Paste / Duplicate
+  if (mod && e.key.toLowerCase() === 'c') { e.preventDefault(); copySelected(); return; }
+  if (mod && e.key.toLowerCase() === 'x') { e.preventDefault(); copySelected(); deleteSelected(); return; }
+  if (mod && e.key.toLowerCase() === 'v') { e.preventDefault(); pasteClipboard(); return; }
+  if (mod && e.key.toLowerCase() === 'd') { e.preventDefault(); duplicateSelected(); return; }
+
+  // Select all (future: multi-select). For now just selects last shape.
+  if (mod && e.key.toLowerCase() === 'a') {
+    e.preventDefault();
+    if (state.shapes.length) { state.selectedId = state.shapes[state.shapes.length - 1].id; render(); }
+    return;
+  }
+
+  // Delete
+  if ((e.key === 'Delete' || e.key === 'Backspace') && state.selectedId) {
+    e.preventDefault();
+    deleteSelected();
+    return;
+  }
+
+  // Escape: deselect + cancel place mode
+  if (e.key === 'Escape') {
+    clearPlaceMode();
+    state.selectedId = null;
+    state.selectedIds.clear();
+    render();
+    return;
+  }
+
+  // Arrow-key nudge (1px, or 10px with Shift)
+  if (state.selectedId && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) {
+    e.preventDefault();
+    const step = e.shiftKey ? 10 : 1;
+    const dx = e.key === 'ArrowRight' ? step : e.key === 'ArrowLeft' ? -step : 0;
+    const dy = e.key === 'ArrowDown' ? step : e.key === 'ArrowUp' ? -step : 0;
+    const s = state.shapes.find(x => x.id === state.selectedId);
+    if (!s) return;
+    pushHistory();
+    if (s.type === 'rect') { s.x += dx; s.y += dy; }
+    else if (['circle','ring','arc'].includes(s.type)) { s.cx += dx; s.cy += dy; }
+    else if (s.type === 'polygon') { s.points = s.points.map(p => [p[0]+dx, p[1]+dy]); }
+    render();
   }
 });
 </script>
