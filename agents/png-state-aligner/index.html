@@ -5,8 +5,11 @@ title: PNG State Aligner
 <style>
   :root { --bg: #121212; --fg: #eee; --panel: #1e1e1e; --accent: #ff6ec7; --warn: #ffc14f; --ok: #7fff9f; --sel: #4fd1ff; }
   body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); font-family: -apple-system, system-ui, sans-serif; overflow: hidden; }
-  #app { display: grid; grid-template-columns: 320px 1fr; height: 100vh; }
-  #sidebar { background: var(--panel); padding: 14px; overflow-y: auto; border-right: 1px solid #333; }
+  #app { display: grid; grid-template-columns: 260px 1fr; height: 100vh; transition: grid-template-columns 0.2s; }
+  #app.collapsed { grid-template-columns: 0 1fr; }
+  #app.collapsed #sidebar { display: none; }
+  #sidebar { background: var(--panel); padding: 12px; overflow-y: auto; border-right: 1px solid #333; }
+  #collapseBtn { position: absolute; top: 8px; left: 8px; z-index: 10; background: #2a2a2a; border: 1px solid #444; color: var(--fg); padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
   #stage { position: relative; overflow: hidden; background: #000; }
   h1 { font-size: 16px; margin: 0 0 8px 0; color: var(--accent); }
   h2 { font-size: 12px; margin: 16px 0 6px 0; color: #bbb; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -112,6 +115,7 @@ title: PNG State Aligner
   </aside>
 
   <main id="stage">
+    <button id="collapseBtn" title="Toggle sidebar (press B)">☰</button>
     <div id="stageInner">
       <canvas id="canvas"></canvas>
       <canvas id="overlay"></canvas>
@@ -188,6 +192,11 @@ function loadFile(input, key) {
 }
 loadFile(document.getElementById('fileA'), 'imgA');
 loadFile(document.getElementById('fileB'), 'imgB');
+
+document.getElementById('collapseBtn').addEventListener('click', () => {
+  document.getElementById('app').classList.toggle('collapsed');
+  setTimeout(render, 220);
+});
 
 document.getElementById('btnLoadDefaults').addEventListener('click', async () => {
   const loadImg = (url, key) => new Promise((res) => {
@@ -273,6 +282,9 @@ window.addEventListener('keydown', e => {
   if (e.key.toLowerCase() === 'h') {
     state.hideBorders = !state.hideBorders; render();
   }
+  if (e.key.toLowerCase() === 'b') {
+    document.getElementById('app').classList.toggle('collapsed'); render();
+  }
   if (e.key === 'Delete' || e.key === 'Backspace') {
     if (state.selectedId != null) {
       pushUndo();
@@ -315,6 +327,7 @@ function canvasToImage(cx, cy) { return { x: cx / state.scale, y: cy / state.sca
 function hitTest(ix, iy) {
   for (let i = state.regions.length - 1; i >= 0; i--) {
     const r = state.regions[i];
+    if (r.locked) continue;
     const HANDLE = 7 / state.scale;
     const corners = [
       { h: 'nw', x: r.x, y: r.y }, { h: 'ne', x: r.x+r.w, y: r.y },
@@ -458,19 +471,23 @@ function refreshRegions() {
     if (r.pressed) cls.push('pressed');
     div.className = cls.join(' ');
     const shapeLabel = r.shape === 'circle' ? '○' : '▭';
+    const disabled = r.locked ? 'disabled' : '';
+    const lockLabel = r.locked ? '🔒 ' : '';
     div.innerHTML = `
-      <div class="rname"><input type="text" value="${r.name}" data-id="${r.id}" class="rename"></div>
+      <div class="rname">${lockLabel}<input type="text" value="${r.name}" data-id="${r.id}" class="rename" ${disabled}></div>
       <div class="rcoords">
-        <div><label>x</label><input type="number" class="cx" data-id="${r.id}" value="${r.x}"></div>
-        <div><label>y</label><input type="number" class="cy" data-id="${r.id}" value="${r.y}"></div>
-        <div><label>w</label><input type="number" class="cw" data-id="${r.id}" value="${r.w}"></div>
-        <div><label>h</label><input type="number" class="ch" data-id="${r.id}" value="${r.h}"></div>
+        <div><label>x</label><input type="number" class="cx" data-id="${r.id}" value="${r.x}" ${disabled}></div>
+        <div><label>y</label><input type="number" class="cy" data-id="${r.id}" value="${r.y}" ${disabled}></div>
+        <div><label>w</label><input type="number" class="cw" data-id="${r.id}" value="${r.w}" ${disabled}></div>
+        <div><label>h</label><input type="number" class="ch" data-id="${r.id}" value="${r.h}" ${disabled}></div>
       </div>
       <div class="rbtns">
+        ${r.locked ? `<button class="runlock" data-id="${r.id}" title="Unlock">Unlock</button>` : `
         <button class="rselect" data-id="${r.id}">Select</button>
         <button class="rshape" data-id="${r.id}" title="Toggle shape rect↔circle">${shapeLabel}</button>
         <button class="rchange ${r.pressed?'change-on':''}" data-id="${r.id}" title="Overlay pressed state from PNG_B">Change</button>
-        <button class="danger rdelete" data-id="${r.id}">Delete</button>
+        <button class="rlock" data-id="${r.id}" title="Lock">Lock</button>
+        <button class="danger rdelete" data-id="${r.id}">Delete</button>`}
       </div>`;
     list.appendChild(div);
   });
@@ -513,6 +530,19 @@ function refreshRegions() {
     pushUndo();
     state.regions = state.regions.filter(x => x.id !== id);
     if (state.selectedId === id) state.selectedId = null;
+    refreshRegions(); render();
+  }));
+  list.querySelectorAll('.rlock').forEach(i => i.addEventListener('click', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (!r) return;
+    pushUndo(); r.locked = true;
+    if (state.selectedId === r.id) state.selectedId = null;
+    refreshRegions(); render();
+  }));
+  list.querySelectorAll('.runlock').forEach(i => i.addEventListener('click', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (!r) return;
+    pushUndo(); r.locked = false;
     refreshRegions(); render();
   }));
   document.getElementById('stats').textContent = `${state.regions.length} region${state.regions.length!==1?'s':''}`;
@@ -588,8 +618,8 @@ function drawRegions() {
     const x = r.x * state.scale, y = r.y * state.scale;
     const w = r.w * state.scale, h = r.h * state.scale;
     const sel = r.id === state.selectedId;
-    const stroke = sel ? '#4fd1ff' : (r.pressed ? '#ffc14f' : '#ff6ec7');
-    const fill = sel ? 'rgba(79,209,255,0.12)' : (r.pressed ? 'rgba(255,193,79,0.10)' : 'rgba(255,110,199,0.08)');
+    const stroke = r.locked ? '#666' : (sel ? '#4fd1ff' : (r.pressed ? '#ffc14f' : '#ff6ec7'));
+    const fill = r.locked ? 'rgba(120,120,120,0.04)' : (sel ? 'rgba(79,209,255,0.12)' : (r.pressed ? 'rgba(255,193,79,0.10)' : 'rgba(255,110,199,0.08)'));
     octx.strokeStyle = stroke; octx.fillStyle = fill;
     if (r.shape === 'circle') {
       octx.beginPath();
@@ -730,14 +760,28 @@ function importShapesData(m) {
       });
     }
     pushUndo();
+    lockBiggestRect(newRegions);
     state.regions = newRegions;
     refreshRegions(); render();
     return;
   }
   if (Array.isArray(m.regions)) {
     pushUndo();
-    state.regions = m.regions.map(r => ({ id: state.nextId++, name: r.name, shape: r.shape || 'rect', pressed: false, x: r.x, y: r.y, w: r.w, h: r.h }));
+    const regs = m.regions.map(r => ({ id: state.nextId++, name: r.name, shape: r.shape || 'rect', pressed: false, locked: !!r.locked, x: r.x, y: r.y, w: r.w, h: r.h }));
+    lockBiggestRect(regs);
+    state.regions = regs;
     refreshRegions(); render();
+  }
+}
+
+function lockBiggestRect(regions) {
+  const rects = regions.filter(r => r.shape === 'rect');
+  if (rects.length < 2) return;
+  let biggest = rects[0];
+  for (const r of rects) if (r.w * r.h > biggest.w * biggest.h) biggest = r;
+  biggest.locked = true;
+  if (!biggest.name || /^rect_\d+$/.test(biggest.name) || /^region_\d+$/.test(biggest.name)) {
+    biggest.name = 'CHASSIS_frame';
   }
 }
 
