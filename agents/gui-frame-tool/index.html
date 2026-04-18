@@ -124,18 +124,32 @@ const state = {
   nextTexId: 1,
 };
 
-// Predefined texture library — generic VST GUI patches. Extended at runtime with user custom crops.
+// Texture library is PNG-agnostic: built dynamically at runtime from the loaded image + traced shapes.
+// No hardcoded coordinates — works for any PNG.
 const PRESET_TEXTURES = [
-  { id: 'own_area',       name: 'OWN AREA',         preset: true, description: 'sample from shape\'s own position (default)' },
-  { id: 'knob_small',     name: 'Knob small',       preset: true, sx: 820, sy: 444, sw: 100, sh: 100 },
-  { id: 'knob_giga',      name: 'Knob giga',        preset: true, sx: 58,  sy: 175, sw: 240, sh: 240 },
-  { id: 'wood_brown',     name: 'Wood brown',       preset: true, sx: 750, sy: 30,  sw: 100, sh: 40 },
-  { id: 'dropdown_light', name: 'Dropdown light',   preset: true, sx: 50,  sy: 670, sw: 100, sh: 40 },
-  { id: 'dropdown_dark',  name: 'Dropdown dark',    preset: true, sx: 1295,sy: 45,  sw: 100, sh: 40 },
-  { id: 'display_dark',   name: 'Display dark',     preset: true, sx: 600, sy: 180, sw: 200, sh: 100 },
-  { id: 'keyboard_white', name: 'Keyboard white',   preset: true, sx: 400, sy: 860, sw: 160, sh: 80 },
-  { id: 'chassis_grain',  name: 'Chassis grain',    preset: true, sx: 500, sy: 75,  sw: 130, sh: 40 },
+  { id: 'own_area', name: 'OWN AREA', preset: true, description: 'sample from shape\'s own position (default)' },
 ];
+
+/** Build texture entries from every traced shape. Each shape becomes a reusable texture source. */
+function shapesAsTextures() {
+  const out = [];
+  for (const s of state.shapes) {
+    let sx, sy, sw, sh;
+    if (s.type === 'rect')       { sx = s.x; sy = s.y; sw = s.w; sh = s.h; }
+    else if (s.type === 'circle'){ sx = s.cx - s.r; sy = s.cy - s.r; sw = s.r * 2; sh = s.r * 2; }
+    else if (s.type === 'ring')  { sx = s.cx - s.r_out; sy = s.cy - s.r_out; sw = s.r_out * 2; sh = s.r_out * 2; }
+    else continue;
+    if (sw <= 0 || sh <= 0) continue;
+    out.push({
+      id: 'from_shape_' + s.id,
+      name: `#${s.id} ${s.type} ${s.name ? '— ' + s.name : ''}`.trim(),
+      fromShapeId: s.id,
+      sx, sy, sw, sh,
+      preset: false,
+    });
+  }
+  return out;
+}
 
 function getSelectedShapes() {
   // Primary selection + multi-select union, deduplicated
@@ -1318,7 +1332,9 @@ function select(id, addToSelection) {
 
 // =========================== TEXTURE ASSIGNMENT ===========================
 function getAllTextures() {
-  return [...PRESET_TEXTURES, ...state.textureLibrary];
+  // OWN AREA first, then one entry per traced shape (so you can reuse shape N's pixels for shape M),
+  // then any user-defined custom textures (Alt-drag)
+  return [...PRESET_TEXTURES, ...shapesAsTextures(), ...state.textureLibrary];
 }
 
 function applyTextureToSelection(texId) {
@@ -1368,16 +1384,13 @@ function renderTexturePanel() {
     cell.title = t.name + (t.description ? ' — ' + t.description : '');
     if (t.id === 'own_area') {
       cell.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;text-align:center;font-size:8px;line-height:1.2">OWN<br>AREA</div>`;
-    } else if (state.bgUrl && t.sx + t.sw <= imgNatW && t.sy + t.sh <= imgNatH) {
-      // Render preview of the cropped texture via an inline canvas
+    } else if (bgImg && bgImg.complete && bgImg.naturalWidth && t.sx + t.sw <= imgNatW && t.sy + t.sh <= imgNatH) {
+      // Render preview of the cropped texture using the already-loaded bg <img>
       const c = document.createElement('canvas');
       c.width = 48; c.height = 48;
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        c.getContext('2d').drawImage(img, t.sx, t.sy, t.sw, t.sh, 0, 0, 48, 48);
-      };
-      img.src = state.bgUrl;
+      try {
+        c.getContext('2d').drawImage(bgImg, t.sx, t.sy, t.sw, t.sh, 0, 0, 48, 48);
+      } catch (err) { /* cross-origin taint — skip */ }
       c.style.cssText = 'width:100%;height:100%;display:block';
       cell.appendChild(c);
     } else {
