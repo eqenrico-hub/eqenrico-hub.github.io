@@ -526,7 +526,7 @@ function refreshRegions() {
         <div><label>h</label><input type="number" class="ch" data-id="${r.id}" value="${r.h}" ${disabled}></div>
       </div>
       ${r.locked ? '' : `
-      <div class="rcoords" title="Source crop offset (nudge where pixels are sampled from inside source PNG without moving the overlay)">
+      <div class="rcoords" title="SRC: nudge where pixels are sampled from source PNG">
         <div><label>src</label>
           <select class="csrc" data-id="${r.id}" style="width:100%; font-size:10px; padding:2px; background:#111; color:var(--fg); border:1px solid #333; border-radius:3px;">
             <option value="B" ${src==='B'?'selected':''}>B</option>
@@ -535,7 +535,13 @@ function refreshRegions() {
         </div>
         <div><label>sx off</label><input type="number" class="csox" data-id="${r.id}" value="${sox}" step="1"></div>
         <div><label>sy off</label><input type="number" class="csoy" data-id="${r.id}" value="${soy}" step="1"></div>
-        <div><label></label><button class="rclearoff" data-id="${r.id}" title="Reset source offsets" style="width:100%; font-size:10px; padding:2px;">↺</button></div>
+        <div><label></label><button class="rclearoff" data-id="${r.id}" title="Reset src offsets" style="width:100%; font-size:10px; padding:2px;">↺src</button></div>
+      </div>
+      <div class="rcoords" title="DST: nudge where the clicked overlay appears on PNG_A (move the displayed crop independently from where it was cut from)">
+        <div><label>&nbsp;</label><span style="font-size:9px; color:#888;">dst</span></div>
+        <div><label>dx off</label><input type="number" class="cdox" data-id="${r.id}" value="${r.dstOffX || 0}" step="1"></div>
+        <div><label>dy off</label><input type="number" class="cdoy" data-id="${r.id}" value="${r.dstOffY || 0}" step="1"></div>
+        <div><label></label><button class="rcleardst" data-id="${r.id}" title="Reset dst offsets" style="width:100%; font-size:10px; padding:2px;">↺dst</button></div>
       </div>`}
       <div class="rbtns">
         ${r.locked ? `<button class="runlock" data-id="${r.id}" title="Unlock">Unlock</button>` : `
@@ -624,6 +630,23 @@ function refreshRegions() {
     pushUndo(); r.srcOffX = 0; r.srcOffY = 0;
     refreshRegions(); render();
   }));
+  ['cdox','cdoy'].forEach(cls => {
+    list.querySelectorAll('.' + cls).forEach(i => i.addEventListener('change', e => {
+      const r = state.regions.find(x => x.id === +e.target.dataset.id);
+      if (!r) return;
+      pushUndo();
+      const v = Math.round(+e.target.value);
+      if (cls === 'cdox') r.dstOffX = v;
+      if (cls === 'cdoy') r.dstOffY = v;
+      render();
+    }));
+  });
+  list.querySelectorAll('.rcleardst').forEach(i => i.addEventListener('click', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (!r) return;
+    pushUndo(); r.dstOffX = 0; r.dstOffY = 0;
+    refreshRegions(); render();
+  }));
   document.getElementById('stats').textContent = `${state.regions.length} region${state.regions.length!==1?'s':''}`;
 }
 
@@ -657,10 +680,9 @@ function render() {
     state.regions.filter(r => r.pressed).forEach(r => {
       const src = (r.source === 'C') ? (state.imgCResized || state.imgC) : (state.imgBResized || state.imgB);
       if (!src) return;
-      const rx = r.x * state.scale, ry = r.y * state.scale;
+      const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
+      const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
       const rw = r.w * state.scale, rh = r.h * state.scale;
-      const srcW = src.naturalWidth || src.width;
-      const srcH = src.naturalHeight || src.height;
       const sx = r.x + (r.srcOffX || 0);
       const sy = r.y + (r.srcOffY || 0);
       ctx.save();
@@ -800,7 +822,7 @@ document.getElementById('btnExportAll').addEventListener('click', async () => {
     const blob = await new Promise(res => c.toBlob(res, 'image/png'));
     const fname = `${r.name}.png`;
     zip.file(fname, blob);
-    manifest.regions.push({ id: r.id, name: r.name, shape: r.shape || 'rect', x: r.x, y: r.y, w: r.w, h: r.h, source: r.source || 'B', src_off_x: r.srcOffX || 0, src_off_y: r.srcOffY || 0, crop_file: fname });
+    manifest.regions.push({ id: r.id, name: r.name, shape: r.shape || 'rect', locked: !!r.locked, x: r.x, y: r.y, w: r.w, h: r.h, source: r.source || 'B', src_off_x: r.srcOffX || 0, src_off_y: r.srcOffY || 0, dst_off_x: r.dstOffX || 0, dst_off_y: r.dstOffY || 0, crop_file: fname });
   }
   zip.file('manifest.json', JSON.stringify(manifest, null, 2));
   const content = await zip.generateAsync({ type: 'blob' });
@@ -877,6 +899,8 @@ function importShapesData(m) {
       source: r.source || 'B',
       srcOffX: r.src_off_x || r.srcOffX || 0,
       srcOffY: r.src_off_y || r.srcOffY || 0,
+      dstOffX: r.dst_off_x || r.dstOffX || 0,
+      dstOffY: r.dst_off_y || r.dstOffY || 0,
       x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.w), h: Math.round(r.h),
     }));
     lockBiggestRect(regs);
