@@ -104,7 +104,9 @@ title: PNG State Aligner
     <div class="hint">
       <kbd>Space</kbd> toggle A↔B · <kbd>0</kbd> reset view<br>
       <kbd>D</kbd> draw mode · <kbd>S</kbd> select mode<br>
+      <kbd>H</kbd> hide/show region borders<br>
       <kbd>Del</kbd> delete selected region<br>
+      <kbd>⌘Z</kbd> undo · <kbd>⌘⇧Z</kbd> redo<br>
       <kbd>Scroll</kbd> zoom · <kbd>Drag</kbd> pan
     </div>
   </aside>
@@ -125,16 +127,34 @@ const state = {
   opacity: 0.5, threshold: 25, zoom: 1.0,
   panX: 0, panY: 0, swipeX: 0.5,
   dragging: false, swipeDrag: false, dragStart: null,
-  // regions: [{id, name, x, y, w, h}]
   regions: [], selectedId: null, nextId: 1,
-  // drawing state
   drawStart: null, drawCur: null,
-  // editing state
-  editMode: null, // 'move', 'resize-n/e/s/w/ne/...'
-  editStart: null, editRegion: null,
-  // cached render metrics
+  editMode: null, editStart: null, editRegion: null,
   scale: 1, dw: 0, dh: 0,
+  hideBorders: false,
+  undoStack: [], redoStack: [],
 };
+
+function snapshot() { return JSON.parse(JSON.stringify(state.regions)); }
+function pushUndo() {
+  state.undoStack.push(snapshot());
+  if (state.undoStack.length > 200) state.undoStack.shift();
+  state.redoStack = [];
+}
+function undo() {
+  if (!state.undoStack.length) return;
+  state.redoStack.push(snapshot());
+  state.regions = state.undoStack.pop();
+  state.selectedId = null;
+  refreshRegions(); render();
+}
+function redo() {
+  if (!state.redoStack.length) return;
+  state.undoStack.push(snapshot());
+  state.regions = state.redoStack.pop();
+  state.selectedId = null;
+  refreshRegions(); render();
+}
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
@@ -230,6 +250,13 @@ document.querySelectorAll('[data-tool]').forEach(b => {
 });
 
 window.addEventListener('keydown', e => {
+  // Undo/redo work even from inputs (standard OS behavior)
+  const meta = e.metaKey || e.ctrlKey;
+  if (meta && e.key.toLowerCase() === 'z') {
+    e.preventDefault();
+    if (e.shiftKey) redo(); else undo();
+    return;
+  }
   if (e.target.tagName === 'INPUT') return;
   if (e.key === ' ') { e.preventDefault();
     state.mode = state.mode === 'A' ? 'B' : 'A';
@@ -243,8 +270,12 @@ window.addEventListener('keydown', e => {
   }
   if (e.key.toLowerCase() === 'd') setTool('draw');
   if (e.key.toLowerCase() === 's') setTool('select');
+  if (e.key.toLowerCase() === 'h') {
+    state.hideBorders = !state.hideBorders; render();
+  }
   if (e.key === 'Delete' || e.key === 'Backspace') {
     if (state.selectedId != null) {
+      pushUndo();
       state.regions = state.regions.filter(r => r.id !== state.selectedId);
       state.selectedId = null;
       refreshRegions(); render();
@@ -332,6 +363,7 @@ canvasWrap.addEventListener('mousedown', e => {
       state.editMode = hit.mode;
       state.editStart = { ix, iy };
       state.editRegion = { ...hit.region };
+      state._undoSnapshotForEdit = snapshot(); // capture pre-edit state
       refreshRegions(); render();
       return;
     } else {
@@ -393,12 +425,24 @@ window.addEventListener('mouseup', e => {
     const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y);
     const w = Math.abs(a.x - b.x), h = Math.abs(a.y - b.y);
     if (w > 3 && h > 3) {
+      pushUndo();
       const r = { id: state.nextId++, name: `region_${state.regions.length + 1}`, shape: 'rect', pressed: false, x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h) };
       state.regions.push(r); state.selectedId = r.id;
       refreshRegions();
     }
     state.drawStart = state.drawCur = null;
     render();
+  }
+  // Commit edit snapshot (move/resize) to undo stack if something actually changed
+  if (state.editMode && state._undoSnapshotForEdit) {
+    const cur = JSON.stringify(state.regions);
+    const pre = JSON.stringify(state._undoSnapshotForEdit);
+    if (cur !== pre) {
+      state.undoStack.push(state._undoSnapshotForEdit);
+      if (state.undoStack.length > 200) state.undoStack.shift();
+      state.redoStack = [];
+    }
+    state._undoSnapshotForEdit = null;
   }
   state.dragging = false; state.swipeDrag = false; state.editMode = null;
   canvasWrap.classList.remove('grabbing');
@@ -432,12 +476,13 @@ function refreshRegions() {
   });
   list.querySelectorAll('.rename').forEach(i => i.addEventListener('change', e => {
     const r = state.regions.find(x => x.id === +e.target.dataset.id);
-    if (r) r.name = e.target.value;
+    if (r) { pushUndo(); r.name = e.target.value; }
   }));
   ['cx','cy','cw','ch'].forEach(cls => {
     list.querySelectorAll('.' + cls).forEach(i => i.addEventListener('change', e => {
       const r = state.regions.find(x => x.id === +e.target.dataset.id);
       if (!r) return;
+      pushUndo();
       const v = Math.round(+e.target.value);
       if (cls === 'cx') r.x = v;
       if (cls === 'cy') r.y = v;
@@ -452,17 +497,20 @@ function refreshRegions() {
   list.querySelectorAll('.rshape').forEach(i => i.addEventListener('click', e => {
     const r = state.regions.find(x => x.id === +e.target.dataset.id);
     if (!r) return;
+    pushUndo();
     r.shape = (r.shape === 'rect') ? 'circle' : 'rect';
     refreshRegions(); render();
   }));
   list.querySelectorAll('.rchange').forEach(i => i.addEventListener('click', e => {
     const r = state.regions.find(x => x.id === +e.target.dataset.id);
     if (!r) return;
+    pushUndo();
     r.pressed = !r.pressed;
     refreshRegions(); render();
   }));
   list.querySelectorAll('.rdelete').forEach(i => i.addEventListener('click', e => {
     const id = +e.target.dataset.id;
+    pushUndo();
     state.regions = state.regions.filter(x => x.id !== id);
     if (state.selectedId === id) state.selectedId = null;
     refreshRegions(); render();
@@ -529,8 +577,7 @@ function render() {
     renderDiff(dw, dh, Bsrc);
   }
 
-  // Draw regions overlay
-  drawRegions();
+  if (!state.hideBorders) drawRegions();
 
   swipeLine.style.display = state.mode === 'swipe' ? 'block' : 'none';
 }
@@ -682,14 +729,14 @@ function importShapesData(m) {
         h: Math.round(h * sy),
       });
     }
+    pushUndo();
     state.regions = newRegions;
     refreshRegions(); render();
-    console.log(`Imported ${newRegions.length} shapes (scaled ${sx.toFixed(4)}×${sy.toFixed(4)})`);
     return;
   }
-  // Aligner manifest format: { regions: [...] }
   if (Array.isArray(m.regions)) {
-    state.regions = m.regions.map(r => ({ id: state.nextId++, name: r.name, x: r.x, y: r.y, w: r.w, h: r.h }));
+    pushUndo();
+    state.regions = m.regions.map(r => ({ id: state.nextId++, name: r.name, shape: r.shape || 'rect', pressed: false, x: r.x, y: r.y, w: r.w, h: r.h }));
     refreshRegions(); render();
   }
 }
