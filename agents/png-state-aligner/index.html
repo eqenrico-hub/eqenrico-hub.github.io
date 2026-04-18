@@ -100,6 +100,10 @@ title: PNG State Aligner
       <button class="tool" data-tool="select">Select / Edit</button>
     </div>
     <div id="stats">0 regions</div>
+    <div style="display:flex; gap:4px; margin: 4px 0;">
+      <button id="btnPressAll" style="background:#3a2a4a; flex:1;">Press ALL</button>
+      <button id="btnReleaseAll" style="flex:1;">Release ALL</button>
+    </div>
     <div id="regionList"></div>
 
     <h2>4. Import / Export</h2>
@@ -204,6 +208,17 @@ loadFile(document.getElementById('fileC'), 'imgC');
 document.getElementById('collapseBtn').addEventListener('click', () => {
   document.getElementById('app').classList.toggle('collapsed');
   setTimeout(render, 220);
+});
+
+document.getElementById('btnPressAll').addEventListener('click', () => {
+  pushUndo();
+  state.regions.forEach(r => { if (!r.locked) r.pressed = true; });
+  refreshRegions(); render();
+});
+document.getElementById('btnReleaseAll').addEventListener('click', () => {
+  pushUndo();
+  state.regions.forEach(r => r.pressed = false);
+  refreshRegions(); render();
 });
 
 document.getElementById('btnLoadDefaults').addEventListener('click', async () => {
