@@ -1,0 +1,68 @@
+---
+layout: default
+title: Frame-to-Blender Aligner
+---
+
+<h1>📐 Frame-to-Blender Aligner</h1>
+<p><em>Refines imprecise GUI traces with CV, then builds a pixel-aligned 3D Blender scene</em></p>
+
+<h2>Problem it solves</h2>
+<p>
+  Hand-traced GUI Frame Tool JSON can be off by tens of pixels. Observed on Band Ritual:
+  the ON/OFF button trace was <strong>~90 px above</strong> the actual PNG position.
+  Running that imprecise JSON directly into Blender produces 3D geometry that
+  visibly does not line up with the underlying artwork, and you spend iterations
+  nudging elements by hand in Blender.
+</p>
+<p>
+  This agent closes the gap with a CV refinement pass plus a render-based
+  validator, so every element ends up where the PNG says it is — automatically.
+</p>
+
+<h2>Pipeline</h2>
+<pre><code>shapes.json (rough trace)                  reference.png
+          |                                       |
+          v                                       |
+   [refine_shapes.py]  &lt;---------- same PNG ------+
+          |
+          v
+   refined.json  -----&gt; [build_blender.py] -----&gt; Blender scene
+                                  |
+                                  v
+                          render.png --&gt; [validate.py] --&gt; alignment_report.json
+</code></pre>
+
+<h2>Files</h2>
+<ul>
+  <li><a href="refine_shapes.py">refine_shapes.py</a> — Hough circles + Canny-edge snap refinement for circles / rects / rings. Bounded search radius so the agent cannot invent new elements, only tighten positions.</li>
+  <li><a href="build_blender.py">build_blender.py</a> — Blender scene builder. Biggest rect = chassis frame. Shadeless Emission chassis (PNG displays as-is), Principled BSDF knobs with bevel + subdiv + dome + indicator. UV-crops the PNG to the actual frame area so shapes and artwork align pixel-perfect.</li>
+  <li><a href="validate.py">validate.py</a> — Renders top-down ortho, per-shape pixel diff vs reference PNG, flags any element with alignment score &lt; 0.6. Report is JSON-serializable so the next iteration can re-refine only flagged items.</li>
+  <li><a href="README.md">README.md</a> — Full context, design decisions, usage.</li>
+</ul>
+
+<h2>One-liner</h2>
+<pre><code>python3 refine_shapes.py shapes.json reference.png refined.json \
+  &amp;&amp; blender --background --python build_blender.py -- refined.json reference.png \
+  &amp;&amp; python3 validate.py refined.json reference.png render.png report.json</code></pre>
+
+<h2>Design decisions</h2>
+<ul>
+  <li><strong>No element semantics.</strong> Every <code>circle</code> becomes a 4-piece knob, every <code>rect</code> becomes a recessed panel. The agent never decides "this circle is a knob and that is a toggle button" — semantic reclassification is a separate pass (see sibling <code>image-to-blender</code>).</li>
+  <li><strong>Frame-relative coordinates.</strong> Biggest rect in JSON = chassis boundary. Everything else is <code>(px - FRAME_X) / FRAME_W</code>, so the same JSON works at any chassis render size.</li>
+  <li><strong>CV refines, never invents.</strong> Refinement is bounded (±30% radius, ±15% rect side). If CV finds nothing convincing the traced value is kept.</li>
+  <li><strong>Shadeless chassis.</strong> PNG texture uses an Emission shader so the artwork renders exactly as it looks in the file — no environment tinting or specular shift.</li>
+</ul>
+
+<h2>Slot in the pipeline</h2>
+<p>
+  Moodboard → VST GUI Pipeline (ChatGPT PNG) → GUI Frame Tool (trace)
+  → <strong>Frame-to-Blender Aligner</strong> (you are here)
+  → Blender Redesign (final polish + render)
+</p>
+<p>
+  Sibling agent <a href="../image-to-blender/">Image-to-Blender</a> goes the other way
+  (auto-detection, no manual trace). Use Aligner when the autodetector misses
+  decorations or dropdown slots the user traced by hand.
+</p>
+
+<p><a href="../">← Back to Agents</a></p>

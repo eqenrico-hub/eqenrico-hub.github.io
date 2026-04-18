@@ -13,8 +13,9 @@ title: Agents
     1. <a href="moodboard-generator/" style="color:#00d4ff;">Moodboard</a> (optional — extract style DNA)
     → 2. <a href="vst-gui-pipeline/" style="color:#00d4ff;">VST GUI Pipeline</a> (ChatGPT generates redesigned GUI PNG)
     → 3. <a href="image-to-blender/" style="color:#00d4ff;">Image-to-Blender</a> (OpenCV detection → JSON)
-    → 4. <a href="blender-redesign/" style="color:#00d4ff;">Blender Redesign</a> (coord-table → 3D geometry)
-    → 5. <a href="gui-frame-tool/" style="color:#00d4ff;">GUI Frame Tool</a> (manual fine-tuning)
+    → 4. <a href="gui-frame-tool/" style="color:#00d4ff;">GUI Frame Tool</a> (manual trace)
+    → 5. <a href="frame-to-blender-aligner/" style="color:#00d4ff;">Frame-to-Blender Aligner</a> (CV refinement + 3D build)
+    → 6. <a href="blender-redesign/" style="color:#00d4ff;">Blender Redesign</a> (coord-table → 3D geometry)
   </p>
 </div>
 
@@ -146,6 +147,29 @@ title: Agents
     </div>
     <div class="links">
       <a href="gui-frame-tool/">Launch tool →</a>
+    </div>
+  </div>
+
+  <div class="agent-card">
+    <h2>📐 Frame-to-Blender Aligner</h2>
+    <p class="desc">
+      CV refinement + Blender builder. Takes an imprecise GUI Frame Tool trace
+      (observed ~90px offsets on hand-traced buttons) and snaps each shape to
+      the real PNG pixels with bounded Hough circles + Canny-edge projections,
+      then emits a pixel-aligned 3D scene: shadeless Emission chassis (PNG
+      textured as-is), photoreal 4-piece knobs, recessed panels. Render-based
+      validator flags misaligned elements for re-refinement. Closes the last gap
+      between manual trace and production-ready 3D.
+    </p>
+    <div class="stack">
+      <span class="tag">Python</span>
+      <span class="tag">OpenCV</span>
+      <span class="tag">Blender bpy</span>
+      <span class="tag">Hough circles</span>
+      <span class="tag">Canny edges</span>
+    </div>
+    <div class="links">
+      <a href="frame-to-blender-aligner/">Details &amp; scripts →</a>
     </div>
   </div>
 
