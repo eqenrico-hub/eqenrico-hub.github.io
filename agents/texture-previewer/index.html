@@ -1,0 +1,396 @@
+---
+layout: default
+title: Texture Previewer
+---
+
+<style>
+  body { background: #0d0d0d; color: #e0e0e0; font-family: -apple-system, sans-serif; }
+  .tp-wrap {
+    display: grid;
+    grid-template-columns: 1fr 340px 300px;
+    gap: 10px;
+    padding: 10px;
+    height: calc(100vh - 100px);
+  }
+  .tp-col { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+  .tp-toolbar { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .tp-toolbar label, .tp-toolbar button {
+    padding: 6px 10px; background: #1e1e1e; border: 1px solid #333;
+    border-radius: 4px; cursor: pointer; font-size: 11px; color: #ddd;
+  }
+  .tp-toolbar label:hover, .tp-toolbar button:hover { border-color: #00d4ff; color: #00d4ff; }
+  .tp-toolbar input[type="file"] { display: none; }
+  .tp-status { font-size: 11px; color: #888; margin-left: 4px; }
+
+  .tp-canvas-holder { flex: 1; background: #111; border: 1px solid #222; overflow: hidden; position: relative; }
+  canvas#main { display: block; cursor: crosshair; }
+
+  .tp-panel { background: #111; border: 1px solid #222; border-radius: 6px; padding: 10px; overflow-y: auto; }
+  .tp-panel h3 { margin: 0 0 8px; color: #00d4ff; font-size: 11px; letter-spacing: 1.2px; }
+  .tp-panel .sub { font-size: 10px; color: #777; margin: -4px 0 6px; }
+
+  /* Shape preview grid (middle column) */
+  .grid-thumbs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+  .thumb {
+    aspect-ratio: 1; background: #1a1a1a; border: 1px solid #333;
+    border-radius: 4px; cursor: pointer; position: relative; overflow: hidden;
+  }
+  .thumb.active { border-color: #00d4ff; box-shadow: 0 0 0 1px #00d4ff; }
+  .thumb canvas { width: 100%; height: 100%; display: block; }
+  .thumb .badge {
+    position: absolute; top: 1px; left: 2px; background: #000c;
+    color: #0cf; font-size: 8px; padding: 1px 3px; border-radius: 2px;
+    font-family: monospace;
+  }
+  .thumb.knob canvas { border-radius: 50%; }
+
+  /* Texture library (right column) */
+  .tex-list { display: flex; flex-direction: column; gap: 4px; }
+  .tex-item {
+    display: flex; align-items: center; gap: 8px; padding: 6px;
+    background: #1a1a1a; border: 1px solid #222; border-radius: 4px;
+    cursor: pointer;
+  }
+  .tex-item:hover { border-color: #00d4ff; }
+  .tex-item.active { border-color: #00d4ff; background: #00d4ff11; }
+  .tex-item canvas { width: 48px; height: 48px; border-radius: 4px; border: 1px solid #333; }
+  .tex-item .info { flex: 1; }
+  .tex-item .name { font-size: 11px; color: #ddd; }
+  .tex-item .hint { font-size: 9px; color: #777; }
+
+  .btn { background: #00d4ff22; border: 1px solid #00d4ff; color: #00d4ff;
+         padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;
+         width: 100%; margin-top: 8px; }
+  .btn:hover { background: #00d4ff33; }
+
+  .sel-count { font-size: 11px; color: #0cf; }
+
+  .tp-legend { font-size: 10px; color: #666; line-height: 1.5; margin-top: 6px; }
+</style>
+
+<h1>🖼️ Texture Previewer</h1>
+<p style="color:#999; font-size:12px; margin-bottom:8px;">
+  Drop <strong>shapes.json</strong> + reference <strong>PNG</strong>. Click shape(s) on the canvas (shift-click = multi-select).
+  Pick a texture from the library. Preview updates live. Export JSON with texture assignment per shape id — Claude reads it
+  and applies in Blender without touching positions.
+</p>
+
+<div class="tp-wrap">
+
+  <!-- LEFT: Main canvas with PNG + shape overlays -->
+  <div class="tp-col">
+    <div class="tp-toolbar">
+      <label>PNG <input id="load-png" type="file" accept="image/*"></label>
+      <label>JSON <input id="load-json" type="file" accept=".json"></label>
+      <button id="select-all-btn">Select all</button>
+      <button id="clear-btn">Clear</button>
+      <span class="tp-status" id="status">Drop files to start</span>
+    </div>
+    <div class="tp-canvas-holder">
+      <canvas id="main"></canvas>
+    </div>
+  </div>
+
+  <!-- MIDDLE: Per-shape live preview grid -->
+  <div class="tp-panel tp-col">
+    <h3>SHAPES PREVIEW <span class="sel-count" id="sel-count"></span></h3>
+    <div class="sub">Current texture on each shape (live). Click to select.</div>
+    <div class="grid-thumbs" id="thumbs"></div>
+    <div class="tp-legend">
+      Circles render as knobs (gradient shadow).<br>
+      Rects render flat with recessed shadow.<br>
+      Selected shapes get a cyan outline on canvas.
+    </div>
+  </div>
+
+  <!-- RIGHT: Texture library -->
+  <div class="tp-panel tp-col">
+    <h3>TEXTURE LIBRARY</h3>
+    <div class="sub">Click to apply to selected shape(s).</div>
+    <div class="tex-list" id="tex-list"></div>
+    <button class="btn" id="export-btn">⬇ Export JSON (with textures)</button>
+    <div class="tp-legend">
+      Each texture is a crop from a specific area of the PNG,
+      or the default "OWN AREA" which samples from the shape's own position.<br>
+      Custom: drag-draw a rect on canvas with <kbd>Alt</kbd> held to create a new library entry.
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  // ========= STATE =========
+  const state = {
+    img: null,
+    pngName: '',
+    shapes: [],          // shapes from JSON
+    frame: null,         // biggest rect
+    selectedIds: new Set(),
+    textureLibrary: [],  // [{ id, name, hint, sx, sy, sw, sh, fromShape? }]
+    assignments: {},     // shape_id -> texture_id
+    altDrag: null,
+  };
+
+  const DEFAULT_TEX = 'own_area';
+
+  // Predefined texture library — crops from notable PNG areas of the Band Ritual PNG
+  // (works for any PNG but these are sensible defaults for VST GUIs)
+  const PRESET_LIBRARY = [
+    { id: 'own_area',        name: 'OWN AREA (per-shape)', hint: 'sample from shape\'s own position — default' },
+    { id: 'knob_small',      name: 'Knob (small)',          sx: 820, sy: 444, sw: 100, sh: 100 },
+    { id: 'knob_giga',       name: 'Knob (giga)',           sx: 58,  sy: 175, sw: 240, sh: 240 },
+    { id: 'wood_brown',      name: 'Wood brown (top bar)',  sx: 750, sy: 30,  sw: 100, sh: 40 },
+    { id: 'dropdown_light',  name: 'Dropdown light',        sx: 50,  sy: 670, sw: 100, sh: 40 },
+    { id: 'dropdown_dark',   name: 'Dropdown dark',         sx: 1295,sy: 45,  sw: 100, sh: 40 },
+    { id: 'display_dark',    name: 'Display (dark glass)',  sx: 600, sy: 180, sw: 200, sh: 100 },
+    { id: 'keyboard_white',  name: 'Keyboard white',        sx: 400, sy: 860, sw: 160, sh: 80 },
+    { id: 'chassis_grain',   name: 'Chassis grain',         sx: 500, sy: 75,  sw: 130, sh: 40 },
+  ];
+
+  const mainCanvas = document.getElementById('main');
+  const mainCtx = mainCanvas.getContext('2d');
+
+  // ========= LOADERS =========
+  document.getElementById('load-png').addEventListener('change', async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    state.pngName = f.name;
+    const img = new Image();
+    img.onload = () => { state.img = img; rebuildLibrary(); redraw(); rebuildThumbs(); setStatus('PNG ' + f.name + ' loaded'); };
+    img.src = URL.createObjectURL(f);
+  });
+
+  document.getElementById('load-json').addEventListener('change', async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    const text = await f.text();
+    const data = JSON.parse(text);
+    state.shapes = data.shapes || [];
+    state.frame = state.shapes.filter(s => s.type === 'rect')
+      .reduce((a, b) => (a.w * a.h > b.w * b.h ? a : b), { w: 0, h: 0 });
+    // Read existing texture assignments if JSON has them
+    state.assignments = {};
+    state.shapes.forEach(s => { if (s.texture_id) state.assignments[s.id] = s.texture_id; });
+    setStatus('Loaded ' + state.shapes.length + ' shapes, frame id=' + state.frame.id);
+    redraw(); rebuildThumbs();
+  });
+
+  function setStatus(m) { document.getElementById('status').textContent = m; }
+
+  // ========= CANVAS DRAW =========
+  function redraw() {
+    if (!state.img) return;
+    const box = mainCanvas.parentElement.getBoundingClientRect();
+    const scale = Math.min(box.width / state.img.width, box.height / state.img.height);
+    mainCanvas.width = state.img.width * scale;
+    mainCanvas.height = state.img.height * scale;
+    mainCtx.setTransform(scale, 0, 0, scale, 0, 0);
+    mainCtx.drawImage(state.img, 0, 0);
+
+    state.shapes.forEach(s => {
+      if (s === state.frame) return;
+      const sel = state.selectedIds.has(s.id);
+      mainCtx.lineWidth = sel ? 3 / scale : 1.2 / scale;
+      mainCtx.strokeStyle = sel ? '#00d4ff' : 'rgba(255, 220, 0, 0.45)';
+      mainCtx.fillStyle = sel ? 'rgba(0, 212, 255, 0.12)' : 'transparent';
+      mainCtx.beginPath();
+      if (s.type === 'rect')       mainCtx.rect(s.x, s.y, s.w, s.h);
+      else if (s.type === 'circle') mainCtx.arc(s.cx, s.cy, s.r, 0, Math.PI * 2);
+      else if (s.type === 'ring')   mainCtx.arc(s.cx, s.cy, s.r_out, 0, Math.PI * 2);
+      else if (s.type === 'polygon' && s.points) {
+        s.points.forEach((p, i) => i === 0 ? mainCtx.moveTo(p[0], p[1]) : mainCtx.lineTo(p[0], p[1]));
+        mainCtx.closePath();
+      }
+      if (sel) mainCtx.fill();
+      mainCtx.stroke();
+    });
+
+    if (state.altDrag) {
+      const d = state.altDrag;
+      mainCtx.strokeStyle = '#ff00ff';
+      mainCtx.lineWidth = 2 / scale;
+      mainCtx.strokeRect(d.x0, d.y0, d.x1 - d.x0, d.y1 - d.y0);
+    }
+  }
+
+  // ========= TEXTURE SOURCE RESOLUTION =========
+  /** Resolve the (sx,sy,sw,sh) rect in the source PNG for a given shape + texture id. */
+  function resolveTexSrc(shape, texId) {
+    if (texId === DEFAULT_TEX || !texId) {
+      if (shape.type === 'rect') return { sx: shape.x, sy: shape.y, sw: shape.w, sh: shape.h };
+      if (shape.type === 'circle') return { sx: shape.cx - shape.r, sy: shape.cy - shape.r, sw: shape.r * 2, sh: shape.r * 2 };
+      if (shape.type === 'ring')   return { sx: shape.cx - shape.r_out, sy: shape.cy - shape.r_out, sw: shape.r_out * 2, sh: shape.r_out * 2 };
+      return { sx: 0, sy: 0, sw: 10, sh: 10 };
+    }
+    const tex = state.textureLibrary.find(t => t.id === texId);
+    if (!tex) return resolveTexSrc(shape, DEFAULT_TEX);
+    return { sx: tex.sx, sy: tex.sy, sw: tex.sw, sh: tex.sh };
+  }
+
+  // ========= THUMB GRID =========
+  function rebuildThumbs() {
+    const host = document.getElementById('thumbs');
+    host.innerHTML = '';
+    document.getElementById('sel-count').textContent =
+      state.selectedIds.size ? `(${state.selectedIds.size} selected)` : '';
+
+    if (!state.img || !state.shapes.length) return;
+    state.shapes.forEach(s => {
+      if (s === state.frame) return;
+      const t = document.createElement('div');
+      const isKnob = (s.type === 'circle' || s.type === 'ring');
+      t.className = 'thumb' + (isKnob ? ' knob' : '') + (state.selectedIds.has(s.id) ? ' active' : '');
+      const c = document.createElement('canvas');
+      c.width = 72; c.height = 72;
+      const ctx = c.getContext('2d');
+      const src = resolveTexSrc(s, state.assignments[s.id] || DEFAULT_TEX);
+      if (src.sw > 0 && src.sh > 0) {
+        ctx.drawImage(state.img, src.sx, src.sy, src.sw, src.sh, 0, 0, 72, 72);
+      }
+      t.appendChild(c);
+      const badge = document.createElement('div');
+      badge.className = 'badge';
+      badge.textContent = s.id + '·' + s.type[0];
+      t.appendChild(badge);
+      t.addEventListener('click', (e) => {
+        if (e.shiftKey) state.selectedIds.add(s.id);
+        else { state.selectedIds.clear(); state.selectedIds.add(s.id); }
+        redraw(); rebuildThumbs();
+      });
+      host.appendChild(t);
+    });
+  }
+
+  // ========= TEXTURE LIBRARY UI =========
+  function rebuildLibrary() {
+    if (!state.img) return;
+    state.textureLibrary = PRESET_LIBRARY.filter(t => t.id === DEFAULT_TEX || (
+      t.sx >= 0 && t.sy >= 0 && t.sx + t.sw <= state.img.width && t.sy + t.sh <= state.img.height
+    ));
+    renderLibrary();
+  }
+
+  function renderLibrary() {
+    const host = document.getElementById('tex-list');
+    host.innerHTML = '';
+    state.textureLibrary.forEach(tex => {
+      const row = document.createElement('div');
+      row.className = 'tex-item';
+      const c = document.createElement('canvas');
+      c.width = 48; c.height = 48;
+      const ctx = c.getContext('2d');
+      if (tex.id === DEFAULT_TEX) {
+        // checker
+        ctx.fillStyle = '#2a2a2a'; ctx.fillRect(0,0,48,48);
+        ctx.fillStyle = '#555'; ctx.font='bold 9px sans-serif'; ctx.textAlign='center';
+        ctx.fillText('OWN', 24, 22); ctx.fillText('AREA', 24, 34);
+      } else if (state.img) {
+        ctx.drawImage(state.img, tex.sx, tex.sy, tex.sw, tex.sh, 0, 0, 48, 48);
+      }
+      row.appendChild(c);
+      const info = document.createElement('div');
+      info.className = 'info';
+      info.innerHTML = '<div class="name">' + tex.name + '</div>' +
+        '<div class="hint">' + (tex.hint || `(${tex.sw}×${tex.sh} at ${tex.sx},${tex.sy})`) + '</div>';
+      row.appendChild(info);
+      row.addEventListener('click', () => applyTextureToSelection(tex.id));
+      host.appendChild(row);
+    });
+  }
+
+  function applyTextureToSelection(texId) {
+    if (!state.selectedIds.size) { setStatus('Select shapes first'); return; }
+    state.selectedIds.forEach(id => { state.assignments[id] = texId; });
+    setStatus('Applied "' + texId + '" to ' + state.selectedIds.size + ' shape(s)');
+    rebuildThumbs();
+  }
+
+  // ========= CANVAS CLICKS =========
+  function canvasToImageCoords(e) {
+    const rect = mainCanvas.getBoundingClientRect();
+    const scale = state.img.width / rect.width;
+    return { x: (e.clientX - rect.left) * scale, y: (e.clientY - rect.top) * scale };
+  }
+
+  mainCanvas.addEventListener('mousedown', (e) => {
+    if (!state.img) return;
+    const { x, y } = canvasToImageCoords(e);
+    if (e.altKey) {
+      state.altDrag = { x0: x, y0: y, x1: x, y1: y };
+      return;
+    }
+    let picked = null;
+    for (const s of state.shapes) {
+      if (s === state.frame) continue;
+      if (s.type === 'rect' && x >= s.x && x <= s.x + s.w && y >= s.y && y <= s.y + s.h) picked = s;
+      else if ((s.type === 'circle' || s.type === 'ring')) {
+        const dx = x - s.cx, dy = y - s.cy;
+        const r = s.type === 'circle' ? s.r : s.r_out;
+        if (dx*dx + dy*dy <= r*r) picked = s;
+      }
+    }
+    if (picked) {
+      if (!e.shiftKey) state.selectedIds.clear();
+      if (state.selectedIds.has(picked.id)) state.selectedIds.delete(picked.id);
+      else state.selectedIds.add(picked.id);
+      redraw(); rebuildThumbs();
+    } else if (!e.shiftKey) {
+      state.selectedIds.clear();
+      redraw(); rebuildThumbs();
+    }
+  });
+
+  mainCanvas.addEventListener('mousemove', (e) => {
+    if (!state.altDrag) return;
+    const { x, y } = canvasToImageCoords(e);
+    state.altDrag.x1 = x; state.altDrag.y1 = y;
+    redraw();
+  });
+
+  mainCanvas.addEventListener('mouseup', () => {
+    if (!state.altDrag) return;
+    const d = state.altDrag;
+    state.altDrag = null;
+    const sx = Math.min(d.x0, d.x1), sy = Math.min(d.y0, d.y1);
+    const sw = Math.abs(d.x1 - d.x0), sh = Math.abs(d.y1 - d.y0);
+    if (sw > 5 && sh > 5) {
+      const id = 'custom_' + Date.now();
+      const name = prompt('Name this texture', 'Custom ' + (state.textureLibrary.length + 1));
+      if (name) {
+        state.textureLibrary.push({ id, name, sx, sy, sw, sh });
+        renderLibrary();
+      }
+    }
+    redraw();
+  });
+
+  // ========= TOOLBAR BUTTONS =========
+  document.getElementById('select-all-btn').addEventListener('click', () => {
+    state.selectedIds = new Set(state.shapes.filter(s => s !== state.frame).map(s => s.id));
+    redraw(); rebuildThumbs();
+  });
+  document.getElementById('clear-btn').addEventListener('click', () => {
+    state.selectedIds.clear();
+    redraw(); rebuildThumbs();
+  });
+
+  document.getElementById('export-btn').addEventListener('click', () => {
+    const out = {
+      image: state.pngName,
+      texture_library: state.textureLibrary,
+      shapes: state.shapes.map(s => ({
+        ...s,
+        texture_id: state.assignments[s.id] || DEFAULT_TEX,
+      })),
+    };
+    const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'shapes_with_textures.json';
+    a.click();
+  });
+
+  window.addEventListener('resize', redraw);
+})();
+</script>
+
+<p><a href="../">← Back to Agents</a></p>
