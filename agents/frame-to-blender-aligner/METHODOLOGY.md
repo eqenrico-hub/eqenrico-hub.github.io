@@ -260,6 +260,7 @@ Now Ctrl+click sets the clone source at the exact pixel under the cursor, click-
 18. **Cube-projected UVs break texture paint on a cube chassis** because all 6 faces share UV 0-1. Either collapse non-top UVs to (0,0), or use a plane instead of a cube for the chassis.
 19. **If the material has a Mapping node between UV and Image, paint strokes drift by the Mapping transform.** Pre-crop the PNG on disk instead of cropping via Mapping, so the shader is UV → Image directly with no transform.
 20. **Don't paint on the original reference PNG.** Work on a separate paintable copy (`bandritual_chassis_paintable.png`) so the original is preserved as a backup.
+21. **Multi-state button textures**: interactive buttons need 2+ textures (default / clicked / hovered). Generate both at the same aspect ratio from ChatGPT in one go, save with state-labeled filenames (`button_1.917_default.png`, `button_1.917_clicked.png`). At VST runtime the state swaps the Image Texture node's image — aspect is identical so no Mapping recomputation is needed.
 
 ---
 
