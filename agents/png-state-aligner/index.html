@@ -5,7 +5,8 @@ title: PNG State Aligner
 <style>
   :root { --bg: #121212; --fg: #eee; --panel: #1e1e1e; --accent: #ff6ec7; --warn: #ffc14f; --ok: #7fff9f; --sel: #4fd1ff; }
   body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); font-family: -apple-system, system-ui, sans-serif; overflow: hidden; }
-  #app { display: grid; grid-template-columns: 260px 1fr; height: 100vh; transition: grid-template-columns 0.2s; }
+  /* Break out of parent Jekyll layout container — cover full viewport */
+  #app { position: fixed; inset: 0; z-index: 9999; background: var(--bg); display: grid; grid-template-columns: 260px 1fr; height: 100vh; width: 100vw; transition: grid-template-columns 0.2s; }
   #app.collapsed { grid-template-columns: 0 1fr; }
   #app.collapsed #sidebar { display: none; }
   #sidebar { background: var(--panel); padding: 12px; overflow-y: auto; border-right: 1px solid #333; }
