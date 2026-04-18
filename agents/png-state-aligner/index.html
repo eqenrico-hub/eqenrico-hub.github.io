@@ -533,14 +533,14 @@ function refreshRegions() {
             <option value="C" ${src==='C'?'selected':''}>C</option>
           </select>
         </div>
-        <div><label>sx off</label><input type="number" class="csox" data-id="${r.id}" value="${sox}" step="1"></div>
-        <div><label>sy off</label><input type="number" class="csoy" data-id="${r.id}" value="${soy}" step="1"></div>
+        <div><label>sx off</label><input type="number" class="csox" data-id="${r.id}" value="${sox}" step="0.1"></div>
+        <div><label>sy off</label><input type="number" class="csoy" data-id="${r.id}" value="${soy}" step="0.1"></div>
         <div><label></label><button class="rclearoff" data-id="${r.id}" title="Reset src offsets" style="width:100%; font-size:10px; padding:2px;">↺src</button></div>
       </div>
       <div class="rcoords" title="DST: nudge where the clicked overlay appears on PNG_A (move the displayed crop independently from where it was cut from)">
         <div><label>&nbsp;</label><span style="font-size:9px; color:#888;">dst</span></div>
-        <div><label>dx off</label><input type="number" class="cdox" data-id="${r.id}" value="${r.dstOffX || 0}" step="1"></div>
-        <div><label>dy off</label><input type="number" class="cdoy" data-id="${r.id}" value="${r.dstOffY || 0}" step="1"></div>
+        <div><label>dx off</label><input type="number" class="cdox" data-id="${r.id}" value="${r.dstOffX || 0}" step="0.1"></div>
+        <div><label>dy off</label><input type="number" class="cdoy" data-id="${r.id}" value="${r.dstOffY || 0}" step="0.1"></div>
         <div><label></label><button class="rcleardst" data-id="${r.id}" title="Reset dst offsets" style="width:100%; font-size:10px; padding:2px;">↺dst</button></div>
       </div>`}
       <div class="rbtns">
@@ -618,7 +618,7 @@ function refreshRegions() {
       const r = state.regions.find(x => x.id === +e.target.dataset.id);
       if (!r) return;
       pushUndo();
-      const v = Math.round(+e.target.value);
+      const v = +e.target.value;
       if (cls === 'csox') r.srcOffX = v;
       if (cls === 'csoy') r.srcOffY = v;
       render();
@@ -635,7 +635,7 @@ function refreshRegions() {
       const r = state.regions.find(x => x.id === +e.target.dataset.id);
       if (!r) return;
       pushUndo();
-      const v = Math.round(+e.target.value);
+      const v = +e.target.value;
       if (cls === 'cdox') r.dstOffX = v;
       if (cls === 'cdoy') r.dstOffY = v;
       render();
