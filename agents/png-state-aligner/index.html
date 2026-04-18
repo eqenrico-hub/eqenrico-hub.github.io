@@ -35,9 +35,15 @@ title: PNG State Aligner
   kbd { background: #333; padding: 1px 5px; border-radius: 3px; font-family: monospace; font-size: 10px; }
   .region-item { background: #222; padding: 6px 8px; margin: 4px 0; border-radius: 4px; border: 1px solid #333; font-size: 11px; }
   .region-item.selected { border-color: var(--sel); background: #1a2a3a; }
+  .region-item.pressed { border-left: 3px solid var(--warn); }
   .region-item .rname { display: flex; align-items: center; gap: 4px; margin-bottom: 3px; }
-  .region-item .rbox { color: #777; font-family: monospace; font-size: 10px; }
-  .region-item .rbtns { display: flex; gap: 4px; margin-top: 3px; }
+  .region-item .rname input { flex: 1; }
+  .region-item .rcoords { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; margin: 4px 0; }
+  .region-item .rcoords input { width: 100%; font-size: 10px; padding: 2px 3px; font-family: monospace; }
+  .region-item .rcoords label { font-size: 9px; color: #666; margin: 0; text-align: center; }
+  .region-item .rbtns { display: flex; gap: 3px; margin-top: 3px; flex-wrap: wrap; }
+  .region-item .rbtns button { font-size: 10px; padding: 3px 6px; }
+  .region-item .rbtns button.change-on { background: var(--warn); color: #000; border-color: var(--warn); }
   #stats { font-size: 11px; color: #aaa; font-family: monospace; margin: 6px 0; }
 </style>
 
@@ -276,11 +282,9 @@ function canvasMouseCoord(e) {
 function canvasToImage(cx, cy) { return { x: cx / state.scale, y: cy / state.scale }; }
 
 function hitTest(ix, iy) {
-  // Check regions in reverse (top-most first)
   for (let i = state.regions.length - 1; i >= 0; i--) {
     const r = state.regions[i];
-    const HANDLE = 6 / state.scale;
-    // Check corner handles first
+    const HANDLE = 7 / state.scale;
     const corners = [
       { h: 'nw', x: r.x, y: r.y }, { h: 'ne', x: r.x+r.w, y: r.y },
       { h: 'sw', x: r.x, y: r.y+r.h }, { h: 'se', x: r.x+r.w, y: r.y+r.h },
@@ -288,7 +292,17 @@ function hitTest(ix, iy) {
     for (const c of corners) {
       if (Math.abs(ix - c.x) <= HANDLE && Math.abs(iy - c.y) <= HANDLE) return { region: r, mode: 'resize-' + c.h };
     }
-    if (ix >= r.x && ix <= r.x + r.w && iy >= r.y && iy <= r.y + r.h) return { region: r, mode: 'move' };
+    // Body hit: bounding box for rect, ellipse equation for circle
+    if (r.shape === 'circle') {
+      const cx = r.x + r.w/2, cy = r.y + r.h/2;
+      const rx = r.w/2, ry = r.h/2;
+      if (rx > 0 && ry > 0) {
+        const nx = (ix - cx) / rx, ny = (iy - cy) / ry;
+        if (nx*nx + ny*ny <= 1) return { region: r, mode: 'move' };
+      }
+    } else {
+      if (ix >= r.x && ix <= r.x + r.w && iy >= r.y && iy <= r.y + r.h) return { region: r, mode: 'move' };
+    }
   }
   return null;
 }
@@ -379,7 +393,7 @@ window.addEventListener('mouseup', e => {
     const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y);
     const w = Math.abs(a.x - b.x), h = Math.abs(a.y - b.y);
     if (w > 3 && h > 3) {
-      const r = { id: state.nextId++, name: `region_${state.regions.length + 1}`, x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h) };
+      const r = { id: state.nextId++, name: `region_${state.regions.length + 1}`, shape: 'rect', pressed: false, x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h) };
       state.regions.push(r); state.selectedId = r.id;
       refreshRegions();
     }
@@ -395,12 +409,23 @@ function refreshRegions() {
   list.innerHTML = '';
   state.regions.forEach(r => {
     const div = document.createElement('div');
-    div.className = 'region-item' + (r.id === state.selectedId ? ' selected' : '');
+    const cls = ['region-item'];
+    if (r.id === state.selectedId) cls.push('selected');
+    if (r.pressed) cls.push('pressed');
+    div.className = cls.join(' ');
+    const shapeLabel = r.shape === 'circle' ? '○' : '▭';
     div.innerHTML = `
       <div class="rname"><input type="text" value="${r.name}" data-id="${r.id}" class="rename"></div>
-      <div class="rbox">x=${r.x} y=${r.y} w=${r.w} h=${r.h}</div>
+      <div class="rcoords">
+        <div><label>x</label><input type="number" class="cx" data-id="${r.id}" value="${r.x}"></div>
+        <div><label>y</label><input type="number" class="cy" data-id="${r.id}" value="${r.y}"></div>
+        <div><label>w</label><input type="number" class="cw" data-id="${r.id}" value="${r.w}"></div>
+        <div><label>h</label><input type="number" class="ch" data-id="${r.id}" value="${r.h}"></div>
+      </div>
       <div class="rbtns">
         <button class="rselect" data-id="${r.id}">Select</button>
+        <button class="rshape" data-id="${r.id}" title="Toggle shape rect↔circle">${shapeLabel}</button>
+        <button class="rchange ${r.pressed?'change-on':''}" data-id="${r.id}" title="Overlay pressed state from PNG_B">Change</button>
         <button class="danger rdelete" data-id="${r.id}">Delete</button>
       </div>`;
     list.appendChild(div);
@@ -409,8 +434,32 @@ function refreshRegions() {
     const r = state.regions.find(x => x.id === +e.target.dataset.id);
     if (r) r.name = e.target.value;
   }));
+  ['cx','cy','cw','ch'].forEach(cls => {
+    list.querySelectorAll('.' + cls).forEach(i => i.addEventListener('change', e => {
+      const r = state.regions.find(x => x.id === +e.target.dataset.id);
+      if (!r) return;
+      const v = Math.round(+e.target.value);
+      if (cls === 'cx') r.x = v;
+      if (cls === 'cy') r.y = v;
+      if (cls === 'cw') r.w = Math.max(2, v);
+      if (cls === 'ch') r.h = Math.max(2, v);
+      render();
+    }));
+  });
   list.querySelectorAll('.rselect').forEach(i => i.addEventListener('click', e => {
     state.selectedId = +e.target.dataset.id; setTool('select'); refreshRegions(); render();
+  }));
+  list.querySelectorAll('.rshape').forEach(i => i.addEventListener('click', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (!r) return;
+    r.shape = (r.shape === 'rect') ? 'circle' : 'rect';
+    refreshRegions(); render();
+  }));
+  list.querySelectorAll('.rchange').forEach(i => i.addEventListener('click', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (!r) return;
+    r.pressed = !r.pressed;
+    refreshRegions(); render();
   }));
   list.querySelectorAll('.rdelete').forEach(i => i.addEventListener('click', e => {
     const id = +e.target.dataset.id;
@@ -448,6 +497,21 @@ function render() {
 
   if (state.mode === 'A') {
     if (state.imgA) ctx.drawImage(state.imgA, 0, 0, dw, dh);
+    // Overlay pressed regions from B, clipped to each region shape
+    const BsrcP = state.imgBResized || state.imgB;
+    if (BsrcP) {
+      state.regions.filter(r => r.pressed).forEach(r => {
+        const rx = r.x * state.scale, ry = r.y * state.scale;
+        const rw = r.w * state.scale, rh = r.h * state.scale;
+        ctx.save();
+        ctx.beginPath();
+        if (r.shape === 'circle') ctx.ellipse(rx + rw/2, ry + rh/2, rw/2, rh/2, 0, 0, Math.PI*2);
+        else ctx.rect(rx, ry, rw, rh);
+        ctx.clip();
+        ctx.drawImage(BsrcP, 0, 0, dw, dh);
+        ctx.restore();
+      });
+    }
   } else if (state.mode === 'B') {
     if (Bsrc) ctx.drawImage(Bsrc, 0, 0, dw, dh);
   } else if (state.mode === 'overlay') {
@@ -477,19 +541,26 @@ function drawRegions() {
     const x = r.x * state.scale, y = r.y * state.scale;
     const w = r.w * state.scale, h = r.h * state.scale;
     const sel = r.id === state.selectedId;
-    octx.strokeStyle = sel ? '#4fd1ff' : '#ff6ec7';
-    octx.fillStyle = sel ? 'rgba(79,209,255,0.12)' : 'rgba(255,110,199,0.08)';
-    octx.fillRect(x, y, w, h);
-    octx.strokeRect(x, y, w, h);
+    const stroke = sel ? '#4fd1ff' : (r.pressed ? '#ffc14f' : '#ff6ec7');
+    const fill = sel ? 'rgba(79,209,255,0.12)' : (r.pressed ? 'rgba(255,193,79,0.10)' : 'rgba(255,110,199,0.08)');
+    octx.strokeStyle = stroke; octx.fillStyle = fill;
+    if (r.shape === 'circle') {
+      octx.beginPath();
+      octx.ellipse(x + w/2, y + h/2, w/2, h/2, 0, 0, Math.PI * 2);
+      octx.fill(); octx.stroke();
+    } else {
+      octx.fillRect(x, y, w, h);
+      octx.strokeRect(x, y, w, h);
+    }
     // Label
-    octx.fillStyle = '#000';
-    octx.fillRect(x, y - 16, octx.measureText(r.name).width + 10, 14);
-    octx.fillStyle = sel ? '#4fd1ff' : '#ff6ec7';
     octx.font = '11px monospace';
-    octx.fillText(r.name, x + 3, y - 4);
+    const labelText = r.name + (r.pressed ? ' •' : '');
+    const labelW = octx.measureText(labelText).width + 10;
+    octx.fillStyle = '#000'; octx.fillRect(x, y - 16, labelW, 14);
+    octx.fillStyle = stroke; octx.fillText(labelText, x + 3, y - 4);
     // Corner handles if selected
     if (sel) {
-      const H = 4;
+      const H = 5;
       [[x,y],[x+w,y],[x,y+h],[x+w,y+h]].forEach(([hx,hy]) => {
         octx.fillStyle = '#4fd1ff';
         octx.fillRect(hx - H/2, hy - H/2, H, H);
@@ -553,11 +624,21 @@ document.getElementById('btnExportAll').addEventListener('click', async () => {
   for (const r of state.regions) {
     const c = document.createElement('canvas');
     c.width = r.w; c.height = r.h;
-    c.getContext('2d').drawImage(Bsrc, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+    const cctx = c.getContext('2d');
+    if (r.shape === 'circle') {
+      cctx.save();
+      cctx.beginPath();
+      cctx.ellipse(r.w/2, r.h/2, r.w/2, r.h/2, 0, 0, Math.PI * 2);
+      cctx.clip();
+      cctx.drawImage(Bsrc, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+      cctx.restore();
+    } else {
+      cctx.drawImage(Bsrc, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+    }
     const blob = await new Promise(res => c.toBlob(res, 'image/png'));
     const fname = `${r.name}.png`;
     zip.file(fname, blob);
-    manifest.regions.push({ id: r.id, name: r.name, x: r.x, y: r.y, w: r.w, h: r.h, crop_file: fname });
+    manifest.regions.push({ id: r.id, name: r.name, shape: r.shape || 'rect', x: r.x, y: r.y, w: r.w, h: r.h, crop_file: fname });
   }
   zip.file('manifest.json', JSON.stringify(manifest, null, 2));
   const content = await zip.generateAsync({ type: 'blob' });
@@ -593,6 +674,8 @@ function importShapesData(m) {
       newRegions.push({
         id: state.nextId++,
         name: s.name || `${s.type}_${s.id}`,
+        shape: s.type === 'circle' ? 'circle' : 'rect',
+        pressed: false,
         x: Math.round(x * sx),
         y: Math.round(y * sy),
         w: Math.round(w * sx),
