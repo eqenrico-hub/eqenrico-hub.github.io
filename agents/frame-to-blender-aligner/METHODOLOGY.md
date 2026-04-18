@@ -218,6 +218,51 @@ Geometry.Position → SeparateXYZ
 
 ---
 
+## Phase 6 — In-Blender texture paint on the chassis PNG
+
+**Problem**: after deleting a 3D element (e.g., Shape_16_circle), the chassis PNG still shows the original art of that element underneath. User wanted to clone-stamp the unwanted area with clean chassis pixels, directly in Blender (Photoshop-style clone brush).
+
+**Failed attempts**:
+1. **OpenCV inpaint** (auto content-aware fill). Too blurry for the fine chassis grain — user: "terrible".
+2. **Texture Paint mode with the original `Generated + Mapping` material**. Paint strokes landed in the wrong pixels because the Mapping node transformed UVs between mesh and image. Clicking spot A painted at pixel B.
+3. **Texture Paint with `UV` output instead of `Generated`**. All 6 cube faces had UVs covering 0-1 (from `cube_project`), so the image tiled on every face — sides showed stripes of piano keys, colours bled everywhere.
+
+**Working solution** (Phase 6 final):
+
+```python
+# 1. Re-UV the chassis with bmesh:
+#    - Top face → planar UV 0→1 mapped to mesh XY bounds
+#    - All other faces → UV collapsed to (0, 0) (no texture visible there)
+for face in bm.faces:
+    if face.normal.z > 0.9:
+        for loop in face.loops:
+            u = (loop.vert.co.x - bbox_min_x) / w
+            v = (loop.vert.co.y - bbox_min_y) / h
+            loop[uv_layer].uv = (u, v)
+    else:
+        for loop in face.loops:
+            loop[uv_layer].uv = (0.0, 0.0)
+
+# 2. Pre-crop the reference PNG to just the frame area (so no Mapping node needed):
+#    Image becomes exactly the paintable canvas, 1604×957 instead of 1619×971.
+
+# 3. Material: TexCoord.UV → Image Texture → Emission. No Mapping node.
+#    The UV input is now clean 1:1 with the image pixels for the top face.
+
+# 4. Enter Texture Paint mode, select Clone brush, set clone_image + canvas to the cropped PNG.
+```
+
+Now Ctrl+click sets the clone source at the exact pixel under the cursor, click-drag paints pixel-perfect on the chassis top face. Works like Photoshop's clone stamp.
+
+**Rules added in Phase 6**:
+
+17. **Texture Paint requires UV output, not Generated.** `Generated` is per-vertex procedural — Blender's paint brush cannot invert it to know which pixel to modify.
+18. **Cube-projected UVs break texture paint on a cube chassis** because all 6 faces share UV 0-1. Either collapse non-top UVs to (0,0), or use a plane instead of a cube for the chassis.
+19. **If the material has a Mapping node between UV and Image, paint strokes drift by the Mapping transform.** Pre-crop the PNG on disk instead of cropping via Mapping, so the shader is UV → Image directly with no transform.
+20. **Don't paint on the original reference PNG.** Work on a separate paintable copy (`bandritual_chassis_paintable.png`) so the original is preserved as a backup.
+
+---
+
 ## Next steps
 
 - [ ] Finalize texture assignment for every rect using the T-key drag flow (or GUI Frame Tool → export JSON → Blender reads `texture_id`).
