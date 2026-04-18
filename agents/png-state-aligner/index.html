@@ -87,9 +87,10 @@ title: PNG State Aligner
     <div id="stats">0 regions</div>
     <div id="regionList"></div>
 
-    <h2>4. Export</h2>
-    <button id="btnExportAll">Export all crops + JSON</button>
-    <button id="btnImportJson">Import JSON</button>
+    <h2>4. Import / Export</h2>
+    <button id="btnImportShapesJson" style="background: #3a2a4a;">Import shapes.json (GUI Frame Tool)</button>
+    <button id="btnExportAll">Export crops bundle (.zip)</button>
+    <button id="btnImportJson">Import manifest.json</button>
     <input type="file" id="fileJson" accept=".json" style="display:none">
     <div class="hint">Each region → 1 PNG cropped from B at native resolution. JSON manifest maps each region to {name, bbox, crop_file}.</div>
 
@@ -569,8 +570,51 @@ document.getElementById('fileJson').addEventListener('change', async e => {
   const f = e.target.files[0]; if (!f) return;
   const txt = await f.text();
   const m = JSON.parse(txt);
-  state.regions = (m.regions || []).map(r => ({ id: state.nextId++, name: r.name, x: r.x, y: r.y, w: r.w, h: r.h }));
-  refreshRegions(); render();
+  importShapesData(m);
+});
+
+function importShapesData(m) {
+  const Bsrc = state.imgBResized || state.imgB;
+  const targetW = state.imgA ? state.imgA.naturalWidth : (Bsrc ? (Bsrc.naturalWidth || Bsrc.width) : null);
+  const targetH = state.imgA ? state.imgA.naturalHeight : (Bsrc ? (Bsrc.naturalHeight || Bsrc.height) : null);
+
+  // GUI Frame Tool format: { bg_width, bg_height, shapes: [{type, ...}] }
+  if (Array.isArray(m.shapes)) {
+    const srcW = m.bg_width || targetW;
+    const srcH = m.bg_height || targetH;
+    const sx = targetW ? (targetW / srcW) : 1;
+    const sy = targetH ? (targetH / srcH) : 1;
+    const newRegions = [];
+    for (const s of m.shapes) {
+      let x, y, w, h;
+      if (s.type === 'rect') { x = s.x; y = s.y; w = s.w; h = s.h; }
+      else if (s.type === 'circle') { x = s.cx - s.r; y = s.cy - s.r; w = s.r * 2; h = s.r * 2; }
+      else continue;
+      newRegions.push({
+        id: state.nextId++,
+        name: s.name || `${s.type}_${s.id}`,
+        x: Math.round(x * sx),
+        y: Math.round(y * sy),
+        w: Math.round(w * sx),
+        h: Math.round(h * sy),
+      });
+    }
+    state.regions = newRegions;
+    refreshRegions(); render();
+    console.log(`Imported ${newRegions.length} shapes (scaled ${sx.toFixed(4)}×${sy.toFixed(4)})`);
+    return;
+  }
+  // Aligner manifest format: { regions: [...] }
+  if (Array.isArray(m.regions)) {
+    state.regions = m.regions.map(r => ({ id: state.nextId++, name: r.name, x: r.x, y: r.y, w: r.w, h: r.h }));
+    refreshRegions(); render();
+  }
+}
+
+document.getElementById('btnImportShapesJson').addEventListener('click', async () => {
+  const r = await fetch('sample_data/shapes.json');
+  if (!r.ok) { alert('Cannot load sample_data/shapes.json'); return; }
+  importShapesData(await r.json());
 });
 
 window.addEventListener('resize', render);
