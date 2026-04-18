@@ -116,10 +116,9 @@ title: PNG State Aligner
     <h2>Shortcuts</h2>
     <div class="hint">
       <kbd>Space</kbd> toggle A↔B · <kbd>0</kbd> reset view<br>
-      <kbd>D</kbd> draw mode · <kbd>S</kbd> select mode<br>
-      <kbd>H</kbd> hide/show region borders<br>
-      <kbd>Del</kbd> delete selected region<br>
-      <kbd>⌘Z</kbd> undo · <kbd>⌘⇧Z</kbd> redo<br>
+      <kbd>D</kbd> draw · <kbd>S</kbd> select · <kbd>B</kbd> sidebar · <kbd>H</kbd> hide borders<br>
+      <kbd>←↑→↓</kbd> nudge 1px · <kbd>⇧←↑→↓</kbd> nudge 10px<br>
+      <kbd>Del</kbd> delete selected · <kbd>⌘Z</kbd> undo · <kbd>⌘⇧Z</kbd> redo<br>
       <kbd>Scroll</kbd> zoom · <kbd>Drag</kbd> pan
     </div>
   </aside>
@@ -316,6 +315,19 @@ window.addEventListener('keydown', e => {
       state.selectedId = null;
       refreshRegions(); render();
     }
+  }
+  // Arrow-key nudge for selected region (1px, Shift=10px, Alt=0.5px rounded)
+  if (state.selectedId != null && ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) {
+    const r = state.regions.find(x => x.id === state.selectedId);
+    if (!r || r.locked) return;
+    e.preventDefault();
+    pushUndo();
+    const step = e.shiftKey ? 10 : 1;
+    if (e.key === 'ArrowUp') r.y -= step;
+    if (e.key === 'ArrowDown') r.y += step;
+    if (e.key === 'ArrowLeft') r.x -= step;
+    if (e.key === 'ArrowRight') r.x += step;
+    refreshRegions(); render();
   }
 });
 function setTool(t) {
@@ -845,6 +857,7 @@ function importShapesData(m) {
     lockBiggestRect(newRegions);
     state.regions = newRegions;
     refreshRegions(); render();
+    setTool('select');
     return;
   }
   if (Array.isArray(m.regions)) {
@@ -863,6 +876,7 @@ function importShapesData(m) {
     lockBiggestRect(regs);
     state.regions = regs;
     refreshRegions(); render();
+    setTool('select');  // auto-enter Select after import so user can drag immediately
   }
 }
 
