@@ -37,7 +37,9 @@ title: Frame-to-Blender Aligner
   <li><a href="refine_shapes.py">refine_shapes.py</a> — Hough circles + Canny-edge snap refinement for circles / rects / rings. Bounded search radius so the agent cannot invent new elements, only tighten positions.</li>
   <li><a href="build_blender.py">build_blender.py</a> — Blender scene builder. Biggest rect = chassis frame. Shadeless Emission chassis (PNG displays as-is), Principled BSDF knobs with bevel + subdiv + dome + indicator. UV-crops the PNG to the actual frame area so shapes and artwork align pixel-perfect.</li>
   <li><a href="validate.py">validate.py</a> — Renders top-down ortho, per-shape pixel diff vs reference PNG, flags any element with alignment score &lt; 0.6. Report is JSON-serializable so the next iteration can re-refine only flagged items.</li>
-  <li><a href="README.md">README.md</a> — Full context, design decisions, usage.</li>
+  <li><a href="nine_slice.py">nine_slice.py</a> — Crop-only 9-slice generator. Takes one master texture PNG + border thickness, emits per-rect PNGs at correct aspect. Guarantees zero stretching — corners are pixel copies, edges/center are crops (or tile-repeats when target exceeds source). Use for batching a single LLM-generated master onto many rects.</li>
+  <li><a href="METHODOLOGY.md">METHODOLOGY.md</a> — Full iteration log with every problem → solution and the 16 hard-won rules. Running record of what we learned building the Band Ritual 3D GUI; the basis for the next-gen agent.</li>
+  <li><a href="README.md">README.md</a> — Concise overview + usage.</li>
 </ul>
 
 <h2>One-liner</h2>
