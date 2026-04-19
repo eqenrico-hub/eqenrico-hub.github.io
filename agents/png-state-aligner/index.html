@@ -104,11 +104,12 @@ title: PNG State Aligner
       <button class="tool" data-tool="clone" title="Clone stamp — Alt+click to set source, drag to paint">Clone stamp</button>
     </div>
     <div id="cloneControls" style="display:none; margin-top:6px;">
-      <label style="font-size:10px;">paint on layer</label>
+      <div class="hint" style="margin-top:0;">Active clone layer (auto-detected):</div>
       <div style="display:flex; gap:4px; margin-bottom:4px;">
-        <button id="btnLayerU" class="active" style="flex:1; font-size:11px; padding:4px;">Unpressed (always)</button>
-        <button id="btnLayerP" style="flex:1; font-size:11px; padding:4px;">Pressed (when clicked)</button>
+        <button id="btnLayerU" class="active" style="flex:1; font-size:11px; padding:4px; pointer-events:none;">Unpressed</button>
+        <button id="btnLayerP" style="flex:1; font-size:11px; padding:4px; pointer-events:none;">Pressed</button>
       </div>
+      <div class="hint">Any region pressed → paint goes to the Pressed layer.<br>All released → paint goes to the Unpressed layer.</div>
       <label style="font-size:10px;">brush size <span id="cbv">40</span>px</label>
       <input type="range" id="cloneBrush" min="5" max="200" value="40" step="1" style="width:100%;">
       <div class="hint">Alt+click to set source · drag to paint over with cloned pixels</div>
@@ -585,7 +586,18 @@ function ensureCloneOverlay() {
 
 function getActiveCloneOverlay() {
   ensureCloneOverlay();
-  return state.cloneLayer === 'pressed' ? state.cloneOverlayPressed : state.cloneOverlay;
+  // Auto-pick layer: if any non-dropdown/non-knob region is currently pressed,
+  // paint goes to the Pressed layer. Otherwise to Unpressed.
+  const anyPressed = state.regions.some(r => r.pressed && r.shape !== 'dropdown' && r.shape !== 'knob');
+  state.cloneLayer = anyPressed ? 'pressed' : 'unpressed';
+  // Reflect in UI if buttons exist
+  const uBtn = document.getElementById('btnLayerU');
+  const pBtn = document.getElementById('btnLayerP');
+  if (uBtn && pBtn) {
+    uBtn.classList.toggle('active', !anyPressed);
+    pBtn.classList.toggle('active', anyPressed);
+  }
+  return anyPressed ? state.cloneOverlayPressed : state.cloneOverlay;
 }
 
 function getCompositeSource() {
@@ -640,16 +652,6 @@ document.getElementById('btnCloneClear').addEventListener('click', () => {
   ovl.getContext('2d').clearRect(0, 0, ovl.width, ovl.height);
   state.cloneSource = null;
   render();
-});
-document.getElementById('btnLayerU').addEventListener('click', () => {
-  state.cloneLayer = 'unpressed';
-  document.getElementById('btnLayerU').classList.add('active');
-  document.getElementById('btnLayerP').classList.remove('active');
-});
-document.getElementById('btnLayerP').addEventListener('click', () => {
-  state.cloneLayer = 'pressed';
-  document.getElementById('btnLayerP').classList.add('active');
-  document.getElementById('btnLayerU').classList.remove('active');
 });
 
 document.getElementById('stage').addEventListener('wheel', e => {
