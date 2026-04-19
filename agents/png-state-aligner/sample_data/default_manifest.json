@@ -39,7 +39,7 @@
       "name": "rect_5",
       "shape": "rect",
       "locked": false,
-      "x": 34.02759361877531,
+      "x": 34,
       "y": 415,
       "w": 154,
       "h": 41,
@@ -215,7 +215,7 @@
       "name": "rect_39_copy",
       "shape": "rect",
       "locked": false,
-      "x": 875.9724063812248,
+      "x": 876,
       "y": 21,
       "w": 370,
       "h": 43,
@@ -535,9 +535,9 @@
       "name": "dropdown_34",
       "shape": "dropdown",
       "locked": false,
-      "x": 35.879734527071165,
+      "x": 36,
       "y": 455,
-      "w": 153.12026547292885,
+      "w": 153,
       "h": 190,
       "source": "B",
       "src_off_x": 0,
@@ -552,6 +552,7 @@
       "top_corner_ext_x": 6.5,
       "top_corner_ext_y": 10,
       "top_corner_curve_pct": 100,
+      "parent_name": null,
       "tex_filename": null
     },
     {
@@ -573,9 +574,10 @@
       "tex_scale": 1,
       "tex_off_x": 0,
       "tex_off_y": 0,
-      "top_corner_ext_x": 7,
-      "top_corner_ext_y": 14,
+      "top_corner_ext_x": 0,
+      "top_corner_ext_y": 17,
       "top_corner_curve_pct": 100,
+      "parent_name": null,
       "tex_filename": null
     },
     {
@@ -597,9 +599,10 @@
       "tex_scale": 1,
       "tex_off_x": 0,
       "tex_off_y": 0,
-      "top_corner_ext_x": 0,
-      "top_corner_ext_y": 0,
+      "top_corner_ext_x": 11.5,
+      "top_corner_ext_y": 9.5,
       "top_corner_curve_pct": 100,
+      "parent_name": null,
       "tex_filename": null
     },
     {
@@ -607,9 +610,9 @@
       "name": "dropdown_34_copy_copy",
       "shape": "dropdown",
       "locked": false,
-      "x": 214.0275936187753,
-      "y": 502,
-      "w": 151.9724063812247,
+      "x": 214,
+      "y": 501,
+      "w": 152,
       "h": 193,
       "source": "B",
       "src_off_x": 0,
@@ -621,9 +624,10 @@
       "tex_scale": 1,
       "tex_off_x": 0,
       "tex_off_y": 0,
-      "top_corner_ext_x": 0,
-      "top_corner_ext_y": 0,
+      "top_corner_ext_x": 10.5,
+      "top_corner_ext_y": 7.5,
       "top_corner_curve_pct": 100,
+      "parent_name": null,
       "tex_filename": null
     },
     {
@@ -648,6 +652,7 @@
       "top_corner_ext_x": 0,
       "top_corner_ext_y": 0,
       "top_corner_curve_pct": 100,
+      "parent_name": null,
       "tex_filename": null
     },
     {
@@ -669,9 +674,10 @@
       "tex_scale": 1,
       "tex_off_x": 0,
       "tex_off_y": 0,
-      "top_corner_ext_x": 0,
-      "top_corner_ext_y": 0,
+      "top_corner_ext_x": 9,
+      "top_corner_ext_y": 9.5,
       "top_corner_curve_pct": 100,
+      "parent_name": null,
       "tex_filename": null
     },
     {
@@ -696,6 +702,7 @@
       "top_corner_ext_x": 3.5,
       "top_corner_ext_y": 16.5,
       "top_corner_curve_pct": 100,
+      "parent_name": null,
       "tex_filename": null
     }
   ]

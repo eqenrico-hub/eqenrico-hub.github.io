@@ -513,8 +513,21 @@ function canvasMouseCoord(e) {
 function canvasToImage(cx, cy) { return { x: cx / state.scale, y: cy / state.scale }; }
 
 function hitTest(ix, iy) {
-  // Two-pass: non-dropdown shapes first, dropdowns second. Non-dropdowns win when
-  // a dropdown bbox overlaps its parent button area.
+  // Pass 1: ALL shapes' corner handles (resize wins over body hits)
+  // Pass 2: non-dropdown bodies
+  // Pass 3: dropdown bodies
+  const HANDLE = 7 / state.scale;
+  for (let i = state.regions.length - 1; i >= 0; i--) {
+    const r = state.regions[i];
+    if (r.locked) continue;
+    const corners = [
+      { h: 'nw', x: r.x, y: r.y }, { h: 'ne', x: r.x+r.w, y: r.y },
+      { h: 'sw', x: r.x, y: r.y+r.h }, { h: 'se', x: r.x+r.w, y: r.y+r.h },
+    ];
+    for (const c of corners) {
+      if (Math.abs(ix - c.x) <= HANDLE && Math.abs(iy - c.y) <= HANDLE) return { region: r, mode: 'resize-' + c.h };
+    }
+  }
   for (let pass = 0; pass < 2; pass++) {
     const seekDropdown = (pass === 1);
     for (let i = state.regions.length - 1; i >= 0; i--) {
@@ -522,16 +535,6 @@ function hitTest(ix, iy) {
       if (r.locked) continue;
       if (!seekDropdown && r.shape === 'dropdown') continue;
       if (seekDropdown && r.shape !== 'dropdown') continue;
-      const HANDLE = 7 / state.scale;
-      const corners = [
-        { h: 'nw', x: r.x, y: r.y }, { h: 'ne', x: r.x+r.w, y: r.y },
-        { h: 'sw', x: r.x, y: r.y+r.h }, { h: 'se', x: r.x+r.w, y: r.y+r.h },
-      ];
-      let handleHit = null;
-      for (const c of corners) {
-        if (Math.abs(ix - c.x) <= HANDLE && Math.abs(iy - c.y) <= HANDLE) { handleHit = c.h; break; }
-      }
-      if (handleHit) return { region: r, mode: 'resize-' + handleHit };
       if (r.shape === 'circle' || r.shape === 'knob') {
         const cx = r.x + r.w/2, cy = r.y + r.h/2;
         const rx = r.w/2, ry = r.h/2;
@@ -1212,7 +1215,7 @@ function render() {
 
   if (state.mode === 'A') {
     if (state.imgA) ctx.drawImage(state.imgA, 0, 0, dw, dh);
-    state.regions.filter(r => r.pressed && r.shape !== 'decal' && r.shape !== 'knob').forEach(r => {
+    state.regions.filter(r => r.pressed && r.shape !== 'decal' && r.shape !== 'knob' && r.shape !== 'dropdown').forEach(r => {
       const src = (r.source === 'C') ? (state.imgCResized || state.imgC) : (state.imgBResized || state.imgB);
       if (!src) return;
       const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
