@@ -566,6 +566,37 @@ function setTool(t) {
   if (cc) cc.style.display = (t === 'clone') ? 'block' : 'none';
 }
 
+// Slider handle images — captured once from PNG_A at each slider-rect's initial position
+// Used so that in edit + interactive mode the handle graphic follows the rect as it's moved.
+state.sliderHandleImages = {}; // regionId → captured canvas
+
+function isSliderHandle(r) {
+  if (r.shape !== 'rect' || r.locked) return null;
+  for (const o of state.regions) {
+    if (o.id === r.id || o.shape !== 'rect' || o.locked) continue;
+    if (r.x >= o.x && r.y >= o.y && r.x + r.w <= o.x + o.w && r.y + r.h <= o.y + o.h) {
+      // Also require the inner rect to be smaller (not ~same size as container)
+      if (r.w < o.w || r.h < o.h) return o;
+    }
+  }
+  return null;
+}
+
+function captureSliderHandleImage(r) {
+  if (!state.imgA) return;
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(r.w));
+  c.height = Math.max(1, Math.round(r.h));
+  c.getContext('2d').drawImage(state.imgA, r.x, r.y, r.w, r.h, 0, 0, c.width, c.height);
+  state.sliderHandleImages[r.id] = { img: c, sourceX: r.x, sourceY: r.y };
+}
+
+function ensureSliderHandles() {
+  for (const r of state.regions) {
+    if (isSliderHandle(r) && !state.sliderHandleImages[r.id]) captureSliderHandleImage(r);
+  }
+}
+
 // Clone stamp — two overlay canvases: unpressed (always visible) + pressed (when any region pressed)
 state.cloneOverlay = null;         // unpressed layer
 state.cloneOverlayPressed = null;  // pressed layer
@@ -1465,14 +1496,26 @@ function render() {
       const rw = r.w * state.scale, rh = r.h * state.scale;
       ctx.drawImage(r.decalImage, rx, ry, rw, rh);
     }
+    // Slider handle: for each rect that's a slider (contained in another rect),
+    // draw the captured PNG_A handle graphic at its CURRENT position. This sits
+    // on top of decals (so the rail decal covers the PNG_A handle at its original
+    // position) and below dropdowns.
+    for (const r of state.regions) {
+      if (!isSliderHandle(r)) continue;
+      const entry = state.sliderHandleImages[r.id];
+      if (!entry || !entry.img) continue;
+      const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
+      const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
+      const rw = r.w * state.scale, rh = r.h * state.scale;
+      ctx.drawImage(entry.img, rx, ry, rw, rh);
+    }
+
     const decals = state.regions.filter(r => r.shape === 'decal' && r.decalImage);
     for (const r of decals) {
       const parent = r.parentId != null ? state.regions.find(o => o.id === r.parentId) : null;
       const isSelected = (r.id === state.selectedId);
-      // Decal behaves like a clicked-state overlay: visible ONLY when its trigger
-      // is pressed (parent if set, else self). Edit-mode exception: always visible
-      // while the region is SELECTED so user can reposition.
-      const visible = parent ? !!parent.pressed : !!r.pressed;
+      // alwaysVisible flag bypasses the pressed gate — useful for static layers like slider rails
+      const visible = r.alwaysVisible ? true : (parent ? !!parent.pressed : !!r.pressed);
       if (!visible && !isSelected) continue;
       const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
       const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
@@ -1521,10 +1564,10 @@ function render() {
   }
 
   if (state.mode === 'A') {
-    if (state.imgA) ctx.drawImage(state.imgA, 0, 0, dw, dh);
-    // Clone UNPRESSED: applied to the base PNG_A BEFORE pressed crops overwrite it,
-    // so that when a button is clicked the PNG_B pressed-state crop covers the
-    // unpressed clone in that region (clone won't leak into the clicked look).
+    if (state.imgA) {
+      ctx.drawImage(state.imgA, 0, 0, dw, dh);
+      ensureSliderHandles();
+    }
     if (state.cloneOverlay) ctx.drawImage(state.cloneOverlay, 0, 0, dw, dh);
     state.regions.filter(r => r.pressed && r.shape !== 'decal' && r.shape !== 'knob' && r.shape !== 'dropdown').forEach(r => {
       const src = (r.source === 'C') ? (state.imgCResized || state.imgC) : (state.imgBResized || state.imgB);
@@ -1754,6 +1797,7 @@ document.getElementById('btnExportAll').addEventListener('click', async () => {
         x: r.x, y: r.y, w: r.w, h: r.h,
         dst_off_x: r.dstOffX || 0, dst_off_y: r.dstOffY || 0,
         parent_name: r.parentId != null ? (state.regions.find(rr => rr.id === r.parentId)?.name || null) : null,
+        always_visible: !!r.alwaysVisible,
         crop_file: fname, decal_filename: r.decalFilename || null,
       });
       continue;
@@ -1921,6 +1965,7 @@ function importShapesData(m) {
         x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.w), h: Math.round(r.h),
       };
       if (shape === 'knob' && state.imgKnobRender) reg.decalImage = state.imgKnobRender;
+      if (shape === 'decal') reg.alwaysVisible = !!r.always_visible;
       if (shape === 'dropdown') {
         reg.bottomRadiusPct = r.bottom_radius_pct ?? r.bottomRadiusPct ?? 15;
         reg.texScale = r.tex_scale ?? r.texScale ?? 1.0;

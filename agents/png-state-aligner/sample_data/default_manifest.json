@@ -760,6 +760,22 @@
       "parent_name": null,
       "crop_file": "decal_45.png",
       "decal_filename": null
+    },
+    {
+      "id": 44,
+      "name": "slider_rail_mix",
+      "shape": "decal",
+      "locked": false,
+      "x": 314,
+      "y": 194,
+      "w": 43,
+      "h": 166,
+      "dst_off_x": 0,
+      "dst_off_y": 0,
+      "parent_name": null,
+      "always_visible": true,
+      "crop_file": "slider_rail_mix.png",
+      "decal_filename": "slider_rail_mix.png"
     }
   ],
   "clone_overlay_file": "clone_overlay.png",
