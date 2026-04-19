@@ -101,6 +101,13 @@ title: PNG State Aligner
       <button class="tool" data-tool="drawknob">Draw knob</button>
       <button class="tool" data-tool="drawdropdown">Draw dropdown</button>
       <button class="tool" data-tool="select">Select / Edit</button>
+      <button class="tool" data-tool="clone" title="Clone stamp — Alt+click to set source, drag to paint">Clone stamp</button>
+    </div>
+    <div id="cloneControls" style="display:none; margin-top:6px;">
+      <label style="font-size:10px;">brush size <span id="cbv">40</span>px</label>
+      <input type="range" id="cloneBrush" min="5" max="200" value="40" step="1" style="width:100%;">
+      <div class="hint">Alt+click to set source · drag to paint over with cloned pixels</div>
+      <button id="btnCloneClear" class="danger" style="width:100%; font-size:10px; margin-top:3px;">Clear all clone edits</button>
     </div>
     <button id="btnInteractive" style="background:#2a4a2a; margin-top:6px; width:100%;">▶ Interactive mode</button>
     <div id="stats">0 regions</div>
@@ -470,7 +477,77 @@ function setTool(t) {
   state.tool = t;
   document.querySelectorAll('[data-tool]').forEach(x => x.classList.toggle('active', x.dataset.tool === t));
   canvasWrap.classList.toggle('drawing', t === 'draw');
+  const cc = document.getElementById('cloneControls');
+  if (cc) cc.style.display = (t === 'clone') ? 'block' : 'none';
 }
+
+// Clone stamp — overlay canvas painted on top of everything
+state.cloneOverlay = null;
+state.cloneSource = null;
+state.cloneStart = null;
+state.cloneDragging = false;
+state.cloneBrush = 40;
+
+function ensureCloneOverlay() {
+  if (state.cloneOverlay || !state.imgA) return state.cloneOverlay;
+  const c = document.createElement('canvas');
+  c.width = state.imgA.naturalWidth;
+  c.height = state.imgA.naturalHeight;
+  state.cloneOverlay = c;
+  return c;
+}
+
+function getCompositeSource() {
+  // Render current base + overlays + pressed crops into an offscreen canvas,
+  // excluding the cloneOverlay itself. Used as the SOURCE for clone painting.
+  if (!state.imgA) return null;
+  const W = state.imgA.naturalWidth, H = state.imgA.naturalHeight;
+  if (!state._compSrc) { state._compSrc = document.createElement('canvas'); state._compSrc.width = W; state._compSrc.height = H; }
+  const c = state._compSrc, cx = c.getContext('2d');
+  cx.clearRect(0, 0, W, H);
+  cx.drawImage(state.imgA, 0, 0);
+  // Pressed crops
+  const Bsrc = state.imgBResized || state.imgB;
+  const Csrc = state.imgCResized || state.imgC;
+  state.regions.filter(r => r.pressed && r.shape !== 'decal' && r.shape !== 'knob' && r.shape !== 'dropdown').forEach(r => {
+    const src = (r.source === 'C') ? Csrc : Bsrc;
+    if (!src) return;
+    const sx = r.x + (r.srcOffX || 0);
+    const sy = r.y + (r.srcOffY || 0);
+    cx.drawImage(src, sx, sy, r.w, r.h, r.x + (r.dstOffX || 0), r.y + (r.dstOffY || 0), r.w, r.h);
+  });
+  return c;
+}
+
+function cloneStamp(imgX, imgY) {
+  const ovl = ensureCloneOverlay();
+  if (!ovl || !state.cloneSource || !state.cloneStart) return;
+  const src = getCompositeSource();
+  if (!src) return;
+  const octx2 = ovl.getContext('2d');
+  const brush = state.cloneBrush;
+  const sx = state.cloneSource.x + (imgX - state.cloneStart.x);
+  const sy = state.cloneSource.y + (imgY - state.cloneStart.y);
+  octx2.save();
+  octx2.beginPath();
+  octx2.arc(imgX, imgY, brush, 0, Math.PI * 2);
+  octx2.clip();
+  octx2.drawImage(src, sx - brush, sy - brush, brush * 2, brush * 2,
+                       imgX - brush, imgY - brush, brush * 2, brush * 2);
+  octx2.restore();
+}
+
+document.getElementById('cloneBrush').addEventListener('input', e => {
+  state.cloneBrush = +e.target.value;
+  document.getElementById('cbv').textContent = e.target.value;
+  render();
+});
+document.getElementById('btnCloneClear').addEventListener('click', () => {
+  if (!state.cloneOverlay) return;
+  state.cloneOverlay.getContext('2d').clearRect(0, 0, state.cloneOverlay.width, state.cloneOverlay.height);
+  state.cloneSource = null;
+  render();
+});
 
 document.getElementById('stage').addEventListener('wheel', e => {
   e.preventDefault();
@@ -614,6 +691,18 @@ canvasWrap.addEventListener('mousedown', e => {
     return;
   }
 
+  if (state.tool === 'clone') {
+    if (e.altKey) {
+      state.cloneSource = { x: ix, y: iy };
+    } else if (state.cloneSource) {
+      state.cloneStart = { x: ix, y: iy };
+      state.cloneDragging = true;
+      cloneStamp(ix, iy);
+      render();
+    }
+    return;
+  }
+
   if (state.tool === 'draw' || state.tool === 'drawring' || state.tool === 'drawknob' || state.tool === 'drawdropdown') {
     state.drawStart = { x: ix, y: iy };
     state.drawCur = { x: ix, y: iy };
@@ -649,6 +738,13 @@ window.addEventListener('mousemove', e => {
     const r = canvasWrap.getBoundingClientRect();
     state.swipeX = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
     swipeLine.style.left = (state.swipeX * 100) + '%';
+    render();
+    return;
+  }
+  if (state.cloneDragging && state.tool === 'clone') {
+    const { cx, cy } = canvasMouseCoord(e);
+    const { x: ix3, y: iy3 } = canvasToImage(cx, cy);
+    cloneStamp(ix3, iy3);
     render();
     return;
   }
@@ -826,6 +922,7 @@ window.addEventListener('mouseup', e => {
     state._undoSnapshotForEdit = null;
   }
   state.dragging = false; state.swipeDrag = false; state.editMode = null;
+  state.cloneDragging = false;
   state.snapGuides = [];
   canvasWrap.classList.remove('grabbing');
   render();
@@ -1258,7 +1355,32 @@ function render() {
   // Static overlays (knob + decal) always on top in any mode EXCEPT diff/sideby
   if (state.mode !== 'diff' && state.mode !== 'sideby') drawStaticOverlays();
 
+  // Clone overlay: painted cloned pixels, sit on top of everything
+  if (state.cloneOverlay) {
+    ctx.drawImage(state.cloneOverlay, 0, 0, dw, dh);
+  }
+
   if (!state.hideBorders) drawRegions();
+
+  // Clone tool source marker
+  if (state.tool === 'clone' && state.cloneSource) {
+    octx.save();
+    octx.strokeStyle = '#ffb347';
+    octx.lineWidth = 2;
+    octx.setLineDash([4, 2]);
+    octx.beginPath();
+    octx.arc(state.cloneSource.x * state.scale, state.cloneSource.y * state.scale, state.cloneBrush * state.scale, 0, Math.PI * 2);
+    octx.stroke();
+    // Crosshair
+    octx.setLineDash([]);
+    octx.beginPath();
+    octx.moveTo(state.cloneSource.x * state.scale - 6, state.cloneSource.y * state.scale);
+    octx.lineTo(state.cloneSource.x * state.scale + 6, state.cloneSource.y * state.scale);
+    octx.moveTo(state.cloneSource.x * state.scale, state.cloneSource.y * state.scale - 6);
+    octx.lineTo(state.cloneSource.x * state.scale, state.cloneSource.y * state.scale + 6);
+    octx.stroke();
+    octx.restore();
+  }
 
   swipeLine.style.display = state.mode === 'swipe' ? 'block' : 'none';
 }
