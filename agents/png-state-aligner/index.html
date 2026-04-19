@@ -104,10 +104,15 @@ title: PNG State Aligner
       <button class="tool" data-tool="clone" title="Clone stamp — Alt+click to set source, drag to paint">Clone stamp</button>
     </div>
     <div id="cloneControls" style="display:none; margin-top:6px;">
+      <label style="font-size:10px;">paint on layer</label>
+      <div style="display:flex; gap:4px; margin-bottom:4px;">
+        <button id="btnLayerU" class="active" style="flex:1; font-size:11px; padding:4px;">Unpressed (always)</button>
+        <button id="btnLayerP" style="flex:1; font-size:11px; padding:4px;">Pressed (when clicked)</button>
+      </div>
       <label style="font-size:10px;">brush size <span id="cbv">40</span>px</label>
       <input type="range" id="cloneBrush" min="5" max="200" value="40" step="1" style="width:100%;">
       <div class="hint">Alt+click to set source · drag to paint over with cloned pixels</div>
-      <button id="btnCloneClear" class="danger" style="width:100%; font-size:10px; margin-top:3px;">Clear all clone edits</button>
+      <button id="btnCloneClear" class="danger" style="width:100%; font-size:10px; margin-top:3px;">Clear active layer</button>
     </div>
     <button id="btnInteractive" style="background:#2a4a2a; margin-top:6px; width:100%;">▶ Interactive mode</button>
     <div id="stats">0 regions</div>
@@ -171,30 +176,35 @@ function snapshot() { return JSON.parse(JSON.stringify(state.regions)); }
 state.cloneUndoStack = [];
 state.cloneRedoStack = [];
 function pushCloneUndo() {
-  if (!state.cloneOverlay) return;
-  const c = state.cloneOverlay.getContext('2d');
-  const data = c.getImageData(0, 0, state.cloneOverlay.width, state.cloneOverlay.height);
-  state.cloneUndoStack.push(data);
+  const ovl = getActiveCloneOverlay();
+  if (!ovl) return;
+  const c = ovl.getContext('2d');
+  const data = c.getImageData(0, 0, ovl.width, ovl.height);
+  state.cloneUndoStack.push({ layer: state.cloneLayer, data });
   if (state.cloneUndoStack.length > 50) state.cloneUndoStack.shift();
   state.cloneRedoStack = [];
 }
 function cloneUndo() {
-  if (!state.cloneUndoStack.length || !state.cloneOverlay) return false;
-  const c = state.cloneOverlay.getContext('2d');
-  const cur = c.getImageData(0, 0, state.cloneOverlay.width, state.cloneOverlay.height);
-  state.cloneRedoStack.push(cur);
-  const prev = state.cloneUndoStack.pop();
-  c.putImageData(prev, 0, 0);
+  if (!state.cloneUndoStack.length) return false;
+  const entry = state.cloneUndoStack.pop();
+  const ovl = entry.layer === 'pressed' ? state.cloneOverlayPressed : state.cloneOverlay;
+  if (!ovl) return false;
+  const c = ovl.getContext('2d');
+  const cur = c.getImageData(0, 0, ovl.width, ovl.height);
+  state.cloneRedoStack.push({ layer: entry.layer, data: cur });
+  c.putImageData(entry.data, 0, 0);
   render();
   return true;
 }
 function cloneRedo() {
-  if (!state.cloneRedoStack.length || !state.cloneOverlay) return false;
-  const c = state.cloneOverlay.getContext('2d');
-  const cur = c.getImageData(0, 0, state.cloneOverlay.width, state.cloneOverlay.height);
-  state.cloneUndoStack.push(cur);
-  const next = state.cloneRedoStack.pop();
-  c.putImageData(next, 0, 0);
+  if (!state.cloneRedoStack.length) return false;
+  const entry = state.cloneRedoStack.pop();
+  const ovl = entry.layer === 'pressed' ? state.cloneOverlayPressed : state.cloneOverlay;
+  if (!ovl) return false;
+  const c = ovl.getContext('2d');
+  const cur = c.getImageData(0, 0, ovl.width, ovl.height);
+  state.cloneUndoStack.push({ layer: entry.layer, data: cur });
+  c.putImageData(entry.data, 0, 0);
   render();
   return true;
 }
@@ -406,21 +416,23 @@ document.getElementById('btnLoadDefaults').addEventListener('click', async () =>
     }
   } catch (e) { console.warn('default manifest not loaded', e); }
 
-  // Auto-load default clone overlay if bundled
-  try {
-    const clrR = await fetch('sample_data/clone_overlay.png');
-    if (clrR.ok) {
-      const blob = await clrR.blob();
+  // Auto-load default clone overlays (unpressed + pressed)
+  async function loadDefaultOverlay(url, targetKey) {
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) return;
+      const blob = await resp.blob();
       const im = new Image();
       await new Promise((res, rej) => { im.onload = res; im.onerror = rej; im.src = URL.createObjectURL(blob); });
       ensureCloneOverlay();
-      if (state.cloneOverlay) {
-        const cctx = state.cloneOverlay.getContext('2d');
-        cctx.clearRect(0, 0, state.cloneOverlay.width, state.cloneOverlay.height);
-        cctx.drawImage(im, 0, 0);
-      }
-    }
-  } catch (e) { console.warn('default clone overlay not loaded', e); }
+      const ovl = targetKey === 'pressed' ? state.cloneOverlayPressed : state.cloneOverlay;
+      const cctx = ovl.getContext('2d');
+      cctx.clearRect(0, 0, ovl.width, ovl.height);
+      cctx.drawImage(im, 0, 0);
+    } catch (_) {}
+  }
+  await loadDefaultOverlay('sample_data/clone_overlay.png', 'unpressed');
+  await loadDefaultOverlay('sample_data/clone_overlay_pressed.png', 'pressed');
 
   render();
 });
@@ -547,20 +559,33 @@ function setTool(t) {
   if (cc) cc.style.display = (t === 'clone') ? 'block' : 'none';
 }
 
-// Clone stamp — overlay canvas painted on top of everything
-state.cloneOverlay = null;
+// Clone stamp — two overlay canvases: unpressed (always visible) + pressed (when any region pressed)
+state.cloneOverlay = null;         // unpressed layer
+state.cloneOverlayPressed = null;  // pressed layer
+state.cloneLayer = 'unpressed';    // which one the user paints into
 state.cloneSource = null;
 state.cloneStart = null;
 state.cloneDragging = false;
 state.cloneBrush = 40;
 
 function ensureCloneOverlay() {
-  if (state.cloneOverlay || !state.imgA) return state.cloneOverlay;
-  const c = document.createElement('canvas');
-  c.width = state.imgA.naturalWidth;
-  c.height = state.imgA.naturalHeight;
-  state.cloneOverlay = c;
-  return c;
+  if (!state.imgA) return null;
+  if (!state.cloneOverlay) {
+    const c = document.createElement('canvas');
+    c.width = state.imgA.naturalWidth; c.height = state.imgA.naturalHeight;
+    state.cloneOverlay = c;
+  }
+  if (!state.cloneOverlayPressed) {
+    const c2 = document.createElement('canvas');
+    c2.width = state.imgA.naturalWidth; c2.height = state.imgA.naturalHeight;
+    state.cloneOverlayPressed = c2;
+  }
+  return state.cloneLayer === 'pressed' ? state.cloneOverlayPressed : state.cloneOverlay;
+}
+
+function getActiveCloneOverlay() {
+  ensureCloneOverlay();
+  return state.cloneLayer === 'pressed' ? state.cloneOverlayPressed : state.cloneOverlay;
 }
 
 function getCompositeSource() {
@@ -586,7 +611,7 @@ function getCompositeSource() {
 }
 
 function cloneStamp(imgX, imgY) {
-  const ovl = ensureCloneOverlay();
+  const ovl = getActiveCloneOverlay();
   if (!ovl || !state.cloneSource || !state.cloneStart) return;
   const src = getCompositeSource();
   if (!src) return;
@@ -609,11 +634,22 @@ document.getElementById('cloneBrush').addEventListener('input', e => {
   render();
 });
 document.getElementById('btnCloneClear').addEventListener('click', () => {
-  if (!state.cloneOverlay) return;
+  const ovl = getActiveCloneOverlay();
+  if (!ovl) return;
   pushCloneUndo();
-  state.cloneOverlay.getContext('2d').clearRect(0, 0, state.cloneOverlay.width, state.cloneOverlay.height);
+  ovl.getContext('2d').clearRect(0, 0, ovl.width, ovl.height);
   state.cloneSource = null;
   render();
+});
+document.getElementById('btnLayerU').addEventListener('click', () => {
+  state.cloneLayer = 'unpressed';
+  document.getElementById('btnLayerU').classList.add('active');
+  document.getElementById('btnLayerP').classList.remove('active');
+});
+document.getElementById('btnLayerP').addEventListener('click', () => {
+  state.cloneLayer = 'pressed';
+  document.getElementById('btnLayerP').classList.add('active');
+  document.getElementById('btnLayerU').classList.remove('active');
 });
 
 document.getElementById('stage').addEventListener('wheel', e => {
@@ -1449,13 +1485,15 @@ function render() {
     renderDiff(dw, dh, Bsrc);
   }
 
-  // Static overlays (knob + decal) always on top in any mode EXCEPT diff/sideby
-  if (state.mode !== 'diff' && state.mode !== 'sideby') drawStaticOverlays();
+  // Clone overlay UNPRESSED: always on, rendered BEFORE static overlays so dropdowns sit on top
+  if (state.cloneOverlay) ctx.drawImage(state.cloneOverlay, 0, 0, dw, dh);
 
-  // Clone overlay: painted cloned pixels, sit on top of everything
-  if (state.cloneOverlay) {
-    ctx.drawImage(state.cloneOverlay, 0, 0, dw, dh);
-  }
+  // Clone overlay PRESSED: rendered only when at least one non-dropdown/non-knob region is pressed
+  const anyPressed = state.regions.some(r => r.pressed && r.shape !== 'dropdown' && r.shape !== 'knob');
+  if (state.cloneOverlayPressed && anyPressed) ctx.drawImage(state.cloneOverlayPressed, 0, 0, dw, dh);
+
+  // Static overlays (knob + decal + dropdown) on top in any mode EXCEPT diff/sideby
+  if (state.mode !== 'diff' && state.mode !== 'sideby') drawStaticOverlays();
 
   if (!state.hideBorders) drawRegions();
 
@@ -1683,10 +1721,13 @@ document.getElementById('btnExportAll').addEventListener('click', async () => {
     }
     manifest.regions.push(entry);
   }
-  // Include cloneOverlay as PNG so clone-stamp edits persist across import/export
   if (state.cloneOverlay) {
     const blob = await new Promise(res => state.cloneOverlay.toBlob(res, 'image/png'));
     if (blob) { zip.file('clone_overlay.png', blob); manifest.clone_overlay_file = 'clone_overlay.png'; }
+  }
+  if (state.cloneOverlayPressed) {
+    const blob = await new Promise(res => state.cloneOverlayPressed.toBlob(res, 'image/png'));
+    if (blob) { zip.file('clone_overlay_pressed.png', blob); manifest.clone_overlay_pressed_file = 'clone_overlay_pressed.png'; }
   }
   zip.file('manifest.json', JSON.stringify(manifest, null, 2));
   const content = await zip.generateAsync({ type: 'blob' });
@@ -1722,20 +1763,22 @@ document.getElementById('fileJson').addEventListener('change', async e => {
       r.decalImage = im;
     }
     refreshRegions(); render();
-    // Restore clone overlay if present in zip
-    const cloneFile = zip.file('clone_overlay.png');
-    if (cloneFile && state.imgA) {
-      const blob = await cloneFile.async('blob');
+    // Restore clone overlays (unpressed + pressed) if present in zip
+    async function loadOverlay(zipName, targetKey) {
+      const f = zip.file(zipName);
+      if (!f || !state.imgA) return;
+      const blob = await f.async('blob');
       const im = new Image();
-      im.onload = () => {
-        ensureCloneOverlay();
-        const cctx = state.cloneOverlay.getContext('2d');
-        cctx.clearRect(0, 0, state.cloneOverlay.width, state.cloneOverlay.height);
-        cctx.drawImage(im, 0, 0);
-        render();
-      };
-      im.src = URL.createObjectURL(blob);
+      await new Promise(res => { im.onload = res; im.onerror = res; im.src = URL.createObjectURL(blob); });
+      ensureCloneOverlay();
+      const ovl = targetKey === 'pressed' ? state.cloneOverlayPressed : state.cloneOverlay;
+      const cctx = ovl.getContext('2d');
+      cctx.clearRect(0, 0, ovl.width, ovl.height);
+      cctx.drawImage(im, 0, 0);
     }
+    await loadOverlay('clone_overlay.png', 'unpressed');
+    await loadOverlay('clone_overlay_pressed.png', 'pressed');
+    render();
   } else {
     const txt = await f.text();
     importShapesData(JSON.parse(txt));
