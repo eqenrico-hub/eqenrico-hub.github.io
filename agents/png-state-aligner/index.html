@@ -553,6 +553,41 @@ window.addEventListener('mousemove', e => {
     if (!r) return;
     if (state.editMode === 'move') {
       r.x = orig.x + dx; r.y = orig.y + dy;
+      // Shift: snap to alignment with other regions
+      state.snapGuides = [];
+      if (e.shiftKey) {
+        const SNAP = 6; // pixels in image space
+        const myL = r.x, myR = r.x + r.w, myCX = r.x + r.w/2;
+        const myT = r.y, myB = r.y + r.h, myCY = r.y + r.h/2;
+        let bestDX = SNAP + 1, snapX = null, guideX = null;
+        let bestDY = SNAP + 1, snapY = null, guideY = null;
+        for (const other of state.regions) {
+          if (other.id === r.id) continue;
+          const oL = other.x, oR = other.x + other.w, oCX = other.x + other.w/2;
+          const oT = other.y, oB = other.y + other.h, oCY = other.y + other.h/2;
+          // X axis: check all 3×3 pairings (left/center/right vs L/C/R)
+          const xpairs = [
+            [myL, oL, oL], [myL, oCX, oCX], [myL, oR, oR],
+            [myCX, oL, oL - r.w/2], [myCX, oCX, oCX - r.w/2], [myCX, oR, oR - r.w/2],
+            [myR, oL, oL - r.w], [myR, oCX, oCX - r.w], [myR, oR, oR - r.w],
+          ];
+          for (const [mine, theirs, newX] of xpairs) {
+            const d = Math.abs(mine - theirs);
+            if (d < bestDX) { bestDX = d; snapX = newX; guideX = theirs; }
+          }
+          const ypairs = [
+            [myT, oT, oT], [myT, oCY, oCY], [myT, oB, oB],
+            [myCY, oT, oT - r.h/2], [myCY, oCY, oCY - r.h/2], [myCY, oB, oB - r.h/2],
+            [myB, oT, oT - r.h], [myB, oCY, oCY - r.h], [myB, oB, oB - r.h],
+          ];
+          for (const [mine, theirs, newY] of ypairs) {
+            const d = Math.abs(mine - theirs);
+            if (d < bestDY) { bestDY = d; snapY = newY; guideY = theirs; }
+          }
+        }
+        if (snapX != null) { r.x = snapX; state.snapGuides.push({ type: 'v', v: guideX }); }
+        if (snapY != null) { r.y = snapY; state.snapGuides.push({ type: 'h', v: guideY }); }
+      }
     } else if (state.editMode.startsWith('resize-')) {
       const handle = state.editMode.split('-')[1];
       let nx = orig.x, ny = orig.y, nw = orig.w, nh = orig.h;
@@ -620,7 +655,9 @@ window.addEventListener('mouseup', e => {
     state._undoSnapshotForEdit = null;
   }
   state.dragging = false; state.swipeDrag = false; state.editMode = null;
+  state.snapGuides = [];
   canvasWrap.classList.remove('grabbing');
+  render();
 });
 
 function refreshRegions() {
@@ -908,6 +945,25 @@ function drawRegions() {
     }
   });
   octx.setLineDash([]);
+  // Alignment guides during Shift+drag
+  if (state.snapGuides && state.snapGuides.length) {
+    octx.save();
+    octx.strokeStyle = '#4fd1ff';
+    octx.lineWidth = 1;
+    octx.setLineDash([4, 3]);
+    for (const g of state.snapGuides) {
+      octx.beginPath();
+      if (g.type === 'v') {
+        const vx = g.v * state.scale;
+        octx.moveTo(vx, 0); octx.lineTo(vx, overlay.height);
+      } else {
+        const vy = g.v * state.scale;
+        octx.moveTo(0, vy); octx.lineTo(overlay.width, vy);
+      }
+      octx.stroke();
+    }
+    octx.restore();
+  }
   // Preview in-progress rect
   if (state.drawStart && state.drawCur) {
     const a = state.drawStart, b = state.drawCur;
