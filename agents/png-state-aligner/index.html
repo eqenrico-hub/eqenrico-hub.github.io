@@ -1496,20 +1496,6 @@ function render() {
       const rw = r.w * state.scale, rh = r.h * state.scale;
       ctx.drawImage(r.decalImage, rx, ry, rw, rh);
     }
-    // Slider handle: for each rect that's a slider (contained in another rect),
-    // draw the captured PNG_A handle graphic at its CURRENT position. This sits
-    // on top of decals (so the rail decal covers the PNG_A handle at its original
-    // position) and below dropdowns.
-    for (const r of state.regions) {
-      if (!isSliderHandle(r)) continue;
-      const entry = state.sliderHandleImages[r.id];
-      if (!entry || !entry.img) continue;
-      const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
-      const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
-      const rw = r.w * state.scale, rh = r.h * state.scale;
-      ctx.drawImage(entry.img, rx, ry, rw, rh);
-    }
-
     const decals = state.regions.filter(r => r.shape === 'decal' && r.decalImage);
     for (const r of decals) {
       const parent = r.parentId != null ? state.regions.find(o => o.id === r.parentId) : null;
@@ -1522,6 +1508,18 @@ function render() {
       const rw = r.w * state.scale, rh = r.h * state.scale;
       ctx.drawImage(r.decalImage, rx, ry, rw, rh);
     }
+
+    // Slider handles on top of decals/rails but below dropdowns
+    for (const r of state.regions) {
+      if (!isSliderHandle(r)) continue;
+      const entry = state.sliderHandleImages[r.id];
+      if (!entry || !entry.img) continue;
+      const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
+      const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
+      const rw = r.w * state.scale, rh = r.h * state.scale;
+      ctx.drawImage(entry.img, rx, ry, rw, rh);
+    }
+
     // Dropdowns rendered ON TOP of knobs/decals (a dropdown opens over the interface,
     // covering everything else in its area)
     state.regions.filter(r => r.shape === 'dropdown').forEach(r => {
