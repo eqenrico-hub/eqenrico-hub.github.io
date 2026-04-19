@@ -1061,11 +1061,12 @@ function render() {
     // Draw dropdowns first (they sit BEHIND knobs/decals visually in the GUI since
     // they open underneath a button — but on the canvas layering, dropdown comes first)
     state.regions.filter(r => r.shape === 'dropdown').forEach(r => {
-      // In interactive mode, only show dropdown if its parent button is pressed
-      if (state.interactiveMode) {
-        const parent = findParentButton(r);
-        if (!parent || !parent.pressed) return;
-      }
+      // Dropdown visibility rule: only show if its linked parent button is pressed.
+      // Exception: if the dropdown itself is selected (edit mode), always show so user can position it.
+      const parent = findParentButton(r);
+      const isSelected = (r.id === state.selectedId);
+      const parentPressed = parent && parent.pressed;
+      if (!parentPressed && !isSelected) return;
       const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
       const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
       const rw = r.w * state.scale, rh = r.h * state.scale;
