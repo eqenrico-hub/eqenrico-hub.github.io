@@ -1614,6 +1614,11 @@ document.getElementById('btnExportAll').addEventListener('click', async () => {
     }
     manifest.regions.push(entry);
   }
+  // Include cloneOverlay as PNG so clone-stamp edits persist across import/export
+  if (state.cloneOverlay) {
+    const blob = await new Promise(res => state.cloneOverlay.toBlob(res, 'image/png'));
+    if (blob) { zip.file('clone_overlay.png', blob); manifest.clone_overlay_file = 'clone_overlay.png'; }
+  }
   zip.file('manifest.json', JSON.stringify(manifest, null, 2));
   const content = await zip.generateAsync({ type: 'blob' });
   const a = document.createElement('a');
@@ -1636,6 +1641,20 @@ document.getElementById('fileJson').addEventListener('change', async e => {
     if (!manifestFile) { alert('manifest.json not found inside zip'); e.target.value = ''; return; }
     const txt = await manifestFile.async('string');
     importShapesData(JSON.parse(txt));
+    // Restore clone overlay if present in zip
+    const cloneFile = zip.file('clone_overlay.png');
+    if (cloneFile && state.imgA) {
+      const blob = await cloneFile.async('blob');
+      const im = new Image();
+      im.onload = () => {
+        ensureCloneOverlay();
+        const cctx = state.cloneOverlay.getContext('2d');
+        cctx.clearRect(0, 0, state.cloneOverlay.width, state.cloneOverlay.height);
+        cctx.drawImage(im, 0, 0);
+        render();
+      };
+      im.src = URL.createObjectURL(blob);
+    }
   } else {
     const txt = await f.text();
     importShapesData(JSON.parse(txt));
