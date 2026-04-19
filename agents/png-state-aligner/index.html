@@ -389,10 +389,7 @@ document.querySelectorAll('[data-mode]').forEach(b => {
 });
 document.querySelectorAll('[data-tool]').forEach(b => {
   b.addEventListener('click', () => {
-    document.querySelectorAll('[data-tool]').forEach(x => x.classList.remove('active'));
-    b.classList.add('active');
-    state.tool = b.dataset.tool;
-    canvasWrap.classList.toggle('drawing', state.tool === 'draw');
+    setTool(b.dataset.tool);
   });
 });
 
