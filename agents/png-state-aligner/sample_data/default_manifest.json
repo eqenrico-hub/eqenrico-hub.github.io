@@ -729,6 +729,55 @@
       "top_corner_curve_pct": 100,
       "parent_name": null,
       "tex_filename": null
+    },
+    {
+      "id": 42,
+      "name": "region_42",
+      "shape": "rect",
+      "locked": false,
+      "x": 1267,
+      "y": 586,
+      "w": 146,
+      "h": 34,
+      "source": "B",
+      "src_off_x": 0,
+      "src_off_y": 0,
+      "dst_off_x": 0,
+      "dst_off_y": 0,
+      "crop_file": "region_42.png"
+    },
+    {
+      "id": 43,
+      "name": "region_43",
+      "shape": "rect",
+      "locked": false,
+      "x": 1270,
+      "y": 589,
+      "w": 84,
+      "h": 23,
+      "source": "B",
+      "src_off_x": 0,
+      "src_off_y": 0,
+      "dst_off_x": 0,
+      "dst_off_y": 0,
+      "crop_file": "region_43.png"
+    },
+    {
+      "id": 44,
+      "name": "region_44",
+      "shape": "rect",
+      "locked": false,
+      "x": 1267,
+      "y": 585,
+      "w": 108,
+      "h": 33,
+      "source": "B",
+      "src_off_x": 0,
+      "src_off_y": 0,
+      "dst_off_x": 0,
+      "dst_off_y": 0,
+      "crop_file": "region_44.png"
     }
-  ]
+  ],
+  "clone_overlay_file": "clone_overlay.png"
 }

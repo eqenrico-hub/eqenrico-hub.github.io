@@ -390,6 +390,22 @@ document.getElementById('btnLoadDefaults').addEventListener('click', async () =>
     if (r.ok) importShapesData(await r.json());
   } catch (e) { console.warn('default manifest not loaded', e); }
 
+  // Auto-load default clone overlay if bundled
+  try {
+    const clrR = await fetch('sample_data/clone_overlay.png');
+    if (clrR.ok) {
+      const blob = await clrR.blob();
+      const im = new Image();
+      await new Promise((res, rej) => { im.onload = res; im.onerror = rej; im.src = URL.createObjectURL(blob); });
+      ensureCloneOverlay();
+      if (state.cloneOverlay) {
+        const cctx = state.cloneOverlay.getContext('2d');
+        cctx.clearRect(0, 0, state.cloneOverlay.width, state.cloneOverlay.height);
+        cctx.drawImage(im, 0, 0);
+      }
+    }
+  } catch (e) { console.warn('default clone overlay not loaded', e); }
+
   render();
 });
 
