@@ -752,9 +752,8 @@ canvasWrap.addEventListener('mousedown', e => {
   const { cx, cy } = canvasMouseCoord(e);
   const { x: ix, y: iy } = canvasToImage(cx, cy);
 
-  // Interactive mode: click toggles pressed state of non-knob regions
+  // Interactive mode: click toggles pressed state; drag inside a container rect = slider move
   if (state.interactiveMode) {
-    // Two-pass: non-dropdown shapes first (buttons beat overlapping dropdowns)
     let hit = null;
     for (let pass = 0; pass < 2 && !hit; pass++) {
       const seekDropdown = (pass === 1);
@@ -786,6 +785,25 @@ canvasWrap.addEventListener('mousedown', e => {
       }
     }
     if (hit) {
+      // Detect if hit region is FULLY contained inside another rect → slider-drag mode
+      const container = state.regions.find(r =>
+        r.id !== hit.id && r.shape === 'rect' && !r.locked &&
+        hit.x >= r.x && hit.y >= r.y &&
+        hit.x + hit.w <= r.x + r.w &&
+        hit.y + hit.h <= r.y + r.h
+      );
+      if (container && hit.shape === 'rect') {
+        // Arm slider drag; if user never moves, we treat as a click (toggle pressed)
+        state.sliderDrag = {
+          regionId: hit.id, containerId: container.id,
+          startIX: ix, startIY: iy,
+          startX: hit.x, startY: hit.y,
+          moved: false,
+          preMovePositions: snapshot(),
+        };
+        state.selectedId = hit.id;
+        return;
+      }
       pushUndo();
       hit.pressed = !hit.pressed;
       render();
@@ -853,6 +871,32 @@ window.addEventListener('mousemove', e => {
     if (!state.cloneDragging) render();
   } else if (state.cloneCursor) {
     state.cloneCursor = null; render();
+  }
+
+  // Interactive slider drag
+  if (state.sliderDrag) {
+    const { cx, cy } = canvasMouseCoord(e);
+    const { x: ix4, y: iy4 } = canvasToImage(cx, cy);
+    const sd = state.sliderDrag;
+    const r = state.regions.find(rr => rr.id === sd.regionId);
+    const c = state.regions.find(rr => rr.id === sd.containerId);
+    if (!r || !c) return;
+    // Slide along whichever axis has room in the container
+    const canSlideY = (c.h - r.h) > (c.w - r.w);
+    if (canSlideY) {
+      const dy = iy4 - sd.startIY;
+      let newY = sd.startY + dy;
+      newY = Math.max(c.y, Math.min(c.y + c.h - r.h, newY));
+      r.y = newY;
+    } else {
+      const dx = ix4 - sd.startIX;
+      let newX = sd.startX + dx;
+      newX = Math.max(c.x, Math.min(c.x + c.w - r.w, newX));
+      r.x = newX;
+    }
+    if (Math.hypot(ix4 - sd.startIX, iy4 - sd.startIY) > 1) sd.moved = true;
+    refreshRegions(); render();
+    return;
   }
 
   if (state.swipeDrag) {
@@ -1041,6 +1085,21 @@ window.addEventListener('mouseup', e => {
       state.redoStack = [];
     }
     state._undoSnapshotForEdit = null;
+  }
+  // End interactive slider drag: if user didn't actually move, treat as a click (toggle pressed)
+  if (state.sliderDrag) {
+    const sd = state.sliderDrag;
+    if (sd.moved) {
+      // Commit the pre-move snapshot so Cmd+Z can revert the slide
+      state.undoStack.push(sd.preMovePositions);
+      if (state.undoStack.length > 200) state.undoStack.shift();
+      state.redoStack = [];
+    } else {
+      const r = state.regions.find(rr => rr.id === sd.regionId);
+      if (r) { pushUndo(); r.pressed = !r.pressed; }
+    }
+    state.sliderDrag = null;
+    refreshRegions(); render();
   }
   state.dragging = false; state.swipeDrag = false; state.editMode = null;
   state.cloneDragging = false;
