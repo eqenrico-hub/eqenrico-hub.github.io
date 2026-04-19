@@ -167,6 +167,38 @@ const state = {
 
 function snapshot() { return JSON.parse(JSON.stringify(state.regions)); }
 
+// Clone stamp undo: per-stroke snapshot of the cloneOverlay pixels
+state.cloneUndoStack = [];
+state.cloneRedoStack = [];
+function pushCloneUndo() {
+  if (!state.cloneOverlay) return;
+  const c = state.cloneOverlay.getContext('2d');
+  const data = c.getImageData(0, 0, state.cloneOverlay.width, state.cloneOverlay.height);
+  state.cloneUndoStack.push(data);
+  if (state.cloneUndoStack.length > 50) state.cloneUndoStack.shift();
+  state.cloneRedoStack = [];
+}
+function cloneUndo() {
+  if (!state.cloneUndoStack.length || !state.cloneOverlay) return false;
+  const c = state.cloneOverlay.getContext('2d');
+  const cur = c.getImageData(0, 0, state.cloneOverlay.width, state.cloneOverlay.height);
+  state.cloneRedoStack.push(cur);
+  const prev = state.cloneUndoStack.pop();
+  c.putImageData(prev, 0, 0);
+  render();
+  return true;
+}
+function cloneRedo() {
+  if (!state.cloneRedoStack.length || !state.cloneOverlay) return false;
+  const c = state.cloneOverlay.getContext('2d');
+  const cur = c.getImageData(0, 0, state.cloneOverlay.width, state.cloneOverlay.height);
+  state.cloneUndoStack.push(cur);
+  const next = state.cloneRedoStack.pop();
+  c.putImageData(next, 0, 0);
+  render();
+  return true;
+}
+
 function tracedDropdownPath(ctx2d, x, y, w, h, bottomR, extX, extY, curvePct) {
   // Ears are right triangles with apex at each top corner of the dropdown, extending UPWARD
   // INSIDE the dropdown's horizontal range. Hypotenuse is concave (curves inward toward apex)
@@ -408,6 +440,11 @@ window.addEventListener('keydown', e => {
   const meta = e.metaKey || e.ctrlKey;
   if (meta && e.key.toLowerCase() === 'z') {
     e.preventDefault();
+    // When in Clone tool OR clone stack has entries, prefer clone undo/redo first
+    if (state.tool === 'clone' || state.cloneUndoStack.length > 0 || state.cloneRedoStack.length > 0) {
+      if (e.shiftKey) { if (cloneRedo()) return; }
+      else { if (cloneUndo()) return; }
+    }
     if (e.shiftKey) redo(); else undo();
     return;
   }
@@ -541,6 +578,7 @@ document.getElementById('cloneBrush').addEventListener('input', e => {
 });
 document.getElementById('btnCloneClear').addEventListener('click', () => {
   if (!state.cloneOverlay) return;
+  pushCloneUndo();
   state.cloneOverlay.getContext('2d').clearRect(0, 0, state.cloneOverlay.width, state.cloneOverlay.height);
   state.cloneSource = null;
   render();
@@ -692,6 +730,7 @@ canvasWrap.addEventListener('mousedown', e => {
     if (e.altKey) {
       state.cloneSource = { x: ix, y: iy };
     } else if (state.cloneSource) {
+      pushCloneUndo(); // snapshot before this stroke so Cmd+Z can revert
       state.cloneStart = { x: ix, y: iy };
       state.cloneDragging = true;
       cloneStamp(ix, iy);
