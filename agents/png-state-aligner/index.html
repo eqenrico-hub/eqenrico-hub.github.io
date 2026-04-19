@@ -125,8 +125,9 @@ title: PNG State Aligner
       <kbd>Space</kbd> toggle A↔B · <kbd>0</kbd> reset view<br>
       <kbd>D</kbd> draw · <kbd>S</kbd> select · <kbd>B</kbd> sidebar · <kbd>H</kbd> hide borders<br>
       <kbd>←↑→↓</kbd> nudge 1px · <kbd>⇧←↑→↓</kbd> nudge 10px<br>
-      <kbd>Del</kbd> delete selected · <kbd>⌘Z</kbd> undo · <kbd>⌘⇧Z</kbd> redo<br>
-      <kbd>Scroll</kbd> zoom · <kbd>Drag</kbd> pan
+      <kbd>⌘C</kbd> copy · <kbd>⌘V</kbd> paste · <kbd>⌘D</kbd> duplicate<br>
+      <kbd>⇧+resize</kbd> keep aspect · <kbd>Del</kbd> delete<br>
+      <kbd>⌘Z</kbd> undo · <kbd>⌘⇧Z</kbd> redo · <kbd>Scroll</kbd> zoom · <kbd>Drag</kbd> pan
     </div>
   </aside>
 
@@ -156,6 +157,27 @@ const state = {
 };
 
 function snapshot() { return JSON.parse(JSON.stringify(state.regions)); }
+
+function pasteClipboard() {
+  if (!state.clipboard) return;
+  pushUndo();
+  const src = state.clipboard;
+  // Paste at +20/+20 offset from original position
+  const newReg = {
+    ...src,
+    id: state.nextId++,
+    name: src.name + '_copy',
+    x: src.x + 20,
+    y: src.y + 20,
+  };
+  // Re-hydrate image refs that JSON.stringify would drop
+  if (src.shape === 'knob' && state.imgKnobRender) newReg.decalImage = state.imgKnobRender;
+  if (src.shape === 'decal' && src.decalImage) newReg.decalImage = src.decalImage;
+  state.regions.push(newReg);
+  state.selectedId = newReg.id;
+  setTool('select');
+  refreshRegions(); render();
+}
 function pushUndo() {
   state.undoStack.push(snapshot());
   if (state.undoStack.length > 200) state.undoStack.shift();
@@ -342,6 +364,24 @@ window.addEventListener('keydown', e => {
   if (meta && e.key.toLowerCase() === 'z') {
     e.preventDefault();
     if (e.shiftKey) redo(); else undo();
+    return;
+  }
+  // Copy / Paste / Duplicate
+  if (meta && e.key.toLowerCase() === 'c' && state.selectedId != null && e.target.tagName !== 'INPUT') {
+    const r = state.regions.find(x => x.id === state.selectedId);
+    if (r) { state.clipboard = { ...r }; console.log('copied region', r.name); }
+    e.preventDefault();
+    return;
+  }
+  if (meta && e.key.toLowerCase() === 'v' && state.clipboard && e.target.tagName !== 'INPUT') {
+    e.preventDefault();
+    pasteClipboard();
+    return;
+  }
+  if (meta && e.key.toLowerCase() === 'd' && state.selectedId != null && e.target.tagName !== 'INPUT') {
+    e.preventDefault();
+    const r = state.regions.find(x => x.id === state.selectedId);
+    if (r) { state.clipboard = { ...r }; pasteClipboard(); }
     return;
   }
   if (e.target.tagName === 'INPUT') return;
