@@ -98,6 +98,7 @@ title: PNG State Aligner
       <button class="tool active" data-tool="view">View / Pan</button>
       <button class="tool" data-tool="draw">Draw rect</button>
       <button class="tool" data-tool="drawring">Draw ring</button>
+      <button class="tool" data-tool="drawknob">Draw knob</button>
       <button class="tool" data-tool="select">Select / Edit</button>
     </div>
     <div id="stats">0 regions</div>
@@ -244,6 +245,18 @@ document.getElementById('btnLoadDefaults').addEventListener('click', async () =>
     const r = await fetch('sample_data/default_manifest.json');
     if (r.ok) importShapesData(await r.json());
   } catch (e) { console.warn('default manifest not loaded', e); }
+
+  // Pre-load the Blender-rendered knob image so "Draw knob" tool has it ready
+  try {
+    const knobImg = await new Promise((res, rej) => {
+      const im = new Image();
+      im.crossOrigin = 'anonymous';
+      im.onload = () => res(im);
+      im.onerror = rej;
+      im.src = 'sample_data/knob_render.png';
+    });
+    state.imgKnobRender = knobImg;
+  } catch (e) { console.warn('knob render not loaded', e); }
 
   // Pre-load metal ring decal and place at reasonable starting position near a knob
   try {
@@ -414,7 +427,7 @@ function hitTest(ix, iy) {
     for (const c of corners) {
       if (Math.abs(ix - c.x) <= HANDLE && Math.abs(iy - c.y) <= HANDLE) return { region: r, mode: 'resize-' + c.h };
     }
-    if (r.shape === 'circle') {
+    if (r.shape === 'circle' || r.shape === 'knob') {
       const cx = r.x + r.w/2, cy = r.y + r.h/2;
       const rx = r.w/2, ry = r.h/2;
       if (rx > 0 && ry > 0) {
@@ -447,10 +460,12 @@ canvasWrap.addEventListener('mousedown', e => {
     return;
   }
 
-  if (state.tool === 'draw' || state.tool === 'drawring') {
+  if (state.tool === 'draw' || state.tool === 'drawring' || state.tool === 'drawknob') {
     state.drawStart = { x: ix, y: iy };
     state.drawCur = { x: ix, y: iy };
-    state.drawShape = (state.tool === 'drawring') ? 'annulus' : 'rect';
+    state.drawShape = (state.tool === 'drawring') ? 'annulus'
+                    : (state.tool === 'drawknob') ? 'knob'
+                    : 'rect';
     return;
   }
   if (state.tool === 'select') {
@@ -482,7 +497,7 @@ window.addEventListener('mousemove', e => {
     render();
     return;
   }
-  if (state.drawStart && (state.tool === 'draw' || state.tool === 'drawring')) {
+  if (state.drawStart && (state.tool === 'draw' || state.tool === 'drawring' || state.tool === 'drawknob')) {
     const { cx, cy } = canvasMouseCoord(e);
     state.drawCur = canvasToImage(cx, cy);
     render();
@@ -517,15 +532,19 @@ window.addEventListener('mousemove', e => {
 });
 
 window.addEventListener('mouseup', e => {
-  if (state.drawStart && (state.tool === 'draw' || state.tool === 'drawring')) {
+  if (state.drawStart && (state.tool === 'draw' || state.tool === 'drawring' || state.tool === 'drawknob')) {
     const a = state.drawStart, b = state.drawCur;
     const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y);
     const w = Math.abs(a.x - b.x), h = Math.abs(a.y - b.y);
     if (w > 3 && h > 3) {
       pushUndo();
       const shape = state.drawShape || 'rect';
-      const base = { id: state.nextId++, name: `region_${state.regions.length + 1}`, shape, pressed: false, x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h) };
-      if (shape === 'annulus') base.innerPct = 0.5; // default hole is 50% of outer radius
+      // Force square for knob (equal w=h) based on min dim
+      let rw = w, rh = h;
+      if (shape === 'knob') { const d = Math.min(w, h); rw = rh = d; }
+      const base = { id: state.nextId++, name: `${shape === 'knob' ? 'knob' : 'region'}_${state.regions.length + 1}`, shape, pressed: false, x: Math.round(x), y: Math.round(y), w: Math.round(rw), h: Math.round(rh) };
+      if (shape === 'annulus') base.innerPct = 0.5;
+      if (shape === 'knob' && state.imgKnobRender) base.decalImage = state.imgKnobRender;
       state.regions.push(base); state.selectedId = base.id;
       refreshRegions();
     }
@@ -556,7 +575,7 @@ function refreshRegions() {
     if (r.id === state.selectedId) cls.push('selected');
     if (r.pressed) cls.push('pressed');
     div.className = cls.join(' ');
-    const shapeLabel = r.shape === 'decal' ? '🖼️' : (r.shape === 'annulus' ? '◎' : (r.shape === 'circle' ? '○' : '▭'));
+    const shapeLabel = r.shape === 'knob' ? '🎛️' : (r.shape === 'decal' ? '🖼️' : (r.shape === 'annulus' ? '◎' : (r.shape === 'circle' ? '○' : '▭')));
     const disabled = r.locked ? 'disabled' : '';
     const lockLabel = r.locked ? '🔒 ' : '';
     const src = r.source || 'B';
@@ -733,8 +752,15 @@ function render() {
 
   if (state.mode === 'A') {
     if (state.imgA) ctx.drawImage(state.imgA, 0, 0, dw, dh);
-    // Decal regions: always render their image at bbox (regardless of pressed)
+    // Decal regions: always render their image at bbox
     state.regions.filter(r => r.shape === 'decal' && r.decalImage).forEach(r => {
+      const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
+      const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
+      const rw = r.w * state.scale, rh = r.h * state.scale;
+      ctx.drawImage(r.decalImage, rx, ry, rw, rh);
+    });
+    // Knob regions: render the knob image at bbox (image should be transparent outside knob)
+    state.regions.filter(r => r.shape === 'knob' && r.decalImage).forEach(r => {
       const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
       const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
       const rw = r.w * state.scale, rh = r.h * state.scale;
@@ -789,7 +815,7 @@ function drawRegions() {
                : (r.locked ? 'rgba(120,120,120,0.04)' : (sel ? 'rgba(79,209,255,0.12)' : (r.pressed ? 'rgba(255,193,79,0.10)' : 'rgba(255,110,199,0.08)')));
     octx.strokeStyle = stroke; octx.fillStyle = fill;
     octx.setLineDash(r.shape === 'decal' && !sel ? [6, 4] : []);
-    if (r.shape === 'circle') {
+    if (r.shape === 'circle' || r.shape === 'knob') {
       octx.beginPath();
       octx.ellipse(x + w/2, y + h/2, w/2, h/2, 0, 0, Math.PI * 2);
       octx.fill(); octx.stroke();
@@ -978,24 +1004,29 @@ function importShapesData(m) {
   }
   if (Array.isArray(m.regions)) {
     pushUndo();
-    const regs = m.regions.map(r => ({
-      id: state.nextId++,
-      name: r.name,
-      shape: r.shape || 'rect',
-      pressed: false,
-      locked: !!r.locked,
-      source: r.source || 'B',
-      srcOffX: r.src_off_x || r.srcOffX || 0,
-      srcOffY: r.src_off_y || r.srcOffY || 0,
-      dstOffX: r.dst_off_x || r.dstOffX || 0,
-      dstOffY: r.dst_off_y || r.dstOffY || 0,
-      innerPct: (r.inner_pct ?? r.innerPct ?? (r.shape === 'annulus' ? 0.5 : undefined)),
-      x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.w), h: Math.round(r.h),
-    }));
+    const regs = m.regions.map(r => {
+      const shape = r.shape || 'rect';
+      const reg = {
+        id: state.nextId++,
+        name: r.name,
+        shape,
+        pressed: false,
+        locked: !!r.locked,
+        source: r.source || 'B',
+        srcOffX: r.src_off_x || r.srcOffX || 0,
+        srcOffY: r.src_off_y || r.srcOffY || 0,
+        dstOffX: r.dst_off_x || r.dstOffX || 0,
+        dstOffY: r.dst_off_y || r.dstOffY || 0,
+        innerPct: (r.inner_pct ?? r.innerPct ?? (shape === 'annulus' ? 0.5 : undefined)),
+        x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.w), h: Math.round(r.h),
+      };
+      if (shape === 'knob' && state.imgKnobRender) reg.decalImage = state.imgKnobRender;
+      return reg;
+    });
     lockBiggestRect(regs);
     state.regions = regs;
     refreshRegions(); render();
-    setTool('select');  // auto-enter Select after import so user can drag immediately
+    setTool('select');
   }
 }
 
