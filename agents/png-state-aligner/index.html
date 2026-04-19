@@ -1402,10 +1402,15 @@ function render() {
     }
     const decals = state.regions.filter(r => r.shape === 'decal' && r.decalImage);
     for (const r of decals) {
-      // If decal has a parent link (explicit or auto-detected), gate visibility on parent.pressed
       const parent = r.parentId != null ? state.regions.find(o => o.id === r.parentId) : null;
       const isSelected = (r.id === state.selectedId);
-      if (parent && !parent.pressed && !isSelected) continue;
+      // Edit mode (non-interactive): show always for positioning
+      // Interactive mode: parent.pressed if parent set, else self.pressed (decal acts as its own trigger)
+      let visible = true;
+      if (state.interactiveMode) {
+        visible = parent ? !!parent.pressed : !!r.pressed;
+      }
+      if (!visible && !isSelected) continue;
       const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
       const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
       const rw = r.w * state.scale, rh = r.h * state.scale;
