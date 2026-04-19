@@ -514,12 +514,29 @@ window.addEventListener('mousemove', e => {
     if (state.editMode === 'move') {
       r.x = orig.x + dx; r.y = orig.y + dy;
     } else if (state.editMode.startsWith('resize-')) {
-      const h = state.editMode.split('-')[1];
+      const handle = state.editMode.split('-')[1];
       let nx = orig.x, ny = orig.y, nw = orig.w, nh = orig.h;
-      if (h.includes('w')) { nx = orig.x + dx; nw = orig.w - dx; }
-      if (h.includes('e')) { nw = orig.w + dx; }
-      if (h.includes('n')) { ny = orig.y + dy; nh = orig.h - dy; }
-      if (h.includes('s')) { nh = orig.h + dy; }
+      if (handle.includes('w')) { nx = orig.x + dx; nw = orig.w - dx; }
+      if (handle.includes('e')) { nw = orig.w + dx; }
+      if (handle.includes('n')) { ny = orig.y + dy; nh = orig.h - dy; }
+      if (handle.includes('s')) { nh = orig.h + dy; }
+      // Shift OR knob/circle shape → keep aspect ratio (square for knob/circle, orig ratio for others)
+      const forceAspect = e.shiftKey || r.shape === 'knob' || r.shape === 'circle';
+      if (forceAspect) {
+        const aspect = (r.shape === 'knob' || r.shape === 'circle') ? 1.0 : (orig.w / orig.h);
+        // Drive dimension by the axis that changed MORE, then derive the other
+        const ratioW = Math.abs(nw - orig.w);
+        const ratioH = Math.abs(nh - orig.h);
+        if (ratioW >= ratioH) {
+          const newH = nw / aspect;
+          if (handle.includes('n')) ny = orig.y + (orig.h - newH);
+          nh = newH;
+        } else {
+          const newW = nh * aspect;
+          if (handle.includes('w')) nx = orig.x + (orig.w - newW);
+          nw = newW;
+        }
+      }
       if (nw > 2 && nh > 2) { r.x = nx; r.y = ny; r.w = nw; r.h = nh; }
     }
     refreshRegions(); render();
