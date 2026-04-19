@@ -1028,6 +1028,14 @@ function refreshRegions() {
         <div><label>h</label><input type="number" class="ch" data-id="${r.id}" value="${r.h}" ${disabled}></div>
       </div>
       ${r.shape === 'annulus' ? `<div style="margin:3px 0;"><label style="font-size:10px;">inner % (hole) <span id="ipv${r.id}">${Math.round((r.innerPct ?? 0.5) * 100)}</span></label><input type="range" class="cinner" data-id="${r.id}" min="0" max="95" value="${Math.round((r.innerPct ?? 0.5) * 100)}" step="0.5" ${disabled}></div>` : ''}
+      ${r.shape === 'decal' ? `
+        <div style="margin:3px 0;"><label style="font-size:10px;">parent button (leave empty = always visible)</label>
+          <select class="cparent" data-id="${r.id}" style="width:100%; font-size:10px; padding:2px; background:#111; color:var(--fg); border:1px solid #333; border-radius:3px;">
+            <option value="">(always visible)</option>
+            ${state.regions.filter(o => o.shape !== 'decal' && o.shape !== 'dropdown' && o.shape !== 'knob' && o.shape !== 'annulus' && !o.locked).map(o => `<option value="${o.id}" ${r.parentId === o.id ? 'selected' : ''}>${o.name}</option>`).join('')}
+          </select>
+        </div>
+      ` : ''}
       ${r.shape === 'dropdown' ? `
         <div style="margin:3px 0;"><label style="font-size:10px;">bottom radius % <span id="rbv${r.id}">${Math.round(r.bottomRadiusPct ?? 15)}</span></label>
           <input type="range" class="crbot" data-id="${r.id}" min="0" max="100" value="${Math.round(r.bottomRadiusPct ?? 15)}" step="1" ${disabled}></div>
@@ -1346,9 +1354,20 @@ function render() {
 
   // Helper: draw static overlays (knob + decal + dropdown) always on top, in any view mode
   function drawStaticOverlays() {
-    // Knobs + decals first (bottom layer)
-    const overlays = state.regions.filter(r => (r.shape === 'decal' || r.shape === 'knob') && r.decalImage);
-    for (const r of overlays) {
+    // Knobs always; decals conditionally (if they have a parent linked, visible only when parent pressed OR this decal is selected)
+    const knobs = state.regions.filter(r => r.shape === 'knob' && r.decalImage);
+    for (const r of knobs) {
+      const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
+      const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
+      const rw = r.w * state.scale, rh = r.h * state.scale;
+      ctx.drawImage(r.decalImage, rx, ry, rw, rh);
+    }
+    const decals = state.regions.filter(r => r.shape === 'decal' && r.decalImage);
+    for (const r of decals) {
+      // If decal has a parent link (explicit or auto-detected), gate visibility on parent.pressed
+      const parent = r.parentId != null ? state.regions.find(o => o.id === r.parentId) : null;
+      const isSelected = (r.id === state.selectedId);
+      if (parent && !parent.pressed && !isSelected) continue;
       const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
       const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
       const rw = r.w * state.scale, rh = r.h * state.scale;
@@ -1615,6 +1634,7 @@ document.getElementById('btnExportAll').addEventListener('click', async () => {
         id: r.id, name: r.name, shape: 'decal', locked: !!r.locked,
         x: r.x, y: r.y, w: r.w, h: r.h,
         dst_off_x: r.dstOffX || 0, dst_off_y: r.dstOffY || 0,
+        parent_name: r.parentId != null ? (state.regions.find(rr => rr.id === r.parentId)?.name || null) : null,
         crop_file: fname, decal_filename: r.decalFilename || null,
       });
       continue;
