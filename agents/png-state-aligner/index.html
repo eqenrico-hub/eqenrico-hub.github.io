@@ -160,23 +160,36 @@ const state = {
 
 function snapshot() { return JSON.parse(JSON.stringify(state.regions)); }
 
-function tracedDropdownPath(ctx2d, x, y, w, h, bottomR, extX, extY) {
-  // Clockwise outline: top-left ear → down → main top → up right ear → down main → rounded bottom → up main left
+function tracedDropdownPath(ctx2d, x, y, w, h, bottomR, extX, extY, curvePct) {
+  // Ears are right triangles with apex at each top corner of the dropdown, extending UPWARD
+  // INSIDE the dropdown's horizontal range. Hypotenuse is concave (curves inward toward apex)
+  // so it matches the button's rounded-bottom arc that creates the gap.
+  // curvePct: 0 = straight hypotenuse (right triangle), 100 = control at apex (max concave)
+  const cp = Math.max(0, Math.min(1, (curvePct ?? 100) / 100));
+  const hasEars = extX > 0 && extY > 0;
   ctx2d.beginPath();
-  ctx2d.moveTo(x - extX, y - extY);
-  ctx2d.lineTo(x, y - extY);
-  ctx2d.lineTo(x, y);
-  ctx2d.lineTo(x + w, y);
-  ctx2d.lineTo(x + w, y - extY);
-  ctx2d.lineTo(x + w + extX, y - extY);
-  ctx2d.lineTo(x + w + extX, y);
-  ctx2d.lineTo(x + w, y);
-  ctx2d.lineTo(x + w, y + h - bottomR);
+  if (hasEars) {
+    // Left ear: apex (x, y), vertices (x, y - extY) and (x + extX, y)
+    // Hypotenuse curved via quadratic bezier with control interpolated between midpoint (cp=0)
+    // and apex (cp=1)
+    const lcpx = x + (1 - cp) * extX / 2;
+    const lcpy = y - (1 - cp) * extY / 2;
+    const rcpx = x + w - (1 - cp) * extX / 2;
+    const rcpy = y - (1 - cp) * extY / 2;
+    ctx2d.moveTo(x, y - extY);
+    ctx2d.quadraticCurveTo(lcpx, lcpy, x + extX, y);
+    ctx2d.lineTo(x + w - extX, y);
+    ctx2d.quadraticCurveTo(rcpx, rcpy, x + w, y - extY);
+    ctx2d.lineTo(x + w, y + h - bottomR);
+  } else {
+    ctx2d.moveTo(x, y);
+    ctx2d.lineTo(x + w, y);
+    ctx2d.lineTo(x + w, y + h - bottomR);
+  }
   if (bottomR > 0) ctx2d.arcTo(x + w, y + h, x + w - bottomR, y + h, bottomR);
   ctx2d.lineTo(x + bottomR, y + h);
   if (bottomR > 0) ctx2d.arcTo(x, y + h, x, y + h - bottomR, bottomR);
-  ctx2d.lineTo(x, y);
-  ctx2d.lineTo(x - extX, y);
+  if (hasEars) ctx2d.lineTo(x, y - extY);
   ctx2d.closePath();
 }
 
@@ -765,7 +778,7 @@ window.addEventListener('mouseup', e => {
       const base = { id: state.nextId++, name: `${namePrefix}_${state.regions.length + 1}`, shape, pressed: false, x: Math.round(x), y: Math.round(y), w: Math.round(rw), h: Math.round(rh) };
       if (shape === 'annulus') base.innerPct = 0.5;
       if (shape === 'knob' && state.imgKnobRender) base.decalImage = state.imgKnobRender;
-      if (shape === 'dropdown') { base.bottomRadiusPct = 15; base.texScale = 1.0; base.texOffX = 0; base.texOffY = 0; base.topCornerExtX = 0; base.topCornerExtY = 0; }
+      if (shape === 'dropdown') { base.bottomRadiusPct = 15; base.texScale = 1.0; base.texOffX = 0; base.texOffY = 0; base.topCornerExtX = 0; base.topCornerExtY = 0; base.topCornerCurvePct = 100; }
       state.regions.push(base); state.selectedId = base.id;
       refreshRegions();
     }
@@ -815,12 +828,14 @@ function refreshRegions() {
       ${r.shape === 'dropdown' ? `
         <div style="margin:3px 0;"><label style="font-size:10px;">bottom radius % <span id="rbv${r.id}">${Math.round(r.bottomRadiusPct ?? 15)}</span></label>
           <input type="range" class="crbot" data-id="${r.id}" min="0" max="100" value="${Math.round(r.bottomRadiusPct ?? 15)}" step="1" ${disabled}></div>
-        <div class="rcoords" title="Top-corner ears (outside bbox on top-left + top-right to fill the button's rounded-bottom gap)">
-          <div><label>top ext X</label><input type="number" class="ctopX" data-id="${r.id}" value="${r.topCornerExtX || 0}" step="0.5" min="0"></div>
-          <div><label>top ext Y</label><input type="number" class="ctopY" data-id="${r.id}" value="${r.topCornerExtY || 0}" step="0.5" min="0"></div>
+        <div class="rcoords" title="Top-corner ears: right triangles with concave hypotenuse, apex at dropdown corner, extending UP into button's rounded-bottom gap">
+          <div><label>ear X</label><input type="number" class="ctopX" data-id="${r.id}" value="${r.topCornerExtX || 0}" step="0.5" min="0"></div>
+          <div><label>ear Y</label><input type="number" class="ctopY" data-id="${r.id}" value="${r.topCornerExtY || 0}" step="0.5" min="0"></div>
           <div></div>
           <div><label></label><button class="rtopclr" data-id="${r.id}" style="width:100%; font-size:10px; padding:2px;">↺ears</button></div>
         </div>
+        <div style="margin:3px 0;"><label style="font-size:10px;">ear curve % (concave) <span id="ecv${r.id}">${Math.round(r.topCornerCurvePct ?? 100)}</span></label>
+          <input type="range" class="ccurve" data-id="${r.id}" min="0" max="100" value="${Math.round(r.topCornerCurvePct ?? 100)}" step="1"></div>
         <div style="margin:3px 0; display:flex; gap:4px; align-items:center;">
           <label style="font-size:10px; flex:0 0 auto; min-width:70px;">width ↔ center</label>
           <button class="cwmid" data-id="${r.id}" data-d="-10" style="padding:2px 6px; font-size:11px;">−10</button>
@@ -1056,6 +1071,15 @@ function refreshRegions() {
     pushUndo(); r.topCornerExtX = 0; r.topCornerExtY = 0;
     refreshRegions(); render();
   }));
+  list.querySelectorAll('.ccurve').forEach(i => i.addEventListener('input', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (!r) return;
+    r.topCornerCurvePct = +e.target.value;
+    const span = document.getElementById('ecv' + r.id);
+    if (span) span.textContent = +e.target.value;
+    render();
+  }));
+  list.querySelectorAll('.ccurve').forEach(i => i.addEventListener('change', () => pushUndo()));
   ['cdox','cdoy'].forEach(cls => {
     list.querySelectorAll('.' + cls).forEach(i => i.addEventListener('change', e => {
       const r = state.regions.find(x => x.id === +e.target.dataset.id);
@@ -1119,8 +1143,9 @@ function render() {
       const R = Math.min(r.w, r.h) * state.scale * 0.5 * pct;
       const extX = (r.topCornerExtX || 0) * state.scale;
       const extY = (r.topCornerExtY || 0) * state.scale;
+      const cp = r.topCornerCurvePct ?? 100;
       ctx.save();
-      tracedDropdownPath(ctx, rx, ry, rw, rh, R, extX, extY);
+      tracedDropdownPath(ctx, rx, ry, rw, rh, R, extX, extY, cp);
       ctx.clip();
       if (r.decalImage) {
         const img = r.decalImage;
@@ -1137,7 +1162,7 @@ function render() {
       } else {
         // Placeholder: semi-transparent dark panel covering full ear-extended bbox
         ctx.fillStyle = 'rgba(30, 28, 24, 0.75)';
-        ctx.fillRect(rx - extX, ry - extY, rw + 2 * extX, rh + extY);
+        ctx.fillRect(rx, ry - extY, rw, rh + extY);
       }
       ctx.restore();
     });
@@ -1213,7 +1238,8 @@ function drawRegions() {
       const R = Math.min(w, h) * 0.5 * pct;
       const extX = (r.topCornerExtX || 0) * state.scale;
       const extY = (r.topCornerExtY || 0) * state.scale;
-      tracedDropdownPath(octx, x, y, w, h, R, extX, extY);
+      const cp = r.topCornerCurvePct ?? 100;
+      tracedDropdownPath(octx, x, y, w, h, R, extX, extY, cp);
       octx.fill(); octx.stroke();
     } else if (r.shape === 'annulus') {
       const cx = x + w/2, cy = y + h/2;
@@ -1359,6 +1385,7 @@ document.getElementById('btnExportAll').addEventListener('click', async () => {
       entry.tex_off_y = r.texOffY ?? 0;
       entry.top_corner_ext_x = r.topCornerExtX ?? 0;
       entry.top_corner_ext_y = r.topCornerExtY ?? 0;
+      entry.top_corner_curve_pct = r.topCornerCurvePct ?? 100;
       entry.tex_filename = r.decalFilename || null;
     }
     manifest.regions.push(entry);
@@ -1453,6 +1480,7 @@ function importShapesData(m) {
         reg.texOffY = r.tex_off_y ?? r.texOffY ?? 0;
         reg.topCornerExtX = r.top_corner_ext_x ?? r.topCornerExtX ?? 0;
         reg.topCornerExtY = r.top_corner_ext_y ?? r.topCornerExtY ?? 0;
+        reg.topCornerCurvePct = r.top_corner_curve_pct ?? r.topCornerCurvePct ?? 100;
       }
       return reg;
     });
