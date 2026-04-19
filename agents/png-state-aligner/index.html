@@ -281,36 +281,6 @@ document.getElementById('btnLoadDefaults').addEventListener('click', async () =>
     if (r.ok) importShapesData(await r.json());
   } catch (e) { console.warn('default manifest not loaded', e); }
 
-  // Pre-load metal ring decal and place at reasonable starting position near a knob
-  try {
-    const decalImg = await new Promise((res, rej) => {
-      const im = new Image();
-      im.crossOrigin = 'anonymous';
-      im.onload = () => res(im);
-      im.onerror = rej;
-      im.src = 'sample_data/metal_ring_overlay.png';
-    });
-    // Anchor to the skull knob center (circle_1 area, approx 176, 291, radius ~112)
-    // Place decal centered on skull knob, size ~ 2.5x knob radius so user sees it around it
-    const SKULL_CX = 176, SKULL_CY = 291, initial_size = 300;
-    // Only add if not already added (avoid duplicate on reload)
-    if (!state.regions.find(r => r.shape === 'decal' && r.decalFilename === 'metal_ring_overlay.png')) {
-      const dec = {
-        id: state.nextId++,
-        name: 'metal_ring_skull',
-        shape: 'decal',
-        pressed: false,
-        x: Math.round(SKULL_CX - initial_size/2),
-        y: Math.round(SKULL_CY - initial_size/2),
-        w: initial_size, h: initial_size,
-        decalImage: decalImg,
-        decalFilename: 'metal_ring_overlay.png',
-      };
-      state.regions.push(dec);
-      refreshRegions();
-    }
-  } catch (e) { console.warn('decal not loaded', e); }
-
   render();
 });
 
