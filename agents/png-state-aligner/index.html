@@ -590,21 +590,54 @@ window.addEventListener('mousemove', e => {
       if (handle.includes('e')) { nw = orig.w + dx; }
       if (handle.includes('n')) { ny = orig.y + dy; nh = orig.h - dy; }
       if (handle.includes('s')) { nh = orig.h + dy; }
-      // Shift OR knob/circle shape → keep aspect ratio (square for knob/circle, orig ratio for others)
-      const forceAspect = e.shiftKey || r.shape === 'knob' || r.shape === 'circle';
-      if (forceAspect) {
-        const aspect = (r.shape === 'knob' || r.shape === 'circle') ? 1.0 : (orig.w / orig.h);
-        // Drive dimension by the axis that changed MORE, then derive the other
-        const ratioW = Math.abs(nw - orig.w);
-        const ratioH = Math.abs(nh - orig.h);
-        if (ratioW >= ratioH) {
-          const newH = nw / aspect;
-          if (handle.includes('n')) ny = orig.y + (orig.h - newH);
-          nh = newH;
-        } else {
-          const newW = nh * aspect;
-          if (handle.includes('w')) nx = orig.x + (orig.w - newW);
-          nw = newW;
+
+      state.snapGuides = [];
+      // Dropdown + Shift → snap moving edges to neighboring region edges (instead of aspect lock)
+      if (r.shape === 'dropdown' && e.shiftKey) {
+        const SNAP = 6;
+        let bestDX = SNAP + 1, snapX = null, guideX = null;
+        let bestDY = SNAP + 1, snapY = null, guideY = null;
+        const movingX = handle.includes('w') ? nx : handle.includes('e') ? nx + nw : null;
+        const movingY = handle.includes('n') ? ny : handle.includes('s') ? ny + nh : null;
+        for (const other of state.regions) {
+          if (other.id === r.id) continue;
+          const candX = [other.x, other.x + other.w/2, other.x + other.w];
+          const candY = [other.y, other.y + other.h/2, other.y + other.h];
+          if (movingX != null) for (const tx of candX) {
+            const d = Math.abs(movingX - tx);
+            if (d < bestDX) { bestDX = d; snapX = tx; guideX = tx; }
+          }
+          if (movingY != null) for (const ty of candY) {
+            const d = Math.abs(movingY - ty);
+            if (d < bestDY) { bestDY = d; snapY = ty; guideY = ty; }
+          }
+        }
+        if (snapX != null) {
+          if (handle.includes('w')) { nw += nx - snapX; nx = snapX; }
+          else if (handle.includes('e')) { nw = snapX - nx; }
+          state.snapGuides.push({ type: 'v', v: guideX });
+        }
+        if (snapY != null) {
+          if (handle.includes('n')) { nh += ny - snapY; ny = snapY; }
+          else if (handle.includes('s')) { nh = snapY - ny; }
+          state.snapGuides.push({ type: 'h', v: guideY });
+        }
+      } else {
+        // Non-dropdown aspect lock: Shift OR knob/circle
+        const forceAspect = e.shiftKey || r.shape === 'knob' || r.shape === 'circle';
+        if (forceAspect) {
+          const aspect = (r.shape === 'knob' || r.shape === 'circle') ? 1.0 : (orig.w / orig.h);
+          const ratioW = Math.abs(nw - orig.w);
+          const ratioH = Math.abs(nh - orig.h);
+          if (ratioW >= ratioH) {
+            const newH = nw / aspect;
+            if (handle.includes('n')) ny = orig.y + (orig.h - newH);
+            nh = newH;
+          } else {
+            const newW = nh * aspect;
+            if (handle.includes('w')) nx = orig.x + (orig.w - newW);
+            nw = newW;
+          }
         }
       }
       if (nw > 2 && nh > 2) { r.x = nx; r.y = ny; r.w = nw; r.h = nh; }
