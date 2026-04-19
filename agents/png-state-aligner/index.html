@@ -1410,12 +1410,10 @@ function render() {
     for (const r of decals) {
       const parent = r.parentId != null ? state.regions.find(o => o.id === r.parentId) : null;
       const isSelected = (r.id === state.selectedId);
-      // Edit mode (non-interactive): show always for positioning
-      // Interactive mode: parent.pressed if parent set, else self.pressed (decal acts as its own trigger)
-      let visible = true;
-      if (state.interactiveMode) {
-        visible = parent ? !!parent.pressed : !!r.pressed;
-      }
+      // Decal behaves like a clicked-state overlay: visible ONLY when its trigger
+      // is pressed (parent if set, else self). Edit-mode exception: always visible
+      // while the region is SELECTED so user can reposition.
+      const visible = parent ? !!parent.pressed : !!r.pressed;
       if (!visible && !isSelected) continue;
       const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
       const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
