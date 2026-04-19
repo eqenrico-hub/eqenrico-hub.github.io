@@ -574,8 +574,8 @@
       "tex_scale": 1,
       "tex_off_x": 0,
       "tex_off_y": 0,
-      "top_corner_ext_x": 0,
-      "top_corner_ext_y": 17,
+      "top_corner_ext_x": 6,
+      "top_corner_ext_y": 21.5,
       "top_corner_curve_pct": 100,
       "parent_name": null,
       "tex_filename": null
@@ -599,8 +599,8 @@
       "tex_scale": 1,
       "tex_off_x": 0,
       "tex_off_y": 0,
-      "top_corner_ext_x": 11.5,
-      "top_corner_ext_y": 9.5,
+      "top_corner_ext_x": 17.5,
+      "top_corner_ext_y": 15.5,
       "top_corner_curve_pct": 100,
       "parent_name": null,
       "tex_filename": null
