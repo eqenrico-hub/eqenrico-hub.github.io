@@ -1452,6 +1452,10 @@ function render() {
 
   if (state.mode === 'A') {
     if (state.imgA) ctx.drawImage(state.imgA, 0, 0, dw, dh);
+    // Clone UNPRESSED: applied to the base PNG_A BEFORE pressed crops overwrite it,
+    // so that when a button is clicked the PNG_B pressed-state crop covers the
+    // unpressed clone in that region (clone won't leak into the clicked look).
+    if (state.cloneOverlay) ctx.drawImage(state.cloneOverlay, 0, 0, dw, dh);
     state.regions.filter(r => r.pressed && r.shape !== 'decal' && r.shape !== 'knob' && r.shape !== 'dropdown').forEach(r => {
       const src = (r.source === 'C') ? (state.imgCResized || state.imgC) : (state.imgBResized || state.imgB);
       if (!src) return;
@@ -1485,12 +1489,13 @@ function render() {
     renderDiff(dw, dh, Bsrc);
   }
 
-  // Clone overlay UNPRESSED: always on, rendered BEFORE static overlays so dropdowns sit on top
-  if (state.cloneOverlay) ctx.drawImage(state.cloneOverlay, 0, 0, dw, dh);
-
-  // Clone overlay PRESSED: rendered only when at least one non-dropdown/non-knob region is pressed
+  // Clone overlay PRESSED: rendered on top of pressed-state crops (only when at least
+  // one non-dropdown/non-knob region is pressed). Unpressed clone was already drawn
+  // in the mode-A branch BEFORE the pressed crops.
   const anyPressed = state.regions.some(r => r.pressed && r.shape !== 'dropdown' && r.shape !== 'knob');
   if (state.cloneOverlayPressed && anyPressed) ctx.drawImage(state.cloneOverlayPressed, 0, 0, dw, dh);
+  // Fallback: in non-A modes, still show unpressed clone on top of everything
+  if (state.mode !== 'A' && state.cloneOverlay) ctx.drawImage(state.cloneOverlay, 0, 0, dw, dh);
 
   // Static overlays (knob + decal + dropdown) on top in any mode EXCEPT diff/sideby
   if (state.mode !== 'diff' && state.mode !== 'sideby') drawStaticOverlays();
