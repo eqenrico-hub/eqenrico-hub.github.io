@@ -108,4 +108,60 @@ At the end, provide a VERDICT: is the document internally coherent enough to sub
     </div>
   </div>
 
+  <div class="prompt-card">
+    <h2>🔬 Research Rigor Mode</h2>
+    <p class="desc">
+      Forces the assistant to verify every factual claim against primary sources before confirming or reformulating anything. Designed for academic and research contexts where overclaiming, misinterpretation, or uncritical reformulation compound over a long conversation. Instructs the assistant to (1) extract verifiable claims, (2) locate the relevant PDFs / notes / source files on your workspace, (3) actually read them (using subagents in parallel for long documents), (4) classify each claim as TRUE / PARTIALLY TRUE / INFERABLE / UNVERIFIABLE / FALSE, (5) re-evaluate whether the overall argument still holds after corrections, (6) flag new vulnerabilities introduced by prior reformulations, and (7) iterate on the same checks as the conversation continues. Hard rule: prefer flagging an overclaim to polishing it rhetorically.
+    </p>
+    <div class="use-case">
+      <span class="tag">Thesis work</span>
+      <span class="tag">Literature review</span>
+      <span class="tag">Paper drafting</span>
+      <span class="tag">Cross-paper synthesis</span>
+      <span class="tag">Long conversations</span>
+    </div>
+    <div class="prompt-copy">
+      <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('pre').textContent).then(()=>{this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)})">Copy</button>
+<pre>RESEARCH RIGOR MODE — read everything before responding.
+
+Before confirming, reformulating, or proposing anything on academic / thesis / research content, execute in order:
+
+1) IDENTIFY CLAIMS. From the text (mine or your own prior output), extract every verifiable assertion: author citations, percentages or counts, cross-paper correspondences, "X is Y" statements, "the literature says Z", "N out of M" claims, conceptual equivalences, etc.
+
+2) LOCATE SOURCES. For each claim, find the primary source. If not explicitly given, actively search likely workspace locations (adapt to your setup):
+   - ~/Desktop/
+   - ~/Downloads/
+   - ~/ObsidianVault/ (or your notes vault)
+   - /Volumes/&lt;external HD&gt;/
+   - project-specific research folders
+   Use Glob/Grep to find relevant PDFs, .docx, .md, .xlsx. If the source does not exist or is not accessible, DECLARE IT — do not fabricate.
+
+3) ACTUALLY READ THE SOURCES. Do not trust my prior summaries, your prior answers, or conversational memory. Read the PDF / text at the specific relevant pages. For long documents, use subagents in parallel with targeted instructions — each subagent reads one source and returns a structured verdict.
+
+4) VERIFY EACH CLAIM. For each one, classify:
+   - TRUE (direct citation / evidence; include page and short quote or context)
+   - PARTIALLY TRUE (specify what holds and what does not)
+   - INFERABLE (the source does not state it explicitly but implies it — make the inference step explicit)
+   - UNVERIFIABLE (declare it; do not guess)
+   - FALSE / OVERCLAIM (say so openly)
+
+5) RE-EVALUATE THE ARGUMENT AFTER VERIFICATION. After the claim-level verdicts are in, zoom back out:
+   - does the overall argument still hold?
+   - do prior reformulations / compromises introduce new vulnerabilities (asymmetries, double standards, circularities, tautologies, selection bias)?
+   - how would a hostile reviewer (peer-review, thesis defense, discussant) attack the argument in its current form?
+
+6) PROPOSE HOW TO PROCEED. If new critiques emerge:
+   - list them without softening
+   - propose 1-2 more defensible reformulations
+   - indicate cost/benefit of each
+   - DO NOT apply changes without my explicit go-ahead.
+
+7) ITERATE IF NEEDED. If I continue reformulating in the same conversation, re-execute steps 1-6 on the new version. A reformulation solves one critique but can open others — do not assume prior verification still holds.
+
+HARD RULE: prefer telling me "claim X is an overclaim" rather than trying to make it hold. The argument must be defensible in discussion, not rhetorically polished.
+
+SHORTCUT: I may invoke this mode mid-conversation by writing "Research Rigor Mode on [topic]" — treat that as a re-activation of all 7 steps above on the specified topic.</pre>
+    </div>
+  </div>
+
 </div>
