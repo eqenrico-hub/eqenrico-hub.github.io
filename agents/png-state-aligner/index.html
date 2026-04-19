@@ -732,9 +732,10 @@ function canvasMouseCoord(e) {
 function canvasToImage(cx, cy) { return { x: cx / state.scale, y: cy / state.scale }; }
 
 function hitTest(ix, iy) {
-  // Pass 1: ALL shapes' corner handles (resize wins over body hits)
-  // Pass 2: non-dropdown bodies
-  // Pass 3: dropdown bodies
+  // Pass A: ALL shapes' corner handles (resize wins over body hits)
+  // Pass B: bodies of rect/circle/annulus (button-like shapes)
+  // Pass C: bodies of decals
+  // Pass D: bodies of dropdowns
   const HANDLE = 7 / state.scale;
   for (let i = state.regions.length - 1; i >= 0; i--) {
     const r = state.regions[i];
@@ -747,13 +748,13 @@ function hitTest(ix, iy) {
       if (Math.abs(ix - c.x) <= HANDLE && Math.abs(iy - c.y) <= HANDLE) return { region: r, mode: 'resize-' + c.h };
     }
   }
-  for (let pass = 0; pass < 2; pass++) {
-    const seekDropdown = (pass === 1);
+  for (let pass = 0; pass < 3; pass++) {
     for (let i = state.regions.length - 1; i >= 0; i--) {
       const r = state.regions[i];
       if (r.locked) continue;
-      if (!seekDropdown && r.shape === 'dropdown') continue;
-      if (seekDropdown && r.shape !== 'dropdown') continue;
+      if (pass === 0 && (r.shape === 'dropdown' || r.shape === 'decal')) continue;
+      if (pass === 1 && r.shape !== 'decal') continue;
+      if (pass === 2 && r.shape !== 'dropdown') continue;
       if (r.shape === 'circle' || r.shape === 'knob') {
         const cx = r.x + r.w/2, cy = r.y + r.h/2;
         const rx = r.w/2, ry = r.h/2;
@@ -786,14 +787,17 @@ canvasWrap.addEventListener('mousedown', e => {
   // Interactive mode: click toggles pressed state; drag inside a container rect = slider move
   if (state.interactiveMode) {
     let hit = null;
-    for (let pass = 0; pass < 2 && !hit; pass++) {
-      const seekDropdown = (pass === 1);
+    // Pass 0: buttons (rect/circle/annulus) — interactive targets get priority
+    // Pass 1: decals (graphic overlays, only hit if no button underneath)
+    // Pass 2: dropdowns
+    for (let pass = 0; pass < 3 && !hit; pass++) {
       for (let i = state.regions.length - 1; i >= 0; i--) {
         const r = state.regions[i];
         if (r.locked) continue;
         if (r.shape === 'knob') continue;
-        if (!seekDropdown && r.shape === 'dropdown') continue;
-        if (seekDropdown && r.shape !== 'dropdown') continue;
+        if (pass === 0 && (r.shape === 'dropdown' || r.shape === 'decal')) continue;
+        if (pass === 1 && r.shape !== 'decal') continue;
+        if (pass === 2 && r.shape !== 'dropdown') continue;
         if (r.shape === 'circle') {
           const cxx = r.x + r.w/2, cyy = r.y + r.h/2;
           const rx = r.w/2, ry = r.h/2;
