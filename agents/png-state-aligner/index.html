@@ -548,6 +548,10 @@ function hitTest(ix, iy) {
         const innerR = outerR * (r.innerPct ?? 0.5);
         const d = Math.hypot(ix - cx, iy - cy);
         if (d <= outerR && d >= innerR) return { region: r, mode: 'move' };
+      } else if (r.shape === 'dropdown') {
+        // Include ear extension upward so clicks on the visible ear area hit the dropdown
+        const extY = r.topCornerExtY || 0;
+        if (ix >= r.x && ix <= r.x + r.w && iy >= r.y - extY && iy <= r.y + r.h) return { region: r, mode: 'move' };
       } else {
         if (ix >= r.x && ix <= r.x + r.w && iy >= r.y && iy <= r.y + r.h) return { region: r, mode: 'move' };
       }
@@ -585,6 +589,9 @@ canvasWrap.addEventListener('mousedown', e => {
           const innerR = outerR * (r.innerPct ?? 0.5);
           const d = Math.hypot(ix - cxx, iy - cyy);
           if (d <= outerR && d >= innerR) { hit = r; break; }
+        } else if (r.shape === 'dropdown') {
+          const extY = r.topCornerExtY || 0;
+          if (ix >= r.x && ix <= r.x + r.w && iy >= r.y - extY && iy <= r.y + r.h) { hit = r; break; }
         } else {
           if (ix >= r.x && ix <= r.x + r.w && iy >= r.y && iy <= r.y + r.h) { hit = r; break; }
         }
