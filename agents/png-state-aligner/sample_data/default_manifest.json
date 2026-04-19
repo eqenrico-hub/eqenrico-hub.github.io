@@ -747,36 +747,20 @@
       "crop_file": "region_42.png"
     },
     {
-      "id": 43,
-      "name": "region_43",
-      "shape": "rect",
+      "id": 45,
+      "name": "decal_45",
+      "shape": "decal",
       "locked": false,
-      "x": 1270,
-      "y": 589,
-      "w": 84,
-      "h": 23,
+      "x": 1267.987222481934,
+      "y": 584.5354920253732,
+      "w": 143.98056351721803,
+      "h": 40.70876638354348,
       "source": "B",
       "src_off_x": 0,
       "src_off_y": 0,
       "dst_off_x": 0,
       "dst_off_y": 0,
-      "crop_file": "region_43.png"
-    },
-    {
-      "id": 44,
-      "name": "region_44",
-      "shape": "rect",
-      "locked": false,
-      "x": 1267,
-      "y": 585,
-      "w": 108,
-      "h": 33,
-      "source": "B",
-      "src_off_x": 0,
-      "src_off_y": 0,
-      "dst_off_x": 0,
-      "dst_off_y": 0,
-      "crop_file": "region_44.png"
+      "crop_file": "decal_45.png"
     }
   ],
   "clone_overlay_file": "clone_overlay.png"

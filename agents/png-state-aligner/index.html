@@ -387,7 +387,23 @@ document.getElementById('btnLoadDefaults').addEventListener('click', async () =>
 
   try {
     const r = await fetch('sample_data/default_manifest.json');
-    if (r.ok) importShapesData(await r.json());
+    if (r.ok) {
+      const manifest = await r.json();
+      importShapesData(manifest);
+      // Rehydrate default decals from sample_data if their crop_file sits next to the manifest
+      for (const entry of (manifest.regions || []).filter(rr => rr.shape === 'decal' && rr.crop_file)) {
+        try {
+          const resp = await fetch('sample_data/' + entry.crop_file);
+          if (!resp.ok) continue;
+          const blob = await resp.blob();
+          const im = new Image();
+          await new Promise((res) => { im.onload = res; im.onerror = res; im.src = URL.createObjectURL(blob); });
+          const reg = state.regions.find(rr => rr.name === entry.name && rr.shape === 'decal');
+          if (reg) reg.decalImage = im;
+        } catch (_) {}
+      }
+      refreshRegions(); render();
+    }
   } catch (e) { console.warn('default manifest not loaded', e); }
 
   // Auto-load default clone overlay if bundled
@@ -1586,6 +1602,23 @@ document.getElementById('btnExportAll').addEventListener('click', async () => {
   }
   const zip = new window.JSZip();
   for (const r of state.regions) {
+    // Decal regions: export the actual decalImage, not a crop from PNG_B/C
+    if (r.shape === 'decal' && r.decalImage) {
+      const cc = document.createElement('canvas');
+      cc.width = r.decalImage.naturalWidth || r.decalImage.width;
+      cc.height = r.decalImage.naturalHeight || r.decalImage.height;
+      cc.getContext('2d').drawImage(r.decalImage, 0, 0);
+      const blob = await new Promise(res => cc.toBlob(res, 'image/png'));
+      const fname = `${r.name}.png`;
+      zip.file(fname, blob);
+      manifest.regions.push({
+        id: r.id, name: r.name, shape: 'decal', locked: !!r.locked,
+        x: r.x, y: r.y, w: r.w, h: r.h,
+        dst_off_x: r.dstOffX || 0, dst_off_y: r.dstOffY || 0,
+        crop_file: fname, decal_filename: r.decalFilename || null,
+      });
+      continue;
+    }
     const src = (r.source === 'C') ? (state.imgCResized || state.imgC) : (state.imgBResized || state.imgB);
     if (!src) continue;
     const c = document.createElement('canvas');
@@ -1657,6 +1690,18 @@ document.getElementById('fileJson').addEventListener('change', async e => {
     if (!manifestFile) { alert('manifest.json not found inside zip'); e.target.value = ''; return; }
     const txt = await manifestFile.async('string');
     importShapesData(JSON.parse(txt));
+    // Rehydrate decal images from their per-region PNGs in the zip
+    for (const r of state.regions.filter(rr => rr.shape === 'decal')) {
+      const cropFile = (manifestFileJSON => manifestFileJSON.regions.find(rr2 => rr2.name === r.name)?.crop_file)(JSON.parse(txt));
+      if (!cropFile) continue;
+      const f2 = zip.file(cropFile);
+      if (!f2) continue;
+      const blob = await f2.async('blob');
+      const im = new Image();
+      await new Promise((res) => { im.onload = res; im.onerror = res; im.src = URL.createObjectURL(blob); });
+      r.decalImage = im;
+    }
+    refreshRegions(); render();
     // Restore clone overlay if present in zip
     const cloneFile = zip.file('clone_overlay.png');
     if (cloneFile && state.imgA) {
