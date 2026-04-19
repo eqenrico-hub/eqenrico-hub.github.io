@@ -285,18 +285,26 @@ document.getElementById('btnInteractive').addEventListener('click', () => {
 
 // Auto-link each dropdown to its parent button (rect whose bottom edge touches dropdown top)
 function findParentButton(dropdown) {
-  const EDGE_TOL = 8;
-  const X_OVERLAP_MIN = 15;
+  // Manual override via parentId takes priority
+  if (dropdown.parentId != null) {
+    return state.regions.find(r => r.id === dropdown.parentId) || null;
+  }
+  // Auto-detect: rect/decal/circle whose bottom edge is within 12px of dropdown top
+  // AND whose horizontal range covers ≥60% of the dropdown's width (prefers strong-overlap matches)
+  const EDGE_TOL = 12;
   let best = null, bestScore = Infinity;
   for (const other of state.regions) {
     if (other.id === dropdown.id) continue;
     if (other.shape === 'dropdown' || other.shape === 'knob' || other.shape === 'annulus') continue;
+    if (other.locked) continue; // skip chassis
     const otherBottom = other.y + other.h;
-    const dy = Math.abs(otherBottom - dropdown.y);
-    if (dy > EDGE_TOL) continue;
+    const dy = otherBottom - dropdown.y; // positive if below top, negative if above
+    if (dy > EDGE_TOL || dy < -EDGE_TOL * 3) continue; // bottom must be near top (allow small overlap)
     const overlap = Math.min(other.x + other.w, dropdown.x + dropdown.w) - Math.max(other.x, dropdown.x);
-    if (overlap < X_OVERLAP_MIN) continue;
-    const score = dy - overlap * 0.01; // lower is better
+    const overlapPct = overlap / Math.min(other.w, dropdown.w);
+    if (overlap < 15 || overlapPct < 0.4) continue;
+    // Score: closer = better, more overlap = better
+    const score = Math.abs(dy) - overlapPct * 5;
     if (score < bestScore) { bestScore = score; best = other; }
   }
   return best;
@@ -836,6 +844,12 @@ function refreshRegions() {
         </div>
         <div style="margin:3px 0;"><label style="font-size:10px;">ear curve % (concave) <span id="ecv${r.id}">${Math.round(r.topCornerCurvePct ?? 100)}</span></label>
           <input type="range" class="ccurve" data-id="${r.id}" min="0" max="100" value="${Math.round(r.topCornerCurvePct ?? 100)}" step="1"></div>
+        <div style="margin:3px 0;"><label style="font-size:10px;">parent button</label>
+          <select class="cparent" data-id="${r.id}" style="width:100%; font-size:10px; padding:2px; background:#111; color:var(--fg); border:1px solid #333; border-radius:3px;">
+            <option value="">(auto-detect: ${(findParentButton({...r, parentId: null}) || {}).name || 'none'})</option>
+            ${state.regions.filter(o => o.shape !== 'dropdown' && o.shape !== 'knob' && o.shape !== 'annulus' && !o.locked).map(o => `<option value="${o.id}" ${r.parentId === o.id ? 'selected' : ''}>${o.name}</option>`).join('')}
+          </select>
+        </div>
         <div style="margin:3px 0; display:flex; gap:4px; align-items:center;">
           <label style="font-size:10px; flex:0 0 auto; min-width:70px;">width ↔ center</label>
           <button class="cwmid" data-id="${r.id}" data-d="-10" style="padding:2px 6px; font-size:11px;">−10</button>
@@ -1080,6 +1094,16 @@ function refreshRegions() {
     render();
   }));
   list.querySelectorAll('.ccurve').forEach(i => i.addEventListener('change', () => pushUndo()));
+
+  // Dropdown parent selector
+  list.querySelectorAll('.cparent').forEach(sel => sel.addEventListener('change', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (!r) return;
+    pushUndo();
+    const v = e.target.value;
+    r.parentId = v ? +v : null;
+    render();
+  }));
   ['cdox','cdoy'].forEach(cls => {
     list.querySelectorAll('.' + cls).forEach(i => i.addEventListener('change', e => {
       const r = state.regions.find(x => x.id === +e.target.dataset.id);
@@ -1386,6 +1410,7 @@ document.getElementById('btnExportAll').addEventListener('click', async () => {
       entry.top_corner_ext_x = r.topCornerExtX ?? 0;
       entry.top_corner_ext_y = r.topCornerExtY ?? 0;
       entry.top_corner_curve_pct = r.topCornerCurvePct ?? 100;
+      entry.parent_name = r.parentId != null ? (state.regions.find(rr => rr.id === r.parentId)?.name || null) : null;
       entry.tex_filename = r.decalFilename || null;
     }
     manifest.regions.push(entry);
@@ -1481,11 +1506,20 @@ function importShapesData(m) {
         reg.topCornerExtX = r.top_corner_ext_x ?? r.topCornerExtX ?? 0;
         reg.topCornerExtY = r.top_corner_ext_y ?? r.topCornerExtY ?? 0;
         reg.topCornerCurvePct = r.top_corner_curve_pct ?? r.topCornerCurvePct ?? 100;
+        reg._pendingParentName = r.parent_name || null;
       }
       return reg;
     });
     lockBiggestRect(regs);
     state.regions = regs;
+    // Second pass: resolve pendingParentName → id
+    for (const r of state.regions) {
+      if (r._pendingParentName) {
+        const parent = state.regions.find(o => o.name === r._pendingParentName);
+        if (parent) r.parentId = parent.id;
+        delete r._pendingParentName;
+      }
+    }
     refreshRegions(); render();
     setTool('select');
   }
