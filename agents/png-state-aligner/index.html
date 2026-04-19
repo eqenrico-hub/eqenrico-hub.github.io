@@ -160,6 +160,26 @@ const state = {
 
 function snapshot() { return JSON.parse(JSON.stringify(state.regions)); }
 
+function tracedDropdownPath(ctx2d, x, y, w, h, bottomR, extX, extY) {
+  // Clockwise outline: top-left ear → down → main top → up right ear → down main → rounded bottom → up main left
+  ctx2d.beginPath();
+  ctx2d.moveTo(x - extX, y - extY);
+  ctx2d.lineTo(x, y - extY);
+  ctx2d.lineTo(x, y);
+  ctx2d.lineTo(x + w, y);
+  ctx2d.lineTo(x + w, y - extY);
+  ctx2d.lineTo(x + w + extX, y - extY);
+  ctx2d.lineTo(x + w + extX, y);
+  ctx2d.lineTo(x + w, y);
+  ctx2d.lineTo(x + w, y + h - bottomR);
+  if (bottomR > 0) ctx2d.arcTo(x + w, y + h, x + w - bottomR, y + h, bottomR);
+  ctx2d.lineTo(x + bottomR, y + h);
+  if (bottomR > 0) ctx2d.arcTo(x, y + h, x, y + h - bottomR, bottomR);
+  ctx2d.lineTo(x, y);
+  ctx2d.lineTo(x - extX, y);
+  ctx2d.closePath();
+}
+
 function pasteClipboard() {
   if (!state.clipboard) return;
   pushUndo();
@@ -745,7 +765,7 @@ window.addEventListener('mouseup', e => {
       const base = { id: state.nextId++, name: `${namePrefix}_${state.regions.length + 1}`, shape, pressed: false, x: Math.round(x), y: Math.round(y), w: Math.round(rw), h: Math.round(rh) };
       if (shape === 'annulus') base.innerPct = 0.5;
       if (shape === 'knob' && state.imgKnobRender) base.decalImage = state.imgKnobRender;
-      if (shape === 'dropdown') { base.bottomRadiusPct = 15; base.texScale = 1.0; base.texOffX = 0; base.texOffY = 0; }
+      if (shape === 'dropdown') { base.bottomRadiusPct = 15; base.texScale = 1.0; base.texOffX = 0; base.texOffY = 0; base.topCornerExtX = 0; base.topCornerExtY = 0; }
       state.regions.push(base); state.selectedId = base.id;
       refreshRegions();
     }
@@ -795,6 +815,12 @@ function refreshRegions() {
       ${r.shape === 'dropdown' ? `
         <div style="margin:3px 0;"><label style="font-size:10px;">bottom radius % <span id="rbv${r.id}">${Math.round(r.bottomRadiusPct ?? 15)}</span></label>
           <input type="range" class="crbot" data-id="${r.id}" min="0" max="100" value="${Math.round(r.bottomRadiusPct ?? 15)}" step="1" ${disabled}></div>
+        <div class="rcoords" title="Top-corner ears (outside bbox on top-left + top-right to fill the button's rounded-bottom gap)">
+          <div><label>top ext X</label><input type="number" class="ctopX" data-id="${r.id}" value="${r.topCornerExtX || 0}" step="0.5" min="0"></div>
+          <div><label>top ext Y</label><input type="number" class="ctopY" data-id="${r.id}" value="${r.topCornerExtY || 0}" step="0.5" min="0"></div>
+          <div></div>
+          <div><label></label><button class="rtopclr" data-id="${r.id}" style="width:100%; font-size:10px; padding:2px;">↺ears</button></div>
+        </div>
         <div style="margin:3px 0; display:flex; gap:4px; align-items:center;">
           <label style="font-size:10px; flex:0 0 auto; min-width:70px;">width ↔ center</label>
           <button class="cwmid" data-id="${r.id}" data-d="-10" style="padding:2px 6px; font-size:11px;">−10</button>
@@ -1011,6 +1037,25 @@ function refreshRegions() {
     r.x = cx - newW / 2;
     refreshRegions(); render();
   }));
+
+  // Dropdown top-corner ears
+  ['ctopX','ctopY'].forEach(cls => {
+    list.querySelectorAll('.' + cls).forEach(i => i.addEventListener('change', e => {
+      const r = state.regions.find(x => x.id === +e.target.dataset.id);
+      if (!r) return;
+      pushUndo();
+      const v = Math.max(0, +e.target.value);
+      if (cls === 'ctopX') r.topCornerExtX = v;
+      if (cls === 'ctopY') r.topCornerExtY = v;
+      render();
+    }));
+  });
+  list.querySelectorAll('.rtopclr').forEach(b => b.addEventListener('click', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (!r) return;
+    pushUndo(); r.topCornerExtX = 0; r.topCornerExtY = 0;
+    refreshRegions(); render();
+  }));
   ['cdox','cdoy'].forEach(cls => {
     list.querySelectorAll('.' + cls).forEach(i => i.addEventListener('change', e => {
       const r = state.regions.find(x => x.id === +e.target.dataset.id);
@@ -1072,15 +1117,10 @@ function render() {
       const rw = r.w * state.scale, rh = r.h * state.scale;
       const pct = (r.bottomRadiusPct ?? 15) / 100;
       const R = Math.min(r.w, r.h) * state.scale * 0.5 * pct;
+      const extX = (r.topCornerExtX || 0) * state.scale;
+      const extY = (r.topCornerExtY || 0) * state.scale;
       ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(rx, ry);
-      ctx.lineTo(rx + rw, ry);
-      ctx.lineTo(rx + rw, ry + rh - R);
-      if (R > 0) ctx.arcTo(rx + rw, ry + rh, rx + rw - R, ry + rh, R);
-      ctx.lineTo(rx + R, ry + rh);
-      if (R > 0) ctx.arcTo(rx, ry + rh, rx, ry + rh - R, R);
-      ctx.closePath();
+      tracedDropdownPath(ctx, rx, ry, rw, rh, R, extX, extY);
       ctx.clip();
       if (r.decalImage) {
         // Pan/zoom: fit image to bbox, then apply user scale + offset
@@ -1171,17 +1211,11 @@ function drawRegions() {
       octx.ellipse(x + w/2, y + h/2, w/2, h/2, 0, 0, Math.PI * 2);
       octx.fill(); octx.stroke();
     } else if (r.shape === 'dropdown') {
-      // Rounded bottom corners only
       const pct = (r.bottomRadiusPct ?? 15) / 100;
       const R = Math.min(w, h) * 0.5 * pct;
-      octx.beginPath();
-      octx.moveTo(x, y);
-      octx.lineTo(x + w, y);
-      octx.lineTo(x + w, y + h - R);
-      if (R > 0) octx.arcTo(x + w, y + h, x + w - R, y + h, R);
-      octx.lineTo(x + R, y + h);
-      if (R > 0) octx.arcTo(x, y + h, x, y + h - R, R);
-      octx.closePath();
+      const extX = (r.topCornerExtX || 0) * state.scale;
+      const extY = (r.topCornerExtY || 0) * state.scale;
+      tracedDropdownPath(octx, x, y, w, h, R, extX, extY);
       octx.fill(); octx.stroke();
     } else if (r.shape === 'annulus') {
       const cx = x + w/2, cy = y + h/2;
@@ -1325,6 +1359,8 @@ document.getElementById('btnExportAll').addEventListener('click', async () => {
       entry.tex_scale = r.texScale ?? 1.0;
       entry.tex_off_x = r.texOffX ?? 0;
       entry.tex_off_y = r.texOffY ?? 0;
+      entry.top_corner_ext_x = r.topCornerExtX ?? 0;
+      entry.top_corner_ext_y = r.topCornerExtY ?? 0;
       entry.tex_filename = r.decalFilename || null;
     }
     manifest.regions.push(entry);
@@ -1417,6 +1453,8 @@ function importShapesData(m) {
         reg.texScale = r.tex_scale ?? r.texScale ?? 1.0;
         reg.texOffX = r.tex_off_x ?? r.texOffX ?? 0;
         reg.texOffY = r.tex_off_y ?? r.texOffY ?? 0;
+        reg.topCornerExtX = r.top_corner_ext_x ?? r.topCornerExtX ?? 0;
+        reg.topCornerExtY = r.top_corner_ext_y ?? r.topCornerExtY ?? 0;
       }
       return reg;
     });
