@@ -795,6 +795,14 @@ function refreshRegions() {
       ${r.shape === 'dropdown' ? `
         <div style="margin:3px 0;"><label style="font-size:10px;">bottom radius % <span id="rbv${r.id}">${Math.round(r.bottomRadiusPct ?? 15)}</span></label>
           <input type="range" class="crbot" data-id="${r.id}" min="0" max="100" value="${Math.round(r.bottomRadiusPct ?? 15)}" step="1" ${disabled}></div>
+        <div style="margin:3px 0; display:flex; gap:4px; align-items:center;">
+          <label style="font-size:10px; flex:0 0 auto; min-width:70px;">width ↔ center</label>
+          <button class="cwmid" data-id="${r.id}" data-d="-10" style="padding:2px 6px; font-size:11px;">−10</button>
+          <button class="cwmid" data-id="${r.id}" data-d="-1" style="padding:2px 6px; font-size:11px;">−1</button>
+          <input type="number" class="cwcenter" data-id="${r.id}" value="${Math.round(r.w)}" step="1" style="width:60px; text-align:center;">
+          <button class="cwmid" data-id="${r.id}" data-d="1" style="padding:2px 6px; font-size:11px;">+1</button>
+          <button class="cwmid" data-id="${r.id}" data-d="10" style="padding:2px 6px; font-size:11px;">+10</button>
+        </div>
         <div style="margin:3px 0;"><button class="rddtex" data-id="${r.id}" style="width:100%; font-size:10px; padding:3px;">${r.decalImage ? '✓ Texture loaded · Replace' : 'Load texture PNG'}</button></div>
         <input type="file" class="rddtexfile" data-id="${r.id}" accept="image/png" style="display:none">
         ${r.decalImage ? `
@@ -978,6 +986,29 @@ function refreshRegions() {
     const r = state.regions.find(x => x.id === +e.target.dataset.id);
     if (!r) return;
     pushUndo(); r.texScale = 1.0; r.texOffX = 0; r.texOffY = 0;
+    refreshRegions(); render();
+  }));
+
+  // Dropdown: Width-from-center adjust (buttons ± and number input)
+  list.querySelectorAll('.cwmid').forEach(btn => btn.addEventListener('click', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (!r) return;
+    const delta = +e.target.dataset.d;
+    pushUndo();
+    const cx = r.x + r.w / 2;
+    const newW = Math.max(6, r.w + delta);
+    r.w = newW;
+    r.x = cx - newW / 2;
+    refreshRegions(); render();
+  }));
+  list.querySelectorAll('.cwcenter').forEach(inp => inp.addEventListener('change', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (!r) return;
+    pushUndo();
+    const cx = r.x + r.w / 2;
+    const newW = Math.max(6, +e.target.value);
+    r.w = newW;
+    r.x = cx - newW / 2;
     refreshRegions(); render();
   }));
   ['cdox','cdoy'].forEach(cls => {
