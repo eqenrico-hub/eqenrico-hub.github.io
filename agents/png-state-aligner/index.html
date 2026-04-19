@@ -731,6 +731,15 @@ canvasWrap.addEventListener('mousedown', e => {
 });
 
 window.addEventListener('mousemove', e => {
+  // Always track cursor position for clone brush preview
+  if (state.tool === 'clone') {
+    const { cx, cy } = canvasMouseCoord(e);
+    state.cloneCursor = canvasToImage(cx, cy);
+    if (!state.cloneDragging) render();
+  } else if (state.cloneCursor) {
+    state.cloneCursor = null; render();
+  }
+
   if (state.swipeDrag) {
     const r = canvasWrap.getBoundingClientRect();
     state.swipeX = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
@@ -1360,24 +1369,34 @@ function render() {
 
   if (!state.hideBorders) drawRegions();
 
-  // Clone tool source marker
-  if (state.tool === 'clone' && state.cloneSource) {
-    octx.save();
-    octx.strokeStyle = '#ffb347';
-    octx.lineWidth = 2;
-    octx.setLineDash([4, 2]);
-    octx.beginPath();
-    octx.arc(state.cloneSource.x * state.scale, state.cloneSource.y * state.scale, state.cloneBrush * state.scale, 0, Math.PI * 2);
-    octx.stroke();
-    // Crosshair
-    octx.setLineDash([]);
-    octx.beginPath();
-    octx.moveTo(state.cloneSource.x * state.scale - 6, state.cloneSource.y * state.scale);
-    octx.lineTo(state.cloneSource.x * state.scale + 6, state.cloneSource.y * state.scale);
-    octx.moveTo(state.cloneSource.x * state.scale, state.cloneSource.y * state.scale - 6);
-    octx.lineTo(state.cloneSource.x * state.scale, state.cloneSource.y * state.scale + 6);
-    octx.stroke();
-    octx.restore();
+  // Clone tool markers: source crosshair + cursor brush preview
+  if (state.tool === 'clone') {
+    if (state.cloneSource) {
+      octx.save();
+      octx.strokeStyle = '#ffb347';
+      octx.lineWidth = 2;
+      octx.setLineDash([4, 2]);
+      octx.beginPath();
+      octx.arc(state.cloneSource.x * state.scale, state.cloneSource.y * state.scale, state.cloneBrush * state.scale, 0, Math.PI * 2);
+      octx.stroke();
+      octx.setLineDash([]);
+      octx.beginPath();
+      octx.moveTo(state.cloneSource.x * state.scale - 6, state.cloneSource.y * state.scale);
+      octx.lineTo(state.cloneSource.x * state.scale + 6, state.cloneSource.y * state.scale);
+      octx.moveTo(state.cloneSource.x * state.scale, state.cloneSource.y * state.scale - 6);
+      octx.lineTo(state.cloneSource.x * state.scale, state.cloneSource.y * state.scale + 6);
+      octx.stroke();
+      octx.restore();
+    }
+    if (state.cloneCursor) {
+      octx.save();
+      octx.strokeStyle = '#4fd1ff';
+      octx.lineWidth = 1.5;
+      octx.beginPath();
+      octx.arc(state.cloneCursor.x * state.scale, state.cloneCursor.y * state.scale, state.cloneBrush * state.scale, 0, Math.PI * 2);
+      octx.stroke();
+      octx.restore();
+    }
   }
 
   swipeLine.style.display = state.mode === 'swipe' ? 'block' : 'none';
