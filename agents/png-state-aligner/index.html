@@ -263,12 +263,8 @@ document.getElementById('btnLoadDefaults').addEventListener('click', async () =>
     loadImg('sample_data/png_c_eq_off.png', 'imgC'),
   ]);
   updateStatus();
-  try {
-    const r = await fetch('sample_data/default_manifest.json');
-    if (r.ok) importShapesData(await r.json());
-  } catch (e) { console.warn('default manifest not loaded', e); }
 
-  // Pre-load the Blender-rendered knob image so "Draw knob" tool has it ready
+  // Pre-load Blender knob render FIRST so manifest import can rehydrate knob regions
   try {
     const knobImg = await new Promise((res, rej) => {
       const im = new Image();
@@ -279,6 +275,11 @@ document.getElementById('btnLoadDefaults').addEventListener('click', async () =>
     });
     state.imgKnobRender = knobImg;
   } catch (e) { console.warn('knob render not loaded', e); }
+
+  try {
+    const r = await fetch('sample_data/default_manifest.json');
+    if (r.ok) importShapesData(await r.json());
+  } catch (e) { console.warn('default manifest not loaded', e); }
 
   // Pre-load metal ring decal and place at reasonable starting position near a knob
   try {
