@@ -512,7 +512,29 @@ window.addEventListener('mousemove', e => {
   }
   if (state.drawStart && (state.tool === 'draw' || state.tool === 'drawring' || state.tool === 'drawknob' || state.tool === 'drawdropdown')) {
     const { cx, cy } = canvasMouseCoord(e);
-    state.drawCur = canvasToImage(cx, cy);
+    let { x: ix2, y: iy2 } = canvasToImage(cx, cy);
+    // Shift while drawing → snap the current (movable) corner to nearby region edges
+    state.snapGuides = [];
+    if (e.shiftKey) {
+      const SNAP = 6;
+      let bestDX = SNAP + 1, snapX = null, guideX = null;
+      let bestDY = SNAP + 1, snapY = null, guideY = null;
+      for (const other of state.regions) {
+        const candidatesX = [other.x, other.x + other.w/2, other.x + other.w];
+        const candidatesY = [other.y, other.y + other.h/2, other.y + other.h];
+        for (const tx of candidatesX) {
+          const d = Math.abs(ix2 - tx);
+          if (d < bestDX) { bestDX = d; snapX = tx; guideX = tx; }
+        }
+        for (const ty of candidatesY) {
+          const d = Math.abs(iy2 - ty);
+          if (d < bestDY) { bestDY = d; snapY = ty; guideY = ty; }
+        }
+      }
+      if (snapX != null) { ix2 = snapX; state.snapGuides.push({ type: 'v', v: guideX }); }
+      if (snapY != null) { iy2 = snapY; state.snapGuides.push({ type: 'h', v: guideY }); }
+    }
+    state.drawCur = { x: ix2, y: iy2 };
     render();
     return;
   }
