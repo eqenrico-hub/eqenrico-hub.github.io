@@ -1123,23 +1123,21 @@ function render() {
       tracedDropdownPath(ctx, rx, ry, rw, rh, R, extX, extY);
       ctx.clip();
       if (r.decalImage) {
-        // Pan/zoom: fit image to bbox, then apply user scale + offset
         const img = r.decalImage;
         const iw = img.naturalWidth || img.width;
         const ih = img.naturalHeight || img.height;
         const scaleUser = r.texScale || 1.0;
         const ox = (r.texOffX || 0) * state.scale;
         const oy = (r.texOffY || 0) * state.scale;
-        // Cover-fit: scale image so it fills the bbox (then multiplied by user scale)
         const coverFit = Math.max(rw / iw, rh / ih) * scaleUser;
         const dw2 = iw * coverFit, dh2 = ih * coverFit;
         const dx2 = rx + (rw - dw2)/2 + ox;
         const dy2 = ry + (rh - dh2)/2 + oy;
         ctx.drawImage(img, dx2, dy2, dw2, dh2);
       } else {
-        // Placeholder: semi-transparent dark panel
+        // Placeholder: semi-transparent dark panel covering full ear-extended bbox
         ctx.fillStyle = 'rgba(30, 28, 24, 0.75)';
-        ctx.fillRect(rx, ry, rw, rh);
+        ctx.fillRect(rx - extX, ry - extY, rw + 2 * extX, rh + extY);
       }
       ctx.restore();
     });
