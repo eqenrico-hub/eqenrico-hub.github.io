@@ -107,7 +107,12 @@ title: PNG State Aligner
     </div>
     <div id="regionList"></div>
 
-    <h2>4. Import / Export</h2>
+    <h2>4. Decal overlay</h2>
+    <button id="btnAddDecal" style="background: #2a3a4a;">Load decal PNG + place</button>
+    <input type="file" id="fileDecal" accept="image/png" style="display:none">
+    <div class="hint">Upload a transparent PNG (e.g. a metal ring). It becomes a draggable/resizable region that renders the image at its bbox.</div>
+
+    <h2>5. Import / Export</h2>
     <button id="btnImportShapesJson" style="background: #3a2a4a;">Import shapes.json (GUI Frame Tool)</button>
     <button id="btnExportAll">Export crops bundle (.zip)</button>
     <button id="btnImportJson">Import bundle.zip or manifest.json</button>
@@ -521,7 +526,7 @@ function refreshRegions() {
     if (r.id === state.selectedId) cls.push('selected');
     if (r.pressed) cls.push('pressed');
     div.className = cls.join(' ');
-    const shapeLabel = r.shape === 'annulus' ? '◎' : (r.shape === 'circle' ? '○' : '▭');
+    const shapeLabel = r.shape === 'decal' ? '🖼️' : (r.shape === 'annulus' ? '◎' : (r.shape === 'circle' ? '○' : '▭'));
     const disabled = r.locked ? 'disabled' : '';
     const lockLabel = r.locked ? '🔒 ' : '';
     const src = r.source || 'B';
@@ -698,7 +703,14 @@ function render() {
 
   if (state.mode === 'A') {
     if (state.imgA) ctx.drawImage(state.imgA, 0, 0, dw, dh);
-    state.regions.filter(r => r.pressed).forEach(r => {
+    // Decal regions: always render their image at bbox (regardless of pressed)
+    state.regions.filter(r => r.shape === 'decal' && r.decalImage).forEach(r => {
+      const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
+      const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
+      const rw = r.w * state.scale, rh = r.h * state.scale;
+      ctx.drawImage(r.decalImage, rx, ry, rw, rh);
+    });
+    state.regions.filter(r => r.pressed && r.shape !== 'decal').forEach(r => {
       const src = (r.source === 'C') ? (state.imgCResized || state.imgC) : (state.imgBResized || state.imgB);
       if (!src) return;
       const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
@@ -742,9 +754,11 @@ function drawRegions() {
     const x = r.x * state.scale, y = r.y * state.scale;
     const w = r.w * state.scale, h = r.h * state.scale;
     const sel = r.id === state.selectedId;
-    const stroke = r.locked ? '#666' : (sel ? '#4fd1ff' : (r.pressed ? '#ffc14f' : '#ff6ec7'));
-    const fill = r.locked ? 'rgba(120,120,120,0.04)' : (sel ? 'rgba(79,209,255,0.12)' : (r.pressed ? 'rgba(255,193,79,0.10)' : 'rgba(255,110,199,0.08)'));
+    const stroke = r.locked ? '#666' : (sel ? '#4fd1ff' : (r.pressed ? '#ffc14f' : (r.shape === 'decal' ? '#7fff9f' : '#ff6ec7')));
+    const fill = r.shape === 'decal' ? (sel ? 'rgba(79,209,255,0.06)' : 'rgba(127,255,159,0.00)')
+               : (r.locked ? 'rgba(120,120,120,0.04)' : (sel ? 'rgba(79,209,255,0.12)' : (r.pressed ? 'rgba(255,193,79,0.10)' : 'rgba(255,110,199,0.08)')));
     octx.strokeStyle = stroke; octx.fillStyle = fill;
+    octx.setLineDash(r.shape === 'decal' && !sel ? [6, 4] : []);
     if (r.shape === 'circle') {
       octx.beginPath();
       octx.ellipse(x + w/2, y + h/2, w/2, h/2, 0, 0, Math.PI * 2);
@@ -780,6 +794,7 @@ function drawRegions() {
       });
     }
   });
+  octx.setLineDash([]);
   // Preview in-progress rect
   if (state.drawStart && state.drawCur) {
     const a = state.drawStart, b = state.drawCur;
@@ -964,6 +979,38 @@ function lockBiggestRect(regions) {
     biggest.name = 'CHASSIS_frame';
   }
 }
+
+document.getElementById('btnAddDecal').addEventListener('click', () => document.getElementById('fileDecal').click());
+document.getElementById('fileDecal').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  const im = new Image();
+  im.onload = () => {
+    // Create a new region with shape='decal' at image center
+    const refW = state.imgA ? state.imgA.naturalWidth : im.naturalWidth;
+    const refH = state.imgA ? state.imgA.naturalHeight : im.naturalHeight;
+    // Default size: 1/8 of reference diagonal, min 100px
+    const initW = Math.max(100, Math.round(Math.min(refW, refH) * 0.2));
+    const initH = Math.round(initW * (im.naturalHeight / im.naturalWidth));
+    pushUndo();
+    const r = {
+      id: state.nextId++,
+      name: `decal_${state.regions.length + 1}`,
+      shape: 'decal',
+      pressed: false,
+      x: Math.round(refW/2 - initW/2),
+      y: Math.round(refH/2 - initH/2),
+      w: initW, h: initH,
+      decalImage: im,
+      decalFilename: f.name,
+    };
+    state.regions.push(r);
+    state.selectedId = r.id;
+    setTool('select');
+    refreshRegions(); render();
+  };
+  im.src = URL.createObjectURL(f);
+  e.target.value = '';
+});
 
 document.getElementById('btnImportShapesJson').addEventListener('click', async () => {
   const r = await fetch('sample_data/shapes.json');
