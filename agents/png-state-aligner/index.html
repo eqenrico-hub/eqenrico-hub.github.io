@@ -324,12 +324,18 @@ document.getElementById('collapseBtn').addEventListener('click', () => {
 });
 
 document.getElementById('btnInteractive').addEventListener('click', () => {
+  const wasOn = state.interactiveMode;
   state.interactiveMode = !state.interactiveMode;
   const btn = document.getElementById('btnInteractive');
   btn.textContent = state.interactiveMode ? '■ Exit interactive' : '▶ Interactive mode';
   btn.style.background = state.interactiveMode ? '#6a2a2a' : '#2a4a2a';
-  // Auto-hide borders in interactive mode
   state.hideBorders = state.interactiveMode;
+  // On EXIT: release all pressed states so leaving doesn't leave the GUI stuck
+  // in a pressed visual state that's confusing for editing.
+  if (wasOn && !state.interactiveMode) {
+    state.regions.forEach(r => { r.pressed = false; });
+    refreshRegions();
+  }
   render();
 });
 
