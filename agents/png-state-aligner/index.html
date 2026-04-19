@@ -97,6 +97,7 @@ title: PNG State Aligner
     <div class="tool-btns">
       <button class="tool active" data-tool="view">View / Pan</button>
       <button class="tool" data-tool="draw">Draw rect</button>
+      <button class="tool" data-tool="drawring">Draw ring</button>
       <button class="tool" data-tool="select">Select / Edit</button>
     </div>
     <div id="stats">0 regions</div>
@@ -378,7 +379,6 @@ function hitTest(ix, iy) {
     for (const c of corners) {
       if (Math.abs(ix - c.x) <= HANDLE && Math.abs(iy - c.y) <= HANDLE) return { region: r, mode: 'resize-' + c.h };
     }
-    // Body hit: bounding box for rect, ellipse equation for circle
     if (r.shape === 'circle') {
       const cx = r.x + r.w/2, cy = r.y + r.h/2;
       const rx = r.w/2, ry = r.h/2;
@@ -386,6 +386,12 @@ function hitTest(ix, iy) {
         const nx = (ix - cx) / rx, ny = (iy - cy) / ry;
         if (nx*nx + ny*ny <= 1) return { region: r, mode: 'move' };
       }
+    } else if (r.shape === 'annulus') {
+      const cx = r.x + r.w/2, cy = r.y + r.h/2;
+      const outerR = Math.min(r.w, r.h) / 2;
+      const innerR = outerR * (r.innerPct ?? 0.5);
+      const d = Math.hypot(ix - cx, iy - cy);
+      if (d <= outerR && d >= innerR) return { region: r, mode: 'move' };
     } else {
       if (ix >= r.x && ix <= r.x + r.w && iy >= r.y && iy <= r.y + r.h) return { region: r, mode: 'move' };
     }
@@ -406,9 +412,10 @@ canvasWrap.addEventListener('mousedown', e => {
     return;
   }
 
-  if (state.tool === 'draw') {
+  if (state.tool === 'draw' || state.tool === 'drawring') {
     state.drawStart = { x: ix, y: iy };
     state.drawCur = { x: ix, y: iy };
+    state.drawShape = (state.tool === 'drawring') ? 'annulus' : 'rect';
     return;
   }
   if (state.tool === 'select') {
@@ -440,7 +447,7 @@ window.addEventListener('mousemove', e => {
     render();
     return;
   }
-  if (state.drawStart && state.tool === 'draw') {
+  if (state.drawStart && (state.tool === 'draw' || state.tool === 'drawring')) {
     const { cx, cy } = canvasMouseCoord(e);
     state.drawCur = canvasToImage(cx, cy);
     render();
@@ -475,14 +482,16 @@ window.addEventListener('mousemove', e => {
 });
 
 window.addEventListener('mouseup', e => {
-  if (state.drawStart && state.tool === 'draw') {
+  if (state.drawStart && (state.tool === 'draw' || state.tool === 'drawring')) {
     const a = state.drawStart, b = state.drawCur;
     const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y);
     const w = Math.abs(a.x - b.x), h = Math.abs(a.y - b.y);
     if (w > 3 && h > 3) {
       pushUndo();
-      const r = { id: state.nextId++, name: `region_${state.regions.length + 1}`, shape: 'rect', pressed: false, x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h) };
-      state.regions.push(r); state.selectedId = r.id;
+      const shape = state.drawShape || 'rect';
+      const base = { id: state.nextId++, name: `region_${state.regions.length + 1}`, shape, pressed: false, x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h) };
+      if (shape === 'annulus') base.innerPct = 0.5; // default hole is 50% of outer radius
+      state.regions.push(base); state.selectedId = base.id;
       refreshRegions();
     }
     state.drawStart = state.drawCur = null;
@@ -512,7 +521,7 @@ function refreshRegions() {
     if (r.id === state.selectedId) cls.push('selected');
     if (r.pressed) cls.push('pressed');
     div.className = cls.join(' ');
-    const shapeLabel = r.shape === 'circle' ? '○' : '▭';
+    const shapeLabel = r.shape === 'annulus' ? '◎' : (r.shape === 'circle' ? '○' : '▭');
     const disabled = r.locked ? 'disabled' : '';
     const lockLabel = r.locked ? '🔒 ' : '';
     const src = r.source || 'B';
@@ -525,6 +534,7 @@ function refreshRegions() {
         <div><label>w</label><input type="number" class="cw" data-id="${r.id}" value="${r.w}" ${disabled}></div>
         <div><label>h</label><input type="number" class="ch" data-id="${r.id}" value="${r.h}" ${disabled}></div>
       </div>
+      ${r.shape === 'annulus' ? `<div style="margin:3px 0;"><label style="font-size:10px;">inner % (hole) <span id="ipv${r.id}">${Math.round((r.innerPct ?? 0.5) * 100)}</span></label><input type="range" class="cinner" data-id="${r.id}" min="0" max="95" value="${Math.round((r.innerPct ?? 0.5) * 100)}" step="0.5" ${disabled}></div>` : ''}
       ${r.locked ? '' : `
       <div class="rcoords" title="SRC: nudge where pixels are sampled from source PNG">
         <div><label>src</label>
@@ -577,7 +587,9 @@ function refreshRegions() {
     const r = state.regions.find(x => x.id === +e.target.dataset.id);
     if (!r) return;
     pushUndo();
-    r.shape = (r.shape === 'rect') ? 'circle' : 'rect';
+    const cycle = { 'rect': 'circle', 'circle': 'annulus', 'annulus': 'rect' };
+    r.shape = cycle[r.shape || 'rect'];
+    if (r.shape === 'annulus' && r.innerPct == null) r.innerPct = 0.5;
     refreshRegions(); render();
   }));
   list.querySelectorAll('.rchange').forEach(i => i.addEventListener('click', e => {
@@ -630,6 +642,15 @@ function refreshRegions() {
     pushUndo(); r.srcOffX = 0; r.srcOffY = 0;
     refreshRegions(); render();
   }));
+  list.querySelectorAll('.cinner').forEach(i => i.addEventListener('input', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (!r) return;
+    r.innerPct = (+e.target.value) / 100;
+    const span = document.getElementById('ipv' + r.id);
+    if (span) span.textContent = +e.target.value;
+    render();
+  }));
+  list.querySelectorAll('.cinner').forEach(i => i.addEventListener('change', e => { pushUndo(); }));
   ['cdox','cdoy'].forEach(cls => {
     list.querySelectorAll('.' + cls).forEach(i => i.addEventListener('change', e => {
       const r = state.regions.find(x => x.id === +e.target.dataset.id);
@@ -728,6 +749,18 @@ function drawRegions() {
       octx.beginPath();
       octx.ellipse(x + w/2, y + h/2, w/2, h/2, 0, 0, Math.PI * 2);
       octx.fill(); octx.stroke();
+    } else if (r.shape === 'annulus') {
+      const cx = x + w/2, cy = y + h/2;
+      const outerR = Math.min(w, h) / 2;
+      const innerR = outerR * (r.innerPct ?? 0.5);
+      // Fill annulus: outer path + inner path counter-clockwise (even-odd rule)
+      octx.beginPath();
+      octx.ellipse(cx, cy, outerR, outerR, 0, 0, Math.PI * 2);
+      octx.ellipse(cx, cy, innerR, innerR, 0, 0, Math.PI * 2, true);
+      octx.fill('evenodd');
+      // Outlines
+      octx.beginPath(); octx.ellipse(cx, cy, outerR, outerR, 0, 0, Math.PI * 2); octx.stroke();
+      octx.beginPath(); octx.ellipse(cx, cy, innerR, innerR, 0, 0, Math.PI * 2); octx.stroke();
     } else {
       octx.fillRect(x, y, w, h);
       octx.strokeRect(x, y, w, h);
@@ -816,13 +849,23 @@ document.getElementById('btnExportAll').addEventListener('click', async () => {
       cctx.clip();
       cctx.drawImage(src, sx, sy, r.w, r.h, 0, 0, r.w, r.h);
       cctx.restore();
+    } else if (r.shape === 'annulus') {
+      const outerR = Math.min(r.w, r.h) / 2;
+      const innerR = outerR * (r.innerPct ?? 0.5);
+      cctx.save();
+      cctx.beginPath();
+      cctx.ellipse(r.w/2, r.h/2, outerR, outerR, 0, 0, Math.PI * 2);
+      cctx.ellipse(r.w/2, r.h/2, innerR, innerR, 0, 0, Math.PI * 2, true);
+      cctx.clip('evenodd');
+      cctx.drawImage(src, sx, sy, r.w, r.h, 0, 0, r.w, r.h);
+      cctx.restore();
     } else {
       cctx.drawImage(src, sx, sy, r.w, r.h, 0, 0, r.w, r.h);
     }
     const blob = await new Promise(res => c.toBlob(res, 'image/png'));
     const fname = `${r.name}.png`;
     zip.file(fname, blob);
-    manifest.regions.push({ id: r.id, name: r.name, shape: r.shape || 'rect', locked: !!r.locked, x: r.x, y: r.y, w: r.w, h: r.h, source: r.source || 'B', src_off_x: r.srcOffX || 0, src_off_y: r.srcOffY || 0, dst_off_x: r.dstOffX || 0, dst_off_y: r.dstOffY || 0, crop_file: fname });
+    manifest.regions.push({ id: r.id, name: r.name, shape: r.shape || 'rect', locked: !!r.locked, x: r.x, y: r.y, w: r.w, h: r.h, inner_pct: r.innerPct, source: r.source || 'B', src_off_x: r.srcOffX || 0, src_off_y: r.srcOffY || 0, dst_off_x: r.dstOffX || 0, dst_off_y: r.dstOffY || 0, crop_file: fname });
   }
   zip.file('manifest.json', JSON.stringify(manifest, null, 2));
   const content = await zip.generateAsync({ type: 'blob' });
@@ -901,6 +944,7 @@ function importShapesData(m) {
       srcOffY: r.src_off_y || r.srcOffY || 0,
       dstOffX: r.dst_off_x || r.dstOffX || 0,
       dstOffY: r.dst_off_y || r.dstOffY || 0,
+      innerPct: (r.inner_pct ?? r.innerPct ?? (r.shape === 'annulus' ? 0.5 : undefined)),
       x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.w), h: Math.round(r.h),
     }));
     lockBiggestRect(regs);
