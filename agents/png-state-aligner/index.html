@@ -1269,8 +1269,16 @@ function render() {
 
   // Helper: draw static overlays (knob + decal + dropdown) always on top, in any view mode
   function drawStaticOverlays() {
-    // Draw dropdowns first (they sit BEHIND knobs/decals visually in the GUI since
-    // they open underneath a button — but on the canvas layering, dropdown comes first)
+    // Knobs + decals first (bottom layer)
+    const overlays = state.regions.filter(r => (r.shape === 'decal' || r.shape === 'knob') && r.decalImage);
+    for (const r of overlays) {
+      const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
+      const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
+      const rw = r.w * state.scale, rh = r.h * state.scale;
+      ctx.drawImage(r.decalImage, rx, ry, rw, rh);
+    }
+    // Dropdowns rendered ON TOP of knobs/decals (a dropdown opens over the interface,
+    // covering everything else in its area)
     state.regions.filter(r => r.shape === 'dropdown').forEach(r => {
       // Dropdown visibility rule: only show if its linked parent button is pressed.
       // Exception: if the dropdown itself is selected (edit mode), always show so user can position it.
@@ -1308,13 +1316,6 @@ function render() {
       }
       ctx.restore();
     });
-    const overlays = state.regions.filter(r => (r.shape === 'decal' || r.shape === 'knob') && r.decalImage);
-    for (const r of overlays) {
-      const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
-      const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
-      const rw = r.w * state.scale, rh = r.h * state.scale;
-      ctx.drawImage(r.decalImage, rx, ry, rw, rh);
-    }
   }
 
   if (state.mode === 'A') {
