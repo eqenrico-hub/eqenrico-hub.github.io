@@ -102,6 +102,7 @@ title: PNG State Aligner
       <button class="tool" data-tool="drawdropdown">Draw dropdown</button>
       <button class="tool" data-tool="select">Select / Edit</button>
     </div>
+    <button id="btnInteractive" style="background:#2a4a2a; margin-top:6px; width:100%;">▶ Interactive mode</button>
     <div id="stats">0 regions</div>
     <div style="display:flex; gap:4px; margin: 4px 0;">
       <button id="btnPressAll" style="background:#3a2a4a; flex:1;">Press ALL</button>
@@ -238,6 +239,35 @@ document.getElementById('collapseBtn').addEventListener('click', () => {
   document.getElementById('app').classList.toggle('collapsed');
   setTimeout(render, 220);
 });
+
+document.getElementById('btnInteractive').addEventListener('click', () => {
+  state.interactiveMode = !state.interactiveMode;
+  const btn = document.getElementById('btnInteractive');
+  btn.textContent = state.interactiveMode ? '■ Exit interactive' : '▶ Interactive mode';
+  btn.style.background = state.interactiveMode ? '#6a2a2a' : '#2a4a2a';
+  // Auto-hide borders in interactive mode
+  state.hideBorders = state.interactiveMode;
+  render();
+});
+
+// Auto-link each dropdown to its parent button (rect whose bottom edge touches dropdown top)
+function findParentButton(dropdown) {
+  const EDGE_TOL = 8;
+  const X_OVERLAP_MIN = 15;
+  let best = null, bestScore = Infinity;
+  for (const other of state.regions) {
+    if (other.id === dropdown.id) continue;
+    if (other.shape === 'dropdown' || other.shape === 'knob' || other.shape === 'annulus') continue;
+    const otherBottom = other.y + other.h;
+    const dy = Math.abs(otherBottom - dropdown.y);
+    if (dy > EDGE_TOL) continue;
+    const overlap = Math.min(other.x + other.w, dropdown.x + dropdown.w) - Math.max(other.x, dropdown.x);
+    if (overlap < X_OVERLAP_MIN) continue;
+    const score = dy - overlap * 0.01; // lower is better
+    if (score < bestScore) { bestScore = score; best = other; }
+  }
+  return best;
+}
 
 document.getElementById('btnPressAll').addEventListener('click', () => {
   pushUndo();
@@ -405,8 +435,24 @@ function setTool(t) {
 
 document.getElementById('stage').addEventListener('wheel', e => {
   e.preventDefault();
+  const stage = document.getElementById('stage');
+  const rect = stage.getBoundingClientRect();
+  const cursorX = e.clientX - rect.left;
+  const cursorY = e.clientY - rect.top;
+  const stageCenterX = rect.width / 2;
+  const stageCenterY = rect.height / 2;
+  const offsetX = cursorX - stageCenterX - state.panX;
+  const offsetY = cursorY - stageCenterY - state.panY;
+
   const delta = -Math.sign(e.deltaY) * 0.12;
-  state.zoom = Math.max(0.25, Math.min(8, state.zoom * (1 + delta)));
+  const newZoom = Math.max(0.25, Math.min(8, state.zoom * (1 + delta)));
+  const ratio = newZoom / state.zoom;
+
+  // Keep the pixel under cursor fixed during zoom
+  state.panX = cursorX - stageCenterX - offsetX * ratio;
+  state.panY = cursorY - stageCenterY - offsetY * ratio;
+  state.zoom = newZoom;
+
   document.getElementById('zoom').value = Math.round(state.zoom * 100);
   document.getElementById('zoomVal').textContent = Math.round(state.zoom * 100) + '%';
   render();
@@ -462,6 +508,40 @@ function hitTest(ix, iy) {
 canvasWrap.addEventListener('mousedown', e => {
   const { cx, cy } = canvasMouseCoord(e);
   const { x: ix, y: iy } = canvasToImage(cx, cy);
+
+  // Interactive mode: click toggles pressed state of non-knob regions
+  if (state.interactiveMode) {
+    // Hit-test ignoring the r.locked filter so chassis clicks pass through
+    let hit = null;
+    for (let i = state.regions.length - 1; i >= 0; i--) {
+      const r = state.regions[i];
+      if (r.locked) continue;
+      if (r.shape === 'knob') continue; // knobs non-interactive for now
+      // Body-only hit (no handles, no resize)
+      if (r.shape === 'circle') {
+        const cxx = r.x + r.w/2, cyy = r.y + r.h/2;
+        const rx = r.w/2, ry = r.h/2;
+        if (rx > 0 && ry > 0) {
+          const nx = (ix - cxx) / rx, ny = (iy - cyy) / ry;
+          if (nx*nx + ny*ny <= 1) { hit = r; break; }
+        }
+      } else if (r.shape === 'annulus') {
+        const cxx = r.x + r.w/2, cyy = r.y + r.h/2;
+        const outerR = Math.min(r.w, r.h) / 2;
+        const innerR = outerR * (r.innerPct ?? 0.5);
+        const d = Math.hypot(ix - cxx, iy - cyy);
+        if (d <= outerR && d >= innerR) { hit = r; break; }
+      } else {
+        if (ix >= r.x && ix <= r.x + r.w && iy >= r.y && iy <= r.y + r.h) { hit = r; break; }
+      }
+    }
+    if (hit) {
+      pushUndo();
+      hit.pressed = !hit.pressed;
+      render();
+    }
+    return;
+  }
 
   if (state.mode === 'swipe' && state.tool === 'view') {
     state.swipeDrag = true;
@@ -950,6 +1030,11 @@ function render() {
     // Draw dropdowns first (they sit BEHIND knobs/decals visually in the GUI since
     // they open underneath a button — but on the canvas layering, dropdown comes first)
     state.regions.filter(r => r.shape === 'dropdown').forEach(r => {
+      // In interactive mode, only show dropdown if its parent button is pressed
+      if (state.interactiveMode) {
+        const parent = findParentButton(r);
+        if (!parent || !parent.pressed) return;
+      }
       const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
       const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
       const rw = r.w * state.scale, rh = r.h * state.scale;
