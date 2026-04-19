@@ -747,21 +747,21 @@
       "crop_file": "region_42.png"
     },
     {
-      "id": 45,
+      "id": 43,
       "name": "decal_45",
       "shape": "decal",
       "locked": false,
-      "x": 1267.987222481934,
-      "y": 584.5354920253732,
-      "w": 143.98056351721803,
-      "h": 40.70876638354348,
-      "source": "B",
-      "src_off_x": 0,
-      "src_off_y": 0,
+      "x": 1267,
+      "y": 584,
+      "w": 148,
+      "h": 42,
       "dst_off_x": 0,
       "dst_off_y": 0,
-      "crop_file": "decal_45.png"
+      "parent_name": null,
+      "crop_file": "decal_45.png",
+      "decal_filename": null
     }
   ],
-  "clone_overlay_file": "clone_overlay.png"
+  "clone_overlay_file": "clone_overlay.png",
+  "clone_overlay_pressed_file": "clone_overlay_pressed.png"
 }
