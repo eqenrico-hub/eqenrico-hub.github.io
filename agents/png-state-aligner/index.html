@@ -1578,8 +1578,8 @@ function render() {
       // knobs get a tight shadow and knob_mix a softer wider one.
       ctx.save();
       ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
-      ctx.shadowOffsetX = Math.max(3, rw * 0.060);
-      ctx.shadowOffsetY = Math.max(5, rh * 0.090);
+      ctx.shadowOffsetX = Math.max(1, rw * 0.025);
+      ctx.shadowOffsetY = Math.max(6, rh * 0.110);
       ctx.shadowBlur    = Math.max(5, rw * 0.080);
       ctx.drawImage(r.decalImage, rx, ry, rw, rh);
       ctx.restore();
