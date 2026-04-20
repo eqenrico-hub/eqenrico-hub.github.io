@@ -7,10 +7,10 @@
       "name": "rect_3",
       "shape": "rect",
       "locked": false,
-      "x": 314,
-      "y": 194,
+      "x": 313.1206140350877,
+      "y": 200.4488304093568,
       "w": 43,
-      "h": 166,
+      "h": 156.6198830409356,
       "source": "B",
       "src_off_x": 0,
       "src_off_y": 0,
@@ -23,8 +23,8 @@
       "name": "rect_4",
       "shape": "rect",
       "locked": false,
-      "x": 315,
-      "y": 274,
+      "x": 315.29312865497076,
+      "y": 234.29917178448738,
       "w": 38,
       "h": 63,
       "source": "B",
@@ -758,6 +758,7 @@
       "dst_off_x": 0,
       "dst_off_y": 0,
       "parent_name": null,
+      "always_visible": false,
       "crop_file": "decal_45.png",
       "decal_filename": null
     },
@@ -775,7 +776,7 @@
       "parent_name": null,
       "always_visible": true,
       "crop_file": "slider_rail_mix.png",
-      "decal_filename": "slider_rail_mix.png"
+      "decal_filename": null
     }
   ],
   "clone_overlay_file": "clone_overlay.png",
