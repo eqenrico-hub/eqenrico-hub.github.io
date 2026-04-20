@@ -1570,12 +1570,19 @@ function render() {
       if (state.imgKnobIndicator) {
         const v = (r.value == null ? 0.5 : r.value);
         const angle = (-135 + 270 * v) * Math.PI / 180;
-        const cx = rx + rw / 2, cy = ry + rh / 2;
+        // Snap rotation origin and draw size to integer pixels so every knob's
+        // indicator goes through identical sub-pixel sampling — otherwise
+        // canvas anti-aliasing renders slightly different thicknesses per knob
+        // when state.scale makes the positions fractional.
+        const cx = Math.round(rx + rw / 2);
+        const cy = Math.round(ry + rh / 2);
+        const iw = Math.round(rw);
+        const ih = Math.round(rh);
         ctx.save();
         ctx.globalAlpha = 1.0;
         ctx.translate(cx, cy);
         ctx.rotate(angle);
-        ctx.drawImage(state.imgKnobIndicator, -rw / 2, -rh / 2, rw, rh);
+        ctx.drawImage(state.imgKnobIndicator, -Math.floor(iw / 2), -Math.floor(ih / 2), iw, ih);
         ctx.restore();
       }
     }
