@@ -1633,43 +1633,13 @@ function render() {
         ctx.fill();
         ctx.restore();
 
-        // Pass 2 — the indicator itself on top, with a gradient + highlight
-        // so it reads as a small 3D bar resting on the knob rings instead of
-        // a flat decal. Lighting direction matches the knob body (SE shadow
-        // → light from NW), so the left/top edges are brighter.
+        // Pass 2 — the indicator itself on top, flat rose fill.
         ctx.save();
         ctx.translate(cx, cy);
         ctx.rotate(angle);
-
-        // Body gradient: bright rose on the upper-left side fading to the
-        // base deep rose on the lower-right. Perpendicular to the bar axis.
-        const bodyGrad = ctx.createLinearGradient(x0, 0, x1, 0);
-        bodyGrad.addColorStop(0.00, 'rgb(245, 120, 145)');
-        bodyGrad.addColorStop(0.35, 'rgb(225, 92, 120)');
-        bodyGrad.addColorStop(1.00, 'rgb(175, 52, 80)');
-        ctx.fillStyle = bodyGrad;
+        ctx.fillStyle = 'rgb(217, 79, 108)';
         indicatorPath();
         ctx.fill();
-
-        // Top sheen: a thin highlight streak hugging the upper-left edge of
-        // the pill, clipped by the pill path. Gives the impression of a
-        // cylindrical/pill cross-section catching light.
-        ctx.save();
-        indicatorPath();
-        ctx.clip();
-        const sheen = ctx.createLinearGradient(x0, 0, x1, 0);
-        sheen.addColorStop(0.00, 'rgba(255, 220, 225, 0.85)');
-        sheen.addColorStop(0.18, 'rgba(255, 220, 225, 0.00)');
-        sheen.addColorStop(1.00, 'rgba(255, 220, 225, 0.00)');
-        ctx.fillStyle = sheen;
-        ctx.fillRect(x0, yTop - 1, indW, indH + 2);
-        ctx.restore();
-
-        // Soft bottom contact shadow line where the bar rests on the rings
-        // below it — sold colour, rotated with the bar, very thin.
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.30)';
-        ctx.fillRect(x0 + 0.5, yBot - 0.5, indW - 1, Math.max(0.8, indW * 0.08));
-
         ctx.restore();
       }
     }
