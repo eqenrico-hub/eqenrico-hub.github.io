@@ -1596,15 +1596,18 @@ function render() {
         ctx.rotate(angle);
         ctx.fillStyle = 'rgb(217, 79, 108)';
         ctx.beginPath();
-        // Start at bottom-left, go up to top-left, arc over the top cap, down
-        // to bottom-right, straight back to bottom-left. Coords are centered:
-        // Y -indInner is just above knob centre, Y -(indInner+indH) is the tip.
+        // Rounded-top rectangle: two small quarter arcs at the top corners,
+        // flat bottom. Coords centred on knob centre: yBot sits just outside
+        // the centre dot, yTop is the tip.
         const yBot = -indInner;
         const yTop = -(indInner + indH);
         const x0 = -indW / 2, x1 = indW / 2;
+        const rClamped = Math.min(radius, indW / 2, indH / 2);
         ctx.moveTo(x0, yBot);
-        ctx.lineTo(x0, yTop + radius);
-        ctx.arc(0, yTop + radius, radius, Math.PI, 0, false);
+        ctx.lineTo(x0, yTop + rClamped);
+        ctx.arcTo(x0, yTop, x0 + rClamped, yTop, rClamped);
+        ctx.lineTo(x1 - rClamped, yTop);
+        ctx.arcTo(x1, yTop, x1, yTop + rClamped, rClamped);
         ctx.lineTo(x1, yBot);
         ctx.closePath();
         ctx.fill();
