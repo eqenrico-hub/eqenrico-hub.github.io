@@ -781,7 +781,7 @@
     },
     {
       "id": 45,
-      "name": "decal_45",
+      "name": "decal_46",
       "shape": "decal",
       "locked": false,
       "x": 1.052687822656594,
@@ -792,7 +792,7 @@
       "dst_off_y": 0,
       "parent_name": null,
       "always_visible": true,
-      "crop_file": "decal_45.png",
+      "crop_file": "decal_46.png",
       "decal_filename": "ChatGPT Image Apr 20, 2026 at 03_49_47 PM.png"
     }
   ],

@@ -2195,9 +2195,17 @@ function addDroppedImageAsDecal(file, dropImageX, dropImageY) {
     const initW = Math.max(60, Math.round(Math.min(refW, refH) * 0.15));
     const initH = Math.round(initW * (im.naturalHeight / im.naturalWidth));
     pushUndo();
+    // Unique name: pick max existing decal_N + 1, so dropped images never
+    // collide with existing decals (which would overwrite each other on
+    // bundle export since crop_file is keyed on name).
+    let maxN = 0;
+    for (const other of state.regions) {
+      const m = /^decal_(\d+)$/.exec(other.name || '');
+      if (m) maxN = Math.max(maxN, parseInt(m[1], 10));
+    }
     const r = {
       id: state.nextId++,
-      name: `decal_${state.regions.length + 1}`,
+      name: `decal_${maxN + 1}`,
       shape: 'decal',
       pressed: false,
       x: Math.round(dropImageX - initW / 2),
