@@ -2105,7 +2105,10 @@ function importShapesData(m) {
         x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.w), h: Math.round(r.h),
       };
       if (shape === 'knob' && state.imgKnobRender) reg.decalImage = state.imgKnobRender;
-      if (shape === 'decal') reg.alwaysVisible = !!r.always_visible;
+      if (shape === 'decal') {
+        reg.alwaysVisible = !!r.always_visible;
+        reg._pendingParentName = r.parent_name || null;
+      }
       if (shape === 'dropdown') {
         reg.bottomRadiusPct = r.bottom_radius_pct ?? r.bottomRadiusPct ?? 15;
         reg.texScale = r.tex_scale ?? r.texScale ?? 1.0;
