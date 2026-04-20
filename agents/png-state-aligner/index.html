@@ -1753,11 +1753,34 @@ function render() {
       octx.restore();
     }
     if (state.cloneCursor) {
+      const cx = state.cloneCursor.x * state.scale;
+      const cy = state.cloneCursor.y * state.scale;
+      const br = state.cloneBrush * state.scale;
+      // Preview: if a source is set and we're not actively dragging, show what
+      // a click here would stamp — same math as cloneStamp() at start == cursor,
+      // so offset collapses to source, centered inside the brush circle.
+      if (state.cloneSource && !state.cloneDragging) {
+        const src = getCompositeSource();
+        if (src) {
+          const brush = state.cloneBrush;
+          const sx = state.cloneSource.x - brush;
+          const sy = state.cloneSource.y - brush;
+          octx.save();
+          octx.beginPath();
+          octx.arc(cx, cy, br, 0, Math.PI * 2);
+          octx.clip();
+          octx.globalAlpha = 0.75;
+          octx.drawImage(src,
+            sx, sy, brush * 2, brush * 2,
+            cx - br, cy - br, br * 2, br * 2);
+          octx.restore();
+        }
+      }
       octx.save();
       octx.strokeStyle = '#4fd1ff';
       octx.lineWidth = 1.5;
       octx.beginPath();
-      octx.arc(state.cloneCursor.x * state.scale, state.cloneCursor.y * state.scale, state.cloneBrush * state.scale, 0, Math.PI * 2);
+      octx.arc(cx, cy, br, 0, Math.PI * 2);
       octx.stroke();
       octx.restore();
     }
