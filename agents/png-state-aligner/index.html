@@ -1567,22 +1567,35 @@ function render() {
       // (−135° → +135°). Indicator image is pre-framed at 12 o'clock, centered
       // on the same camera as the body, so a simple rotate-around-rect-center
       // produces the right sweep.
-      if (state.imgKnobIndicator) {
+      {
+        // Draw the indicator procedurally so the rounded top is visible on
+        // screen — Blender renders pixel-accurate bevels but at 1024→72 the
+        // corner radius collapses to < 1 px.
         const v = (r.value == null ? 0.5 : r.value);
         const angle = (-135 + 270 * v) * Math.PI / 180;
-        // Snap rotation origin and draw size to integer pixels so every knob's
-        // indicator goes through identical sub-pixel sampling — otherwise
-        // canvas anti-aliasing renders slightly different thicknesses per knob
-        // when state.scale makes the positions fractional.
         const cx = Math.round(rx + rw / 2);
         const cy = Math.round(ry + rh / 2);
-        const iw = Math.round(rw);
-        const ih = Math.round(rh);
+        const indW = Math.max(2, Math.round(rw * 0.065));   // ~4.7 px on 72 knob
+        const indH = Math.max(6, Math.round(rh * 0.23));    // ~16 px on 72 knob
+        const indInner = Math.round(rh * 0.07);             // start just outside the small center dot
+        const radius = indW / 2;                            // fully round top cap
         ctx.save();
-        ctx.globalAlpha = 1.0;
         ctx.translate(cx, cy);
         ctx.rotate(angle);
-        ctx.drawImage(state.imgKnobIndicator, -Math.floor(iw / 2), -Math.floor(ih / 2), iw, ih);
+        ctx.fillStyle = 'rgb(217, 79, 108)';
+        ctx.beginPath();
+        // Start at bottom-left, go up to top-left, arc over the top cap, down
+        // to bottom-right, straight back to bottom-left. Coords are centered:
+        // Y -indInner is just above knob centre, Y -(indInner+indH) is the tip.
+        const yBot = -indInner;
+        const yTop = -(indInner + indH);
+        const x0 = -indW / 2, x1 = indW / 2;
+        ctx.moveTo(x0, yBot);
+        ctx.lineTo(x0, yTop + radius);
+        ctx.arc(0, yTop + radius, radius, Math.PI, 0, false);
+        ctx.lineTo(x1, yBot);
+        ctx.closePath();
+        ctx.fill();
         ctx.restore();
       }
     }
