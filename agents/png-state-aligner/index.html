@@ -1769,7 +1769,12 @@ function render() {
           octx.beginPath();
           octx.arc(cx, cy, br, 0, Math.PI * 2);
           octx.clip();
-          octx.globalAlpha = 0.75;
+          // Neutral backdrop so the preview is distinguishable on dark source
+          // areas (otherwise black source pixels blend invisibly with the dark
+          // PNG behind the overlay canvas).
+          octx.fillStyle = 'rgba(255,255,255,0.35)';
+          octx.fillRect(cx - br, cy - br, br * 2, br * 2);
+          octx.globalAlpha = 1.0;
           octx.drawImage(src,
             sx, sy, brush * 2, brush * 2,
             cx - br, cy - br, br * 2, br * 2);
