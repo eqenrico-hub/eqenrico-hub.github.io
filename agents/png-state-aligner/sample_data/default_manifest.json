@@ -32,7 +32,8 @@
       "src_off_y": 0,
       "dst_off_x": 0,
       "dst_off_y": 0,
-      "crop_file": "rect_4.png"
+      "crop_file": "rect_4.png",
+      "handle_file": "slider_handle_native.png"
     },
     {
       "id": 3,

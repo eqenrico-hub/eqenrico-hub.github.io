@@ -419,6 +419,23 @@ document.getElementById('btnLoadDefaults').addEventListener('click', async () =>
           if (reg) reg.decalImage = im;
         } catch (_) {}
       }
+      // Rehydrate slider-handle PNG assets (overrides live capture from PNG_A)
+      for (const entry of (manifest.regions || []).filter(rr => rr.handle_file)) {
+        try {
+          const resp = await fetch('sample_data/' + entry.handle_file);
+          if (!resp.ok) continue;
+          const blob = await resp.blob();
+          const im = new Image();
+          await new Promise((res) => { im.onload = res; im.onerror = res; im.src = URL.createObjectURL(blob); });
+          const reg = state.regions.find(rr => rr.name === entry.name);
+          if (reg) {
+            const c = document.createElement('canvas');
+            c.width = im.naturalWidth; c.height = im.naturalHeight;
+            c.getContext('2d').drawImage(im, 0, 0);
+            state.sliderHandleImages[reg.id] = { img: c, sourceX: reg.x, sourceY: reg.y, fromFile: true };
+          }
+        } catch (_) {}
+      }
       refreshRegions(); render();
     }
   } catch (e) { console.warn('default manifest not loaded', e); }
@@ -1519,9 +1536,20 @@ function render() {
       const entry = state.sliderHandleImages[r.id];
       if (!entry || !entry.img) continue;
       const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
-      const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
-      const rw = r.w * state.scale, rh = r.h * state.scale;
-      ctx.drawImage(entry.img, rx, ry, rw, rh);
+      // When the handle PNG came from a file (handle_file), draw it at native
+      // size to guarantee zero distortion; center it inside the rect horizontally
+      // and anchor to rect top vertically (so it tracks the drag cleanly).
+      if (entry.fromFile) {
+        const iw = entry.img.width, ih = entry.img.height;
+        const cx = r.x + r.w / 2 + dox;
+        const rx = (cx - iw / 2) * state.scale;
+        const ry = (r.y + dox * 0 + (r.h - ih) / 2 + (r.dstOffY || 0)) * state.scale;
+        ctx.drawImage(entry.img, rx, ry, iw * state.scale, ih * state.scale);
+      } else {
+        const rx = (r.x + dox) * state.scale, ry = (r.y + (r.dstOffY || 0)) * state.scale;
+        const rw = r.w * state.scale, rh = r.h * state.scale;
+        ctx.drawImage(entry.img, rx, ry, rw, rh);
+      }
     }
 
     // Dropdowns rendered ON TOP of knobs/decals (a dropdown opens over the interface,
