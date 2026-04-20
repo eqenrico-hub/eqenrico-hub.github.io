@@ -1573,7 +1573,16 @@ function render() {
       const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
       const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
       const rw = r.w * state.scale, rh = r.h * state.scale;
+      // Drop shadow: light falls from upper-left (matches the "attack" knob
+      // reference in PNG_A). Offset + blur scale with knob size so small
+      // knobs get a tight shadow and knob_mix a softer wider one.
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.42)';
+      ctx.shadowOffsetX = Math.max(2, rw * 0.035);
+      ctx.shadowOffsetY = Math.max(3, rh * 0.055);
+      ctx.shadowBlur    = Math.max(4, rw * 0.07);
       ctx.drawImage(r.decalImage, rx, ry, rw, rh);
+      ctx.restore();
       // Indicator (Shape_17/18_circle_ind rendered from Blender). Rotates with
       // the knob's normalized value v in [0..1] across the JUCE rotary sweep
       // (−135° → +135°). Indicator image is pre-framed at 12 o'clock, centered
