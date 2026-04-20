@@ -1572,6 +1572,7 @@ function render() {
         const angle = (-135 + 270 * v) * Math.PI / 180;
         const cx = rx + rw / 2, cy = ry + rh / 2;
         ctx.save();
+        ctx.globalAlpha = 0.8;
         ctx.translate(cx, cy);
         ctx.rotate(angle);
         ctx.drawImage(state.imgKnobIndicator, -rw / 2, -rh / 2, rw, rh);
