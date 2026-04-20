@@ -401,6 +401,16 @@ document.getElementById('btnLoadDefaults').addEventListener('click', async () =>
     });
     state.imgKnobRender = knobImg;
   } catch (e) { console.warn('knob render not loaded', e); }
+  try {
+    const indImg = await new Promise((res, rej) => {
+      const im = new Image();
+      im.crossOrigin = 'anonymous';
+      im.onload = () => res(im);
+      im.onerror = rej;
+      im.src = 'sample_data/knob_indicator.png';
+    });
+    state.imgKnobIndicator = indImg;
+  } catch (e) { console.warn('knob indicator not loaded', e); }
 
   try {
     const r = await fetch('sample_data/default_manifest.json');
@@ -803,6 +813,24 @@ canvasWrap.addEventListener('mousedown', e => {
 
   // Interactive mode: click toggles pressed state; drag inside a container rect = slider move
   if (state.interactiveMode) {
+    // Knob drag — vertical drag rotates knob across its −135°..+135° range
+    let knobHit = null;
+    for (let i = state.regions.length - 1; i >= 0; i--) {
+      const r = state.regions[i];
+      if (r.shape !== 'knob' || r.locked) continue;
+      const cxx = r.x + r.w/2, cyy = r.y + r.h/2;
+      const rr = r.w/2;
+      if (Math.hypot(ix - cxx, iy - cyy) <= rr) { knobHit = r; break; }
+    }
+    if (knobHit) {
+      state.knobDrag = {
+        regionId: knobHit.id,
+        startIY: iy,
+        startValue: (knobHit.value == null ? 0.5 : knobHit.value),
+      };
+      state.selectedId = knobHit.id;
+      return;
+    }
     let hit = null;
     // Pass 0: buttons (rect/circle/annulus) — interactive targets get priority
     // Pass 1: decals (graphic overlays, only hit if no button underneath)
@@ -925,6 +953,19 @@ window.addEventListener('mousemove', e => {
     state.cloneCursor = null; render();
   }
 
+  // Interactive knob rotate
+  if (state.knobDrag) {
+    const { cx, cy } = canvasMouseCoord(e);
+    const { x: _ix, y: iy4 } = canvasToImage(cx, cy);
+    const kd = state.knobDrag;
+    const r = state.regions.find(rr => rr.id === kd.regionId);
+    if (!r) return;
+    // 200 image pixels of vertical drag = full 0..1 range. Up = increase.
+    const dv = -(iy4 - kd.startIY) / 200;
+    r.value = Math.max(0, Math.min(1, kd.startValue + dv));
+    render();
+    return;
+  }
   // Interactive slider drag
   if (state.sliderDrag) {
     const { cx, cy } = canvasMouseCoord(e);
@@ -1137,6 +1178,11 @@ window.addEventListener('mouseup', e => {
       state.redoStack = [];
     }
     state._undoSnapshotForEdit = null;
+  }
+  // End interactive knob drag
+  if (state.knobDrag) {
+    state.knobDrag = null;
+    render();
   }
   // End interactive slider drag: if user didn't actually move, treat as a click (toggle pressed)
   if (state.sliderDrag) {
@@ -1516,6 +1562,21 @@ function render() {
       const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
       const rw = r.w * state.scale, rh = r.h * state.scale;
       ctx.drawImage(r.decalImage, rx, ry, rw, rh);
+      // Indicator (Shape_17/18_circle_ind rendered from Blender). Rotates with
+      // the knob's normalized value v in [0..1] across the JUCE rotary sweep
+      // (−135° → +135°). Indicator image is pre-framed at 12 o'clock, centered
+      // on the same camera as the body, so a simple rotate-around-rect-center
+      // produces the right sweep.
+      if (state.imgKnobIndicator) {
+        const v = (r.value == null ? 0.5 : r.value);
+        const angle = (-135 + 270 * v) * Math.PI / 180;
+        const cx = rx + rw / 2, cy = ry + rh / 2;
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(angle);
+        ctx.drawImage(state.imgKnobIndicator, -rw / 2, -rh / 2, rw, rh);
+        ctx.restore();
+      }
     }
     const decals = state.regions.filter(r => r.shape === 'decal' && r.decalImage);
     for (const r of decals) {
