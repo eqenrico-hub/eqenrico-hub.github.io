@@ -1597,28 +1597,48 @@ function render() {
         const cx = Math.round(rx + rw / 2);
         const cy = Math.round(ry + rh / 2);
         const indW = Math.max(2, Math.round(rw * 0.065));
-        const indH = Math.max(6, Math.round(rh * 0.207));   // −5% from previous
+        const indH = Math.max(6, Math.round(rh * 0.207));
         const indInner = Math.round(rh * 0.07);
-        const radius = indW * 0.18;                         // barely chamfered top
-        ctx.save();
-        ctx.translate(cx, cy);
-        ctx.rotate(angle);
-        ctx.fillStyle = 'rgb(217, 79, 108)';
-        ctx.beginPath();
-        // Rounded-top rectangle: two small quarter arcs at the top corners,
-        // flat bottom. Coords centred on knob centre: yBot sits just outside
-        // the centre dot, yTop is the tip.
+        const radius = indW * 0.18;
         const yBot = -indInner;
         const yTop = -(indInner + indH);
         const x0 = -indW / 2, x1 = indW / 2;
         const rClamped = Math.min(radius, indW / 2, indH / 2);
-        ctx.moveTo(x0, yBot);
-        ctx.lineTo(x0, yTop + rClamped);
-        ctx.arcTo(x0, yTop, x0 + rClamped, yTop, rClamped);
-        ctx.lineTo(x1 - rClamped, yTop);
-        ctx.arcTo(x1, yTop, x1, yTop + rClamped, rClamped);
-        ctx.lineTo(x1, yBot);
-        ctx.closePath();
+
+        // Shared path builder — call after translating + rotating the ctx.
+        function indicatorPath() {
+          ctx.beginPath();
+          ctx.moveTo(x0, yBot);
+          ctx.lineTo(x0, yTop + rClamped);
+          ctx.arcTo(x0, yTop, x0 + rClamped, yTop, rClamped);
+          ctx.lineTo(x1 - rClamped, yTop);
+          ctx.arcTo(x1, yTop, x1, yTop + rClamped, rClamped);
+          ctx.lineTo(x1, yBot);
+          ctx.closePath();
+        }
+
+        // Pass 1 — world-space drop shadow so the indicator reads as elevated
+        // above the knob top face. Shadow offset is in canvas coords (not
+        // rotated with the indicator) so the light direction stays consistent
+        // with the knob body shadow (SE).
+        const shOffX = Math.max(1, rw * 0.018);
+        const shOffY = Math.max(2, rw * 0.030);
+        const shBlur = Math.max(2, rw * 0.030);
+        ctx.save();
+        ctx.translate(cx + shOffX, cy + shOffY);
+        ctx.rotate(angle);
+        ctx.filter = `blur(${shBlur}px)`;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.42)';
+        indicatorPath();
+        ctx.fill();
+        ctx.restore();
+
+        // Pass 2 — the indicator itself on top, sharp.
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(angle);
+        ctx.fillStyle = 'rgb(217, 79, 108)';
+        indicatorPath();
         ctx.fill();
         ctx.restore();
       }
