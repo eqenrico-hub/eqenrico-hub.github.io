@@ -429,6 +429,18 @@ document.getElementById('btnLoadDefaults').addEventListener('click', async () =>
           if (reg) reg.decalImage = im;
         } catch (_) {}
       }
+      // Rehydrate per-knob custom images (overrides shared imgKnobRender)
+      for (const entry of (manifest.regions || []).filter(rr => rr.shape === 'knob' && rr.knob_image_file)) {
+        try {
+          const resp = await fetch('sample_data/' + entry.knob_image_file + '?v=' + Date.now());
+          if (!resp.ok) continue;
+          const blob = await resp.blob();
+          const im = new Image();
+          await new Promise((res) => { im.onload = res; im.onerror = res; im.src = URL.createObjectURL(blob); });
+          const reg = state.regions.find(rr => rr.name === entry.name && rr.shape === 'knob');
+          if (reg) reg.decalImage = im;
+        } catch (_) {}
+      }
       // Rehydrate slider-handle PNG assets (overrides live capture from PNG_A)
       for (const entry of (manifest.regions || []).filter(rr => rr.handle_file)) {
         try {
@@ -1973,6 +1985,9 @@ document.getElementById('btnExportAll').addEventListener('click', async () => {
     const fname = `${r.name}.png`;
     zip.file(fname, blob);
     const entry = { id: r.id, name: r.name, shape: r.shape || 'rect', locked: !!r.locked, x: r.x, y: r.y, w: r.w, h: r.h, inner_pct: r.innerPct, source: r.source || 'B', src_off_x: r.srcOffX || 0, src_off_y: r.srcOffY || 0, dst_off_x: r.dstOffX || 0, dst_off_y: r.dstOffY || 0, crop_file: fname };
+    if (r.shape === 'knob' && r.knobImageFile) {
+      entry.knob_image_file = r.knobImageFile;
+    }
     if (r.shape === 'dropdown') {
       entry.bottom_radius_pct = r.bottomRadiusPct ?? 15;
       entry.tex_scale = r.texScale ?? 1.0;
@@ -2105,6 +2120,7 @@ function importShapesData(m) {
         x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.w), h: Math.round(r.h),
       };
       if (shape === 'knob' && state.imgKnobRender) reg.decalImage = state.imgKnobRender;
+      if (shape === 'knob' && r.knob_image_file) reg._pendingKnobImage = r.knob_image_file;
       if (shape === 'decal') {
         reg.alwaysVisible = !!r.always_visible;
         reg._pendingParentName = r.parent_name || null;
@@ -2123,12 +2139,16 @@ function importShapesData(m) {
     });
     lockBiggestRect(regs);
     state.regions = regs;
-    // Second pass: resolve pendingParentName → id
+    // Second pass: resolve pendingParentName → id, stash knob image filename
     for (const r of state.regions) {
       if (r._pendingParentName) {
         const parent = state.regions.find(o => o.name === r._pendingParentName);
         if (parent) r.parentId = parent.id;
         delete r._pendingParentName;
+      }
+      if (r._pendingKnobImage) {
+        r.knobImageFile = r._pendingKnobImage;
+        delete r._pendingKnobImage;
       }
     }
     refreshRegions(); render();

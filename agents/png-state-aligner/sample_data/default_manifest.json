@@ -794,6 +794,23 @@
       "always_visible": true,
       "crop_file": "decal_46.png",
       "decal_filename": null
+    },
+    {
+      "id": 999,
+      "name": "knob_mix",
+      "shape": "knob",
+      "locked": false,
+      "x": 73,
+      "y": 187,
+      "w": 200,
+      "h": 200,
+      "source": "B",
+      "src_off_x": 0,
+      "src_off_y": 0,
+      "dst_off_x": 0,
+      "dst_off_y": 0,
+      "crop_file": "knob_mix.png",
+      "knob_image_file": "gigaknob_render.png"
     }
   ],
   "clone_overlay_file": "clone_overlay.png",
