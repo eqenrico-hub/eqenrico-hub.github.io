@@ -1576,9 +1576,9 @@ function render() {
         const cx = Math.round(rx + rw / 2);
         const cy = Math.round(ry + rh / 2);
         const indW = Math.max(2, Math.round(rw * 0.065));   // ~4.7 px on 72 knob
-        const indH = Math.max(6, Math.round(rh * 0.23));    // ~16 px on 72 knob
+        const indH = Math.max(6, Math.round(rh * 0.218));   // ~15.7 px on 72 knob (−5%)
         const indInner = Math.round(rh * 0.07);             // start just outside the small center dot
-        const radius = indW / 2;                            // fully round top cap
+        const radius = indW * 0.35;                         // subtle rounded top, not a full cap
         ctx.save();
         ctx.translate(cx, cy);
         ctx.rotate(angle);
