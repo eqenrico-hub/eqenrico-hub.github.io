@@ -407,7 +407,7 @@ document.getElementById('btnLoadDefaults').addEventListener('click', async () =>
       im.crossOrigin = 'anonymous';
       im.onload = () => res(im);
       im.onerror = rej;
-      im.src = 'sample_data/knob_indicator.png';
+      im.src = 'sample_data/knob_indicator.png?v=' + Date.now();
     });
     state.imgKnobIndicator = indImg;
   } catch (e) { console.warn('knob indicator not loaded', e); }
