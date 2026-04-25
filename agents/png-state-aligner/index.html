@@ -883,6 +883,10 @@ canvasWrap.addEventListener('mousedown', e => {
         const r = state.regions[i];
         if (r.locked) continue;
         if (r.shape === 'knob') continue;
+        // Text labels are non-interactive in interactive mode — clicks fall
+        // through to the button rect underneath so its pressed state (and the
+        // linked text colour/position) toggle correctly.
+        if (r.shape === 'text') continue;
         if (pass === 0 && (r.shape === 'dropdown' || r.shape === 'decal')) continue;
         if (pass === 1 && r.shape !== 'decal') continue;
         if (pass === 2 && r.shape !== 'dropdown') continue;
