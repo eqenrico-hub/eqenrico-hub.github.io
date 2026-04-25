@@ -94,7 +94,7 @@ title: PNG State Aligner
     <label>Diff threshold <span id="thrVal">25</span></label>
     <input type="range" id="threshold" min="0" max="100" value="25">
     <label>Zoom <span id="zoomVal">100%</span></label>
-    <input type="range" id="zoom" min="25" max="800" value="100">
+    <input type="range" id="zoom" min="25" max="3200" value="100">
 
     <h2>3. Draw crop regions</h2>
     <div class="tool-btns">
@@ -749,7 +749,7 @@ document.getElementById('stage').addEventListener('wheel', e => {
   const offsetY = cursorY - stageCenterY - state.panY;
 
   const delta = -Math.sign(e.deltaY) * 0.12;
-  const newZoom = Math.max(0.25, Math.min(8, state.zoom * (1 + delta)));
+  const newZoom = Math.max(0.25, Math.min(32, state.zoom * (1 + delta)));
   const ratio = newZoom / state.zoom;
 
   // Keep the pixel under cursor fixed during zoom
@@ -1314,8 +1314,8 @@ function refreshRegions() {
           </div>
         </div>
         <div class="rcoords" style="grid-template-columns:1fr 1fr 1fr;">
-          <div><label>pressed Δx</label><input type="number" class="ctxtdx" data-id="${r.id}" value="${r.pressedOffsetX || 0}" step="1"></div>
-          <div><label>pressed Δy</label><input type="number" class="ctxtdy" data-id="${r.id}" value="${r.pressedOffsetY || 0}" step="1"></div>
+          <div><label>pressed Δx</label><input type="number" class="ctxtdx" data-id="${r.id}" value="${r.pressedOffsetX || 0}" step="0.1"></div>
+          <div><label>pressed Δy</label><input type="number" class="ctxtdy" data-id="${r.id}" value="${r.pressedOffsetY || 0}" step="0.1"></div>
           <div><label>presets</label>
             <select class="ctxtdpreset" data-id="${r.id}" style="width:100%; font-size:10px; padding:2px; background:#111; color:var(--fg); border:1px solid #333; border-radius:3px;">
               <option value="">—</option>
@@ -1648,11 +1648,11 @@ function refreshRegions() {
     if (r) { pushUndo(); r.pressedColor = e.target.value; render(); }
   }));
   ['ctxtdx','ctxtdy'].forEach(cls => {
-    list.querySelectorAll('.' + cls).forEach(i => i.addEventListener('change', e => {
+    list.querySelectorAll('.' + cls).forEach(i => i.addEventListener('input', e => {
       const r = state.regions.find(x => x.id === +e.target.dataset.id);
       if (!r) return;
       pushUndo();
-      const v = +e.target.value || 0;
+      const v = parseFloat(e.target.value) || 0;
       if (cls === 'ctxtdx') r.pressedOffsetX = v; else r.pressedOffsetY = v;
       render();
     }));
