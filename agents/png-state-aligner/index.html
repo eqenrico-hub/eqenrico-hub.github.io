@@ -128,6 +128,10 @@ title: PNG State Aligner
     <input type="file" id="fileDecal" accept="image/png" style="display:none">
     <div class="hint">Upload a transparent PNG (e.g. a metal ring). It becomes a draggable/resizable region that renders the image at its bbox.</div>
 
+    <h2>4b. Text label</h2>
+    <button id="btnAddText" style="background: #3a3a2a;">+ Add text label</button>
+    <div class="hint">Drops a text region at canvas centre. In the region inspector you can edit content, font, size, colour, link to a parent button, and offset its position when the parent is pressed.</div>
+
     <h2>5. Import / Export</h2>
     <button id="btnImportShapesJson" style="background: #3a2a4a;">Import shapes.json (GUI Frame Tool)</button>
     <button id="btnExportAll">Export crops bundle (.zip)</button>
@@ -1227,7 +1231,7 @@ function refreshRegions() {
     if (r.id === state.selectedId) cls.push('selected');
     if (r.pressed) cls.push('pressed');
     div.className = cls.join(' ');
-    const shapeLabel = r.shape === 'dropdown' ? '⤓' : (r.shape === 'knob' ? '🎛️' : (r.shape === 'decal' ? '🖼️' : (r.shape === 'annulus' ? '◎' : (r.shape === 'circle' ? '○' : '▭'))));
+    const shapeLabel = r.shape === 'dropdown' ? '⤓' : (r.shape === 'knob' ? '🎛️' : (r.shape === 'decal' ? '🖼️' : (r.shape === 'text' ? '🅰️' : (r.shape === 'annulus' ? '◎' : (r.shape === 'circle' ? '○' : '▭')))));
     const disabled = r.locked ? 'disabled' : '';
     const lockLabel = r.locked ? '🔒 ' : '';
     const src = r.source || 'B';
@@ -1241,6 +1245,56 @@ function refreshRegions() {
         <div><label>h</label><input type="number" class="ch" data-id="${r.id}" value="${r.h}" ${disabled}></div>
       </div>
       ${r.shape === 'annulus' ? `<div style="margin:3px 0;"><label style="font-size:10px;">inner % (hole) <span id="ipv${r.id}">${Math.round((r.innerPct ?? 0.5) * 100)}</span></label><input type="range" class="cinner" data-id="${r.id}" min="0" max="95" value="${Math.round((r.innerPct ?? 0.5) * 100)}" step="0.5" ${disabled}></div>` : ''}
+      ${r.shape === 'text' ? `
+        <div style="margin:3px 0;"><label style="font-size:10px;">text content</label>
+          <input type="text" class="ctxt" data-id="${r.id}" value="${(r.text || '').replace(/"/g,'&quot;')}" style="width:100%; font-size:11px; padding:3px; background:#111; color:var(--fg); border:1px solid #333; border-radius:3px;"></div>
+        <div class="rcoords" style="grid-template-columns:1fr 1fr;">
+          <div><label>font</label>
+            <select class="ctxtfont" data-id="${r.id}" style="width:100%; font-size:10px; padding:2px; background:#111; color:var(--fg); border:1px solid #333; border-radius:3px;">
+              ${['Helvetica, Arial, sans-serif','Inter, sans-serif','Georgia, serif','Times New Roman, serif','Courier New, monospace','Menlo, monospace','Impact, sans-serif','Trebuchet MS, sans-serif','Verdana, sans-serif','Roboto, sans-serif'].map(f => `<option value="${f}" ${r.fontFamily===f?'selected':''}>${f.split(',')[0]}</option>`).join('')}
+            </select>
+          </div>
+          <div><label>size</label><input type="number" class="ctxtsize" data-id="${r.id}" value="${r.fontSize || 18}" step="1" min="6" max="200"></div>
+          <div><label>weight</label>
+            <select class="ctxtwt" data-id="${r.id}" style="width:100%; font-size:10px; padding:2px; background:#111; color:var(--fg); border:1px solid #333; border-radius:3px;">
+              ${['300','400','500','600','700','800','900'].map(w => `<option value="${w}" ${(r.fontWeight||'700')===w?'selected':''}>${w}</option>`).join('')}
+            </select>
+          </div>
+          <div><label>align</label>
+            <select class="ctxtalign" data-id="${r.id}" style="width:100%; font-size:10px; padding:2px; background:#111; color:var(--fg); border:1px solid #333; border-radius:3px;">
+              ${['left','center','right'].map(a => `<option value="${a}" ${(r.textAlign||'center')===a?'selected':''}>${a}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="rcoords" style="grid-template-columns:1fr 1fr;">
+          <div><label>colour</label><input type="color" class="ctxtcolor" data-id="${r.id}" value="${r.color || '#ffffff'}" style="width:100%; height:24px; padding:0; border:1px solid #333;"></div>
+          <div><label>pressed col</label><input type="color" class="ctxtpcolor" data-id="${r.id}" value="${r.pressedColor || r.color || '#ffffff'}" style="width:100%; height:24px; padding:0; border:1px solid #333;"></div>
+        </div>
+        <div class="rcoords" style="grid-template-columns:1fr 1fr 1fr;">
+          <div><label>pressed Δx</label><input type="number" class="ctxtdx" data-id="${r.id}" value="${r.pressedOffsetX || 0}" step="1"></div>
+          <div><label>pressed Δy</label><input type="number" class="ctxtdy" data-id="${r.id}" value="${r.pressedOffsetY || 0}" step="1"></div>
+          <div><label>presets</label>
+            <select class="ctxtdpreset" data-id="${r.id}" style="width:100%; font-size:10px; padding:2px; background:#111; color:var(--fg); border:1px solid #333; border-radius:3px;">
+              <option value="">—</option>
+              <option value="0,0">none</option>
+              <option value="2,2">↘ +2,+2</option>
+              <option value="-2,2">↙ -2,+2</option>
+              <option value="2,-2">↗ +2,-2</option>
+              <option value="-2,-2">↖ -2,-2</option>
+              <option value="3,3">↘ +3,+3</option>
+              <option value="-3,3">↙ -3,+3</option>
+              <option value="3,-3">↗ +3,-3</option>
+              <option value="-3,-3">↖ -3,-3</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin:3px 0;"><label style="font-size:10px;">parent button (text moves to pressed Δ when parent is pressed)</label>
+          <select class="cparent" data-id="${r.id}" style="width:100%; font-size:10px; padding:2px; background:#111; color:var(--fg); border:1px solid #333; border-radius:3px;">
+            <option value="">(no link — toggle the text region itself)</option>
+            ${state.regions.filter(o => o.shape !== 'text' && o.shape !== 'decal' && o.shape !== 'dropdown' && o.shape !== 'knob' && o.shape !== 'annulus' && !o.locked).map(o => `<option value="${o.id}" ${r.parentId === o.id ? 'selected' : ''}>${o.name}</option>`).join('')}
+          </select>
+        </div>
+      ` : ''}
       ${r.shape === 'decal' ? `
         <div style="margin:3px 0;"><label style="font-size:10px;">parent button (leave empty = always visible)</label>
           <select class="cparent" data-id="${r.id}" style="width:100%; font-size:10px; padding:2px; background:#111; color:var(--fg); border:1px solid #333; border-radius:3px;">
@@ -1520,6 +1574,54 @@ function refreshRegions() {
     r.parentId = v ? +v : null;
     render();
   }));
+
+  // Text region inputs
+  list.querySelectorAll('.ctxt').forEach(i => i.addEventListener('input', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (r) { pushUndo(); r.text = e.target.value; render(); }
+  }));
+  list.querySelectorAll('.ctxtfont').forEach(i => i.addEventListener('change', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (r) { pushUndo(); r.fontFamily = e.target.value; render(); }
+  }));
+  list.querySelectorAll('.ctxtsize').forEach(i => i.addEventListener('change', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (r) { pushUndo(); r.fontSize = Math.max(6, +e.target.value); render(); }
+  }));
+  list.querySelectorAll('.ctxtwt').forEach(i => i.addEventListener('change', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (r) { pushUndo(); r.fontWeight = e.target.value; render(); }
+  }));
+  list.querySelectorAll('.ctxtalign').forEach(i => i.addEventListener('change', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (r) { pushUndo(); r.textAlign = e.target.value; render(); }
+  }));
+  list.querySelectorAll('.ctxtcolor').forEach(i => i.addEventListener('input', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (r) { pushUndo(); r.color = e.target.value; render(); }
+  }));
+  list.querySelectorAll('.ctxtpcolor').forEach(i => i.addEventListener('input', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (r) { pushUndo(); r.pressedColor = e.target.value; render(); }
+  }));
+  ['ctxtdx','ctxtdy'].forEach(cls => {
+    list.querySelectorAll('.' + cls).forEach(i => i.addEventListener('change', e => {
+      const r = state.regions.find(x => x.id === +e.target.dataset.id);
+      if (!r) return;
+      pushUndo();
+      const v = +e.target.value || 0;
+      if (cls === 'ctxtdx') r.pressedOffsetX = v; else r.pressedOffsetY = v;
+      render();
+    }));
+  });
+  list.querySelectorAll('.ctxtdpreset').forEach(sel => sel.addEventListener('change', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (!r || !e.target.value) return;
+    pushUndo();
+    const [dx, dy] = e.target.value.split(',').map(s => +s);
+    r.pressedOffsetX = dx; r.pressedOffsetY = dy;
+    refreshRegions(); render();
+  }));
   ['cdox','cdoy'].forEach(cls => {
     list.querySelectorAll('.' + cls).forEach(i => i.addEventListener('change', e => {
       const r = state.regions.find(x => x.id === +e.target.dataset.id);
@@ -1643,6 +1745,34 @@ function render() {
         ctx.restore();
       }
     }
+    // Text labels (drawn before decals so glow/icon decals can sit over them
+    // when desired; can be revisited).
+    const textRegions = state.regions.filter(r => r.shape === 'text' && r.text);
+    for (const r of textRegions) {
+      const parent = r.parentId != null ? state.regions.find(o => o.id === r.parentId) : null;
+      const isSelected = (r.id === state.selectedId);
+      const pressedShown = parent ? !!parent.pressed : !!r.pressed;
+      if (parent && !isSelected) {
+        // text always renders; only the position/colour changes with pressed state
+      }
+      const ox = pressedShown ? (r.pressedOffsetX || 0) : 0;
+      const oy = pressedShown ? (r.pressedOffsetY || 0) : 0;
+      const fill = (pressedShown && r.pressedColor) ? r.pressedColor : (r.color || '#ffffff');
+      const px = (r.x + ox) * state.scale;
+      const py = (r.y + oy) * state.scale;
+      const pw = r.w * state.scale;
+      const ph = r.h * state.scale;
+      ctx.save();
+      ctx.fillStyle = fill;
+      ctx.font = `${r.fontWeight || '400'} ${(r.fontSize || 16) * state.scale}px ${r.fontFamily || 'sans-serif'}`;
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = (r.textAlign || 'center');
+      const cx = ctx.textAlign === 'left' ? px : (ctx.textAlign === 'right' ? px + pw : px + pw / 2);
+      const cy = py + ph / 2;
+      ctx.fillText(r.text, cx, cy);
+      ctx.restore();
+    }
+
     const decals = state.regions.filter(r => r.shape === 'decal' && r.decalImage);
     for (const r of decals) {
       const parent = r.parentId != null ? state.regions.find(o => o.id === r.parentId) : null;
@@ -1967,6 +2097,24 @@ document.getElementById('btnExportAll').addEventListener('click', async () => {
   }
   const zip = new window.JSZip();
   for (const r of state.regions) {
+    // Text regions: metadata only, no PNG crop
+    if (r.shape === 'text') {
+      manifest.regions.push({
+        id: r.id, name: r.name, shape: 'text', locked: !!r.locked,
+        x: r.x, y: r.y, w: r.w, h: r.h,
+        text: r.text || '',
+        font_family: r.fontFamily || 'Helvetica, Arial, sans-serif',
+        font_size: r.fontSize || 18,
+        font_weight: r.fontWeight || '700',
+        text_align: r.textAlign || 'center',
+        color: r.color || '#ffffff',
+        pressed_color: r.pressedColor || '',
+        pressed_offset_x: r.pressedOffsetX || 0,
+        pressed_offset_y: r.pressedOffsetY || 0,
+        parent_name: r.parentId != null ? (state.regions.find(rr => rr.id === r.parentId)?.name || null) : null,
+      });
+      continue;
+    }
     // Decal regions: export the actual decalImage, not a crop from PNG_B/C
     if (r.shape === 'decal' && r.decalImage) {
       const cc = document.createElement('canvas');
@@ -2157,6 +2305,18 @@ function importShapesData(m) {
         reg.alwaysVisible = !!r.always_visible;
         reg._pendingParentName = r.parent_name || null;
       }
+      if (shape === 'text') {
+        reg.text = r.text || '';
+        reg.fontFamily = r.font_family || r.fontFamily || 'Helvetica, Arial, sans-serif';
+        reg.fontSize = r.font_size || r.fontSize || 18;
+        reg.fontWeight = r.font_weight || r.fontWeight || '700';
+        reg.textAlign = r.text_align || r.textAlign || 'center';
+        reg.color = r.color || '#ffffff';
+        reg.pressedColor = r.pressed_color || r.pressedColor || '';
+        reg.pressedOffsetX = r.pressed_offset_x ?? r.pressedOffsetX ?? 0;
+        reg.pressedOffsetY = r.pressed_offset_y ?? r.pressedOffsetY ?? 0;
+        reg._pendingParentName = r.parent_name || null;
+      }
       if (shape === 'dropdown') {
         reg.bottomRadiusPct = r.bottom_radius_pct ?? r.bottomRadiusPct ?? 15;
         reg.texScale = r.tex_scale ?? r.texScale ?? 1.0;
@@ -2229,6 +2389,39 @@ document.getElementById('fileDecal').addEventListener('change', e => {
   };
   im.src = URL.createObjectURL(f);
   e.target.value = '';
+});
+
+document.getElementById('btnAddText').addEventListener('click', () => {
+  const refW = state.imgA ? state.imgA.naturalWidth : 800;
+  const refH = state.imgA ? state.imgA.naturalHeight : 600;
+  let maxN = 0;
+  for (const o of state.regions) {
+    const m = /^text_(\d+)$/.exec(o.name || '');
+    if (m) maxN = Math.max(maxN, parseInt(m[1], 10));
+  }
+  pushUndo();
+  const r = {
+    id: state.nextId++,
+    name: `text_${maxN + 1}`,
+    shape: 'text',
+    pressed: false,
+    text: 'TEXT',
+    fontFamily: 'Helvetica, Arial, sans-serif',
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#ffffff',
+    pressedColor: '',
+    pressedOffsetX: 0,
+    pressedOffsetY: 2,
+    parentId: null,
+    x: Math.round(refW / 2 - 60),
+    y: Math.round(refH / 2 - 12),
+    w: 120, h: 28,
+  };
+  state.regions.push(r);
+  state.selectedId = r.id;
+  setTool('select');
+  refreshRegions(); render();
 });
 
 document.getElementById('btnImportShapesJson').addEventListener('click', async () => {
