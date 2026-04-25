@@ -2,6 +2,9 @@
 layout: default
 title: PNG State Aligner
 ---
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800;900&family=Oswald:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
 <style>
   :root { --bg: #121212; --fg: #eee; --panel: #1e1e1e; --accent: #ff6ec7; --warn: #ffc14f; --ok: #7fff9f; --sel: #4fd1ff; }
   body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); font-family: -apple-system, system-ui, sans-serif; overflow: hidden; }
@@ -827,6 +830,30 @@ canvasWrap.addEventListener('mousedown', e => {
   const { cx, cy } = canvasMouseCoord(e);
   const { x: ix, y: iy } = canvasToImage(cx, cy);
 
+  // Eyedropper consumer — sample the main canvas pixel under the cursor and
+  // assign the hex to the targeted text region's field, then disarm.
+  if (state.colorPickTarget) {
+    const cv = document.getElementById('canvas');
+    if (cv) {
+      const rect = cv.getBoundingClientRect();
+      const px = Math.round(e.clientX - rect.left);
+      const py = Math.round(e.clientY - rect.top);
+      try {
+        const data = cv.getContext('2d').getImageData(px, py, 1, 1).data;
+        const hex = '#' + [data[0], data[1], data[2]].map(v => v.toString(16).padStart(2, '0')).join('');
+        const reg = state.regions.find(rr => rr.id === state.colorPickTarget.regionId);
+        if (reg) {
+          pushUndo();
+          reg[state.colorPickTarget.field] = hex;
+        }
+      } catch (_) {}
+    }
+    state.colorPickTarget = null;
+    canvasWrap.classList.remove('drawing');
+    refreshRegions(); render();
+    return;
+  }
+
   // Interactive mode: click toggles pressed state; drag inside a container rect = slider move
   if (state.interactiveMode) {
     // Knob drag — vertical drag rotates knob across its −135°..+135° range.
@@ -1251,7 +1278,7 @@ function refreshRegions() {
         <div class="rcoords" style="grid-template-columns:1fr 1fr;">
           <div><label>font</label>
             <select class="ctxtfont" data-id="${r.id}" style="width:100%; font-size:10px; padding:2px; background:#111; color:var(--fg); border:1px solid #333; border-radius:3px;">
-              ${['Helvetica, Arial, sans-serif','Inter, sans-serif','Georgia, serif','Times New Roman, serif','Courier New, monospace','Menlo, monospace','Impact, sans-serif','Trebuchet MS, sans-serif','Verdana, sans-serif','Roboto, sans-serif'].map(f => `<option value="${f}" ${r.fontFamily===f?'selected':''}>${f.split(',')[0]}</option>`).join('')}
+              ${['Helvetica, Arial, sans-serif','Arial Black, sans-serif','Inter, sans-serif','Roboto, sans-serif','Oswald, sans-serif','Anton, sans-serif','Bebas Neue, sans-serif','Impact, sans-serif','Georgia, serif','Times New Roman, serif','Courier New, monospace','Menlo, monospace','Trebuchet MS, sans-serif','Verdana, sans-serif'].map(f => `<option value="${f}" ${r.fontFamily===f?'selected':''}>${f.split(',')[0]}</option>`).join('')}
             </select>
           </div>
           <div><label>size</label><input type="number" class="ctxtsize" data-id="${r.id}" value="${r.fontSize || 18}" step="1" min="6" max="200"></div>
@@ -1267,8 +1294,20 @@ function refreshRegions() {
           </div>
         </div>
         <div class="rcoords" style="grid-template-columns:1fr 1fr;">
-          <div><label>colour</label><input type="color" class="ctxtcolor" data-id="${r.id}" value="${r.color || '#ffffff'}" style="width:100%; height:24px; padding:0; border:1px solid #333;"></div>
-          <div><label>pressed col</label><input type="color" class="ctxtpcolor" data-id="${r.id}" value="${r.pressedColor || r.color || '#ffffff'}" style="width:100%; height:24px; padding:0; border:1px solid #333;"></div>
+          <div>
+            <label>colour</label>
+            <div style="display:flex; gap:3px;">
+              <input type="color" class="ctxtcolor" data-id="${r.id}" value="${(r.color || '#ffffff').slice(0,7)}" style="flex:1; height:24px; padding:0; border:1px solid #333;">
+              <button class="ctxtcpick" data-id="${r.id}" data-field="color" title="Pick colour from preview" style="width:24px; padding:0; font-size:13px;">💧</button>
+            </div>
+          </div>
+          <div>
+            <label>pressed col</label>
+            <div style="display:flex; gap:3px;">
+              <input type="color" class="ctxtpcolor" data-id="${r.id}" value="${(r.pressedColor || r.color || '#ffffff').slice(0,7)}" style="flex:1; height:24px; padding:0; border:1px solid #333;">
+              <button class="ctxtcpick" data-id="${r.id}" data-field="pressedColor" title="Pick colour from preview" style="width:24px; padding:0; font-size:13px;">💧</button>
+            </div>
+          </div>
         </div>
         <div class="rcoords" style="grid-template-columns:1fr 1fr 1fr;">
           <div><label>pressed Δx</label><input type="number" class="ctxtdx" data-id="${r.id}" value="${r.pressedOffsetX || 0}" step="1"></div>
@@ -1621,6 +1660,14 @@ function refreshRegions() {
     const [dx, dy] = e.target.value.split(',').map(s => +s);
     r.pressedOffsetX = dx; r.pressedOffsetY = dy;
     refreshRegions(); render();
+  }));
+  // Eyedropper: arm a one-shot canvas pick that overrides the next click.
+  list.querySelectorAll('.ctxtcpick').forEach(b => b.addEventListener('click', e => {
+    const id = +e.currentTarget.dataset.id;
+    const field = e.currentTarget.dataset.field;
+    state.colorPickTarget = { regionId: id, field };
+    canvasWrap.classList.add('drawing'); // crosshair cursor
+    e.currentTarget.style.background = '#3a2a4a';
   }));
   ['cdox','cdoy'].forEach(cls => {
     list.querySelectorAll('.' + cls).forEach(i => i.addEventListener('change', e => {
