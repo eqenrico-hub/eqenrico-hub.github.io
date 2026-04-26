@@ -2394,10 +2394,20 @@ function render() {
     }
     drawAlwaysVisibleDecals();
     drawWidgetOverlays();
-    if (state.paintOverlay) ctx.drawImage(state.paintOverlay, 0, 0, dw, dh);
+    // Paint overlay drawn last (on top of EVERYTHING). Defensive save/restore
+    // + explicit globalAlpha = 1 so any earlier-leaked transform / alpha state
+    // can't dim the paint.
+    if (state.paintOverlay) {
+      ctx.save();
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.drawImage(state.paintOverlay, 0, 0, dw, dh);
+      ctx.restore();
+    }
     if (state.paintDragging && state.paintStroke) {
       ctx.save();
       ctx.globalAlpha = Math.max(0.01, Math.min(1, state.paintOpacity || 1));
+      ctx.globalCompositeOperation = 'source-over';
       ctx.drawImage(state.paintStroke, 0, 0, dw, dh);
       ctx.restore();
     }
