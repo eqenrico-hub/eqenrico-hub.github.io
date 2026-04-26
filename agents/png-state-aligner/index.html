@@ -2109,6 +2109,9 @@ function refreshRegions() {
           </select>
         </div>
       ` : ''}
+      ${r.shape === 'rect' && !r.locked ? `
+        <div style="margin:3px 0;"><button class="rcroprect" data-id="${r.id}" style="width:100%; font-size:10px; padding:4px; background:#3a4a2a;">▭ Crop rect from PNG_A → download</button></div>
+      ` : ''}
       ${r.shape === 'decal' ? `
         <div style="margin:3px 0;"><label style="font-size:10px;">parent button (leave empty = always visible)</label>
           <select class="cparent" data-id="${r.id}" style="width:100%; font-size:10px; padding:2px; background:#111; color:var(--fg); border:1px solid #333; border-radius:3px;">
@@ -2402,6 +2405,21 @@ function refreshRegions() {
     cx.restore();
     return c;
   }
+  list.querySelectorAll('.rcroprect').forEach(btn => btn.addEventListener('click', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (!r || !state.imgA) return;
+    const w = Math.max(1, Math.round(r.w));
+    const h = Math.max(1, Math.round(r.h));
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    c.getContext('2d').drawImage(state.imgA, r.x, r.y, r.w, r.h, 0, 0, w, h);
+    c.toBlob(blob => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `rect_crop_${r.name}_${Math.round(r.x)}_${Math.round(r.y)}_${w}x${h}.png`;
+      a.click();
+    });
+  }));
   list.querySelectorAll('.rcropcircle').forEach(btn => btn.addEventListener('click', e => {
     const r = state.regions.find(x => x.id === +e.target.dataset.id);
     if (!r) return;
