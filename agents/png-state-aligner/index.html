@@ -139,7 +139,8 @@ title: PNG State Aligner
       <label style="font-size:10px; display:flex; align-items:center; gap:4px;"><input type="checkbox" id="fadeAspectLock" checked> lock 1:1</label>
       <label style="font-size:10px;">strength per stroke <span id="fadeStrengthVal">25</span>%</label>
       <input type="range" id="fadeStrength" min="1" max="100" value="25" step="1" style="width:100%;">
-      <div class="hint">Drag to gradually erase the active clone-stamp layer with a soft falloff. Use small sizes (down to 0.3 px) for tight edge feathering.</div>
+      <div class="hint">Drag to gradually erase whatever you see in preview (decals, clone stamps, etc) with a soft falloff. Down to 0.3 px for tight edge feathering.</div>
+      <button id="btnFadeClear" class="danger" style="width:100%; font-size:10px; margin-top:3px;">Clear all fade</button>
     </div>
     <button id="btnInteractive" style="background:#2a4a2a; margin-top:6px; width:100%;">▶ Interactive mode</button>
     <div id="stats">0 regions</div>
@@ -687,6 +688,18 @@ state.fadeShape = 'circle';
 state.fadeAspectLock = true;
 state.fadeStrength = 0.25;
 state.fadeDragging = false;
+state.fadeMask = null; // accumulator canvas; opaque pixels = "show PNG_A here, not overlays"
+
+function ensureFadeMask() {
+  if (!state.imgA) return null;
+  if (!state.fadeMask) {
+    const c = document.createElement('canvas');
+    c.width = state.imgA.naturalWidth;
+    c.height = state.imgA.naturalHeight;
+    state.fadeMask = c;
+  }
+  return state.fadeMask;
+}
 
 function ensureCloneOverlay() {
   if (!state.imgA) return null;
@@ -795,30 +808,43 @@ document.querySelectorAll('input[name="cloneShape"]').forEach(r => r.addEventLis
   render();
 }));
 
-// Fade brush — soft eraser on the active clone-stamp layer
+// Fade brush — accumulates an alpha mask. At render time, pixels in the
+// composited overlay layers (decals + clone stamps + everything except PNG_A)
+// are erased where the mask is opaque, so PNG_A shows through. This makes
+// fade behave as "soften whatever I currently see" instead of only erasing
+// clone strokes.
 function fadeStamp(imgX, imgY) {
+  // Also erase from active clone overlay so the user can iteratively rebuild
+  // the stamp without it interfering. Mirrors the original behaviour.
   const ovl = getActiveCloneOverlay();
-  if (!ovl) return;
-  const octx2 = ovl.getContext('2d');
+  const fade = ensureFadeMask();
+  if (!fade) return;
   const bx = state.fadeBrushX, by = state.fadeBrushY;
-  octx2.save();
-  octx2.globalCompositeOperation = 'destination-out';
-  // Soft falloff via radial gradient — peak at strength in centre, 0 at edge
   const peak = Math.max(0.01, Math.min(1, state.fadeStrength || 0.25));
   const r = Math.max(bx, by);
-  const grad = octx2.createRadialGradient(imgX, imgY, 0, imgX, imgY, r);
-  grad.addColorStop(0,   `rgba(0,0,0,${peak.toFixed(3)})`);
-  grad.addColorStop(0.6, `rgba(0,0,0,${(peak*0.45).toFixed(3)})`);
-  grad.addColorStop(1,   'rgba(0,0,0,0)');
-  octx2.fillStyle = grad;
-  if (state.fadeShape === 'square') {
-    octx2.fillRect(imgX - bx, imgY - by, bx * 2, by * 2);
-  } else {
-    octx2.beginPath();
-    octx2.ellipse(imgX, imgY, bx, by, 0, 0, Math.PI * 2);
-    octx2.fill();
-  }
-  octx2.restore();
+
+  const drawTo = (canv, op) => {
+    const c = canv.getContext('2d');
+    c.save();
+    if (op) c.globalCompositeOperation = op;
+    const g = c.createRadialGradient(imgX, imgY, 0, imgX, imgY, r);
+    g.addColorStop(0,   `rgba(0,0,0,${peak.toFixed(3)})`);
+    g.addColorStop(0.6, `rgba(0,0,0,${(peak*0.45).toFixed(3)})`);
+    g.addColorStop(1,   'rgba(0,0,0,0)');
+    c.fillStyle = g;
+    if (state.fadeShape === 'square') {
+      c.fillRect(imgX - bx, imgY - by, bx * 2, by * 2);
+    } else {
+      c.beginPath();
+      c.ellipse(imgX, imgY, bx, by, 0, 0, Math.PI * 2);
+      c.fill();
+    }
+    c.restore();
+  };
+
+  if (ovl) drawTo(ovl, 'destination-out');
+  // fadeMask uses default source-over with black-with-alpha — accumulates alpha
+  drawTo(fade, null);
 }
 
 function setFadeBrushX(v) {
@@ -854,6 +880,12 @@ document.querySelectorAll('input[name="fadeShape"]').forEach(r => r.addEventList
   state.fadeShape = e.target.value;
   render();
 }));
+document.getElementById('btnFadeClear').addEventListener('click', () => {
+  if (state.fadeMask) {
+    state.fadeMask.getContext('2d').clearRect(0, 0, state.fadeMask.width, state.fadeMask.height);
+    render();
+  }
+});
 document.getElementById('btnCloneClear').addEventListener('click', () => {
   const ovl = getActiveCloneOverlay();
   if (!ovl) return;
@@ -2090,6 +2122,24 @@ function render() {
         const dx2 = sx * state.scale, dy2 = sy * state.scale, dw2 = sw * state.scale, dh2 = sh * state.scale;
         if (sw > 0 && sh > 0) ctx.drawImage(state.cloneOverlayPressed, sx, sy, sw, sh, dx2, dy2, dw2, dh2);
       }
+    }
+
+    // Fade mask: where the user has dragged the fade brush, restore PNG_A
+    // pixels over whatever was drawn (decals, knobs, clone stamps, etc).
+    // Implemented via an offscreen "mask × PNG_A" composite drawn on top.
+    if (state.fadeMask && state.imgA) {
+      if (!state._fadeApply) {
+        state._fadeApply = document.createElement('canvas');
+      }
+      const fa = state._fadeApply;
+      fa.width = state.fadeMask.width;
+      fa.height = state.fadeMask.height;
+      const fac = fa.getContext('2d');
+      fac.clearRect(0, 0, fa.width, fa.height);
+      fac.drawImage(state.fadeMask, 0, 0);
+      fac.globalCompositeOperation = 'source-in';
+      fac.drawImage(state.imgA, 0, 0);
+      ctx.drawImage(fa, 0, 0, dw, dh);
     }
   }
 
