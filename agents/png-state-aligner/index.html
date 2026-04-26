@@ -2218,30 +2218,18 @@ function render() {
       ctx.fillText(r.text, cx, cy);
       ctx.restore();
     }
-    // Parent-linked decals only (alwaysVisible decals are drawn later, on top
-    // of the clone overlays — they're "permanent stickers" that user paint
-    // shouldn't hide).
-    const decals = state.regions.filter(r => r.shape === 'decal' && r.decalImage && !r.alwaysVisible);
+    // Parent-linked decals AND rotating-as-knob decals draw in the chassis
+    // layer (BELOW clone overlays). Rotating decals are knob-like graphics
+    // the user wants to clone-stamp / fade over to clean up the edges of
+    // their circle crop, so they need to live underneath user paint.
+    // Non-rotating always_visible decals (e.g. decal_46 sticker) draw later,
+    // ABOVE clone, so accidental stamps don't hide them.
+    const decals = state.regions.filter(r => r.shape === 'decal' && r.decalImage && (!r.alwaysVisible || r.rotatesAsKnob));
     for (const r of decals) {
       const parent = r.parentId != null ? state.regions.find(o => o.id === r.parentId) : null;
       const isSelected = (r.id === state.selectedId);
-      const visible = parent ? !!parent.pressed : !!r.pressed;
+      const visible = r.alwaysVisible ? true : (parent ? !!parent.pressed : !!r.pressed);
       if (!visible && !isSelected) continue;
-      const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
-      const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
-      const rw = r.w * state.scale, rh = r.h * state.scale;
-      ctx.drawImage(r.decalImage, rx, ry, rw, rh);
-    }
-  }
-
-  // Layer 1.5 — always-visible decals drawn ABOVE clone overlays so they're
-  // never covered by accidental stamps; they sit BELOW interactive widgets.
-  // Decals with rotatesAsKnob behave like knobs: rotated around their bbox
-  // centre by (-135 + 270 * value) and the procedural indicator is suppressed
-  // because the rotation is baked into the cropped pixels themselves.
-  function drawAlwaysVisibleDecals() {
-    const decals = state.regions.filter(r => r.shape === 'decal' && r.decalImage && r.alwaysVisible);
-    for (const r of decals) {
       const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
       const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
       const rw = r.w * state.scale, rh = r.h * state.scale;
@@ -2257,6 +2245,20 @@ function render() {
       } else {
         ctx.drawImage(r.decalImage, rx, ry, rw, rh);
       }
+    }
+  }
+
+  // Layer 1.5 — always-visible decals that are NOT rotating knobs. Drawn
+  // ABOVE clone overlays so accidental stamps don't hide permanent stickers
+  // (decal_46 etc). Rotating decals draw in chassis layer instead so the
+  // user can clone/fade-brush over them.
+  function drawAlwaysVisibleDecals() {
+    const decals = state.regions.filter(r => r.shape === 'decal' && r.decalImage && r.alwaysVisible && !r.rotatesAsKnob);
+    for (const r of decals) {
+      const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
+      const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
+      const rw = r.w * state.scale, rh = r.h * state.scale;
+      ctx.drawImage(r.decalImage, rx, ry, rw, rh);
     }
   }
 
