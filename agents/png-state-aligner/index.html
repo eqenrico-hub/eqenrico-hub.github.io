@@ -574,6 +574,25 @@ document.getElementById('btnLoadDefaults').addEventListener('click', async () =>
   }
   await loadDefaultOverlay('sample_data/clone_overlay.png', 'unpressed');
   await loadDefaultOverlay('sample_data/clone_overlay_pressed.png', 'pressed');
+  // Optional auto-load for paint and fade layers
+  async function loadDefaultLayer(url, targetKey) {
+    try {
+      const resp = await fetch(url + '?v=' + Date.now());
+      if (!resp.ok) return;
+      const blob = await resp.blob();
+      const im = new Image();
+      await new Promise((res, rej) => { im.onload = res; im.onerror = rej; im.src = URL.createObjectURL(blob); });
+      let canv;
+      if (targetKey === 'paint') canv = ensurePaintOverlay();
+      else canv = ensureFadeMask();
+      if (!canv) return;
+      const c = canv.getContext('2d');
+      c.clearRect(0, 0, canv.width, canv.height);
+      c.drawImage(im, 0, 0);
+    } catch (_) {}
+  }
+  await loadDefaultLayer('sample_data/paint_overlay.png', 'paint');
+  await loadDefaultLayer('sample_data/fade_mask.png', 'fade');
 
   render();
 });
@@ -2630,6 +2649,14 @@ document.getElementById('btnExportAll').addEventListener('click', async () => {
     const blob = await new Promise(res => state.cloneOverlayPressed.toBlob(res, 'image/png'));
     if (blob) { zip.file('clone_overlay_pressed.png', blob); manifest.clone_overlay_pressed_file = 'clone_overlay_pressed.png'; }
   }
+  if (state.paintOverlay) {
+    const blob = await new Promise(res => state.paintOverlay.toBlob(res, 'image/png'));
+    if (blob) { zip.file('paint_overlay.png', blob); manifest.paint_overlay_file = 'paint_overlay.png'; }
+  }
+  if (state.fadeMask) {
+    const blob = await new Promise(res => state.fadeMask.toBlob(res, 'image/png'));
+    if (blob) { zip.file('fade_mask.png', blob); manifest.fade_mask_file = 'fade_mask.png'; }
+  }
   zip.file('manifest.json', JSON.stringify(manifest, null, 2));
   const content = await zip.generateAsync({ type: 'blob' });
   const a = document.createElement('a');
@@ -2679,6 +2706,23 @@ document.getElementById('fileJson').addEventListener('change', async e => {
     }
     await loadOverlay('clone_overlay.png', 'unpressed');
     await loadOverlay('clone_overlay_pressed.png', 'pressed');
+    // Restore paint + fade layers from bundle if present
+    async function loadLayer(zipName, kind) {
+      const f2 = zip.file(zipName);
+      if (!f2 || !state.imgA) return;
+      const blob = await f2.async('blob');
+      const im = new Image();
+      await new Promise(res => { im.onload = res; im.onerror = res; im.src = URL.createObjectURL(blob); });
+      let canv;
+      if (kind === 'paint') canv = ensurePaintOverlay();
+      else canv = ensureFadeMask();
+      if (!canv) return;
+      const c = canv.getContext('2d');
+      c.clearRect(0, 0, canv.width, canv.height);
+      c.drawImage(im, 0, 0);
+    }
+    await loadLayer('paint_overlay.png', 'paint');
+    await loadLayer('fade_mask.png', 'fade');
     render();
   } else {
     const txt = await f.text();
