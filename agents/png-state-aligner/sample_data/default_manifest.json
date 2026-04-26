@@ -324,7 +324,7 @@
       "crop_file": "CHASSIS_frame.png"
     },
     {
-      "id": 33,
+      "id": 21,
       "name": "dropdown_34",
       "shape": "dropdown",
       "locked": false,
@@ -349,7 +349,7 @@
       "tex_filename": null
     },
     {
-      "id": 34,
+      "id": 22,
       "name": "dropdown_34_copy",
       "shape": "dropdown",
       "locked": false,
@@ -374,7 +374,7 @@
       "tex_filename": null
     },
     {
-      "id": 35,
+      "id": 23,
       "name": "dropdown_34_copy",
       "shape": "dropdown",
       "locked": false,
@@ -399,7 +399,7 @@
       "tex_filename": null
     },
     {
-      "id": 36,
+      "id": 24,
       "name": "dropdown_34_copy_copy",
       "shape": "dropdown",
       "locked": false,
@@ -424,7 +424,7 @@
       "tex_filename": null
     },
     {
-      "id": 37,
+      "id": 25,
       "name": "dropdown_38",
       "shape": "dropdown",
       "locked": false,
@@ -449,7 +449,7 @@
       "tex_filename": null
     },
     {
-      "id": 38,
+      "id": 26,
       "name": "dropdown_39",
       "shape": "dropdown",
       "locked": false,
@@ -474,7 +474,7 @@
       "tex_filename": null
     },
     {
-      "id": 39,
+      "id": 27,
       "name": "dropdown_39_copy",
       "shape": "dropdown",
       "locked": false,
@@ -499,7 +499,7 @@
       "tex_filename": null
     },
     {
-      "id": 40,
+      "id": 28,
       "name": "dropdown_41",
       "shape": "dropdown",
       "locked": false,
@@ -524,7 +524,7 @@
       "tex_filename": null
     },
     {
-      "id": 41,
+      "id": 29,
       "name": "region_42",
       "shape": "rect",
       "locked": false,
@@ -540,7 +540,7 @@
       "crop_file": "region_42.png"
     },
     {
-      "id": 42,
+      "id": 30,
       "name": "decal_45",
       "shape": "decal",
       "locked": false,
@@ -558,7 +558,7 @@
       "decal_filename": null
     },
     {
-      "id": 43,
+      "id": 31,
       "name": "slider_rail_mix",
       "shape": "decal",
       "locked": false,
@@ -576,7 +576,7 @@
       "decal_filename": null
     },
     {
-      "id": 44,
+      "id": 32,
       "name": "decal_46",
       "shape": "decal",
       "locked": false,
@@ -594,7 +594,7 @@
       "decal_filename": null
     },
     {
-      "id": 45,
+      "id": 33,
       "name": "knob_mix",
       "shape": "knob",
       "locked": false,
@@ -611,7 +611,7 @@
       "knob_image_file": "gigaknob_render.png"
     },
     {
-      "id": 46,
+      "id": 34,
       "name": "text_1",
       "shape": "text",
       "locked": false,
@@ -631,7 +631,7 @@
       "parent_name": "rect_44"
     },
     {
-      "id": 47,
+      "id": 35,
       "name": "text_2",
       "shape": "text",
       "locked": false,
@@ -651,7 +651,7 @@
       "parent_name": "rect_10"
     },
     {
-      "id": 48,
+      "id": 36,
       "name": "decal_47",
       "shape": "decal",
       "locked": false,
@@ -669,14 +669,14 @@
       "decal_filename": null
     },
     {
-      "id": 49,
+      "id": 37,
       "name": "decal_48",
       "shape": "decal",
       "locked": false,
-      "x": 714.0031242612449,
-      "y": 462.0139277465947,
-      "w": 47.991740434313044,
-      "h": 47.991740434313044,
+      "x": 714,
+      "y": 462,
+      "w": 48,
+      "h": 48,
       "dst_off_x": 0,
       "dst_off_y": 0,
       "parent_name": null,
@@ -684,17 +684,17 @@
       "rotates_as_knob": true,
       "value": 0.5,
       "crop_file": "decal_48.png",
-      "decal_filename": "circle_crop_knob_22_715_462_47.png"
+      "decal_filename": null
     },
     {
-      "id": 50,
+      "id": 38,
       "name": "decal_49",
       "shape": "decal",
       "locked": false,
-      "x": 958.0619201332881,
-      "y": 462.2193570128483,
-      "w": 45.90106892180495,
-      "h": 46.261919025175594,
+      "x": 958,
+      "y": 462,
+      "w": 46,
+      "h": 46,
       "dst_off_x": 0,
       "dst_off_y": 0,
       "parent_name": null,
@@ -702,17 +702,17 @@
       "rotates_as_knob": true,
       "value": 0.5,
       "crop_file": "decal_49.png",
-      "decal_filename": "circle_crop_knob_22_copy_copy_958_462_46.png"
+      "decal_filename": null
     },
     {
-      "id": 51,
+      "id": 39,
       "name": "decal_50",
       "shape": "decal",
       "locked": false,
-      "x": 1078.6898591843817,
-      "y": 461.89257641004275,
-      "w": 46.72158191849854,
-      "h": 46.72158191849854,
+      "x": 1079,
+      "y": 462,
+      "w": 47,
+      "h": 47,
       "dst_off_x": 0,
       "dst_off_y": 0,
       "parent_name": null,
@@ -720,17 +720,17 @@
       "rotates_as_knob": true,
       "value": 0.5,
       "crop_file": "decal_50.png",
-      "decal_filename": "circle_crop_knob_22_copy_copy_copy_1079_462_46.png"
+      "decal_filename": null
     },
     {
-      "id": 52,
+      "id": 40,
       "name": "decal_51",
       "shape": "decal",
       "locked": false,
-      "x": 1201.154645873944,
-      "y": 462.4264674030756,
-      "w": 47.08607883504163,
-      "h": 47.08607883504163,
+      "x": 1201,
+      "y": 462,
+      "w": 47,
+      "h": 47,
       "dst_off_x": 0,
       "dst_off_y": 0,
       "parent_name": null,
@@ -738,17 +738,17 @@
       "rotates_as_knob": true,
       "value": 0.5,
       "crop_file": "decal_51.png",
-      "decal_filename": "circle_crop_knob_22_copy_copy_copy_copy_1202_463_45.png"
+      "decal_filename": null
     },
     {
-      "id": 53,
+      "id": 41,
       "name": "decal_52",
       "shape": "decal",
       "locked": false,
-      "x": 1398.8976599039777,
-      "y": 131.88958872127031,
-      "w": 48.0942333756941,
-      "h": 48.0942333756941,
+      "x": 1399,
+      "y": 132,
+      "w": 48,
+      "h": 48,
       "dst_off_x": 0,
       "dst_off_y": 0,
       "parent_name": null,
@@ -756,17 +756,17 @@
       "rotates_as_knob": true,
       "value": 0.5,
       "crop_file": "decal_52.png",
-      "decal_filename": "circle_crop_knob_22_copy_copy_copy_copy_copy_copy_copy_copy_1399_131_48.png"
+      "decal_filename": null
     },
     {
-      "id": 54,
+      "id": 42,
       "name": "decal_53",
       "shape": "decal",
       "locked": false,
-      "x": 1505.6807885795117,
-      "y": 131.59878564708364,
-      "w": 48.04946882812851,
-      "h": 48.04946882812851,
+      "x": 1506,
+      "y": 132,
+      "w": 48,
+      "h": 48,
       "dst_off_x": 0,
       "dst_off_y": 0,
       "parent_name": null,
@@ -774,17 +774,17 @@
       "rotates_as_knob": true,
       "value": 0.5,
       "crop_file": "decal_53.png",
-      "decal_filename": "circle_crop_knob_22_copy_copy_copy_copy_copy_copy_copy_1506_132_48.png"
+      "decal_filename": null
     },
     {
-      "id": 55,
+      "id": 43,
       "name": "decal_54",
       "shape": "decal",
       "locked": false,
-      "x": 1397.9781065194877,
-      "y": 291.77109712124604,
-      "w": 46.659030762116174,
-      "h": 46.659030762116174,
+      "x": 1398,
+      "y": 292,
+      "w": 47,
+      "h": 47,
       "dst_off_x": 0,
       "dst_off_y": 0,
       "parent_name": null,
@@ -792,17 +792,17 @@
       "rotates_as_knob": true,
       "value": 0.5,
       "crop_file": "decal_54.png",
-      "decal_filename": "circle_crop_knob_22_copy_copy_copy_copy_copy_copy_1399_292_46.png"
+      "decal_filename": null
     },
     {
-      "id": 56,
+      "id": 44,
       "name": "decal_55",
       "shape": "decal",
       "locked": false,
-      "x": 1503.1539961013648,
-      "y": 292.8967775619979,
-      "w": 45.67650532958123,
-      "h": 45.67650532958123,
+      "x": 1503,
+      "y": 293,
+      "w": 46,
+      "h": 46,
       "dst_off_x": 0,
       "dst_off_y": 0,
       "parent_name": null,
@@ -810,17 +810,17 @@
       "rotates_as_knob": true,
       "value": 0.5,
       "crop_file": "decal_55.png",
-      "decal_filename": "circle_crop_knob_22_copy_copy_copy_copy_copy_copy_1503_292_46.png"
+      "decal_filename": null
     },
     {
-      "id": 57,
+      "id": 45,
       "name": "decal_56",
       "shape": "decal",
       "locked": false,
-      "x": 1398.815992639491,
-      "y": 458.7273899727382,
-      "w": 46.0501360394652,
-      "h": 46.0501360394652,
+      "x": 1399,
+      "y": 459,
+      "w": 46,
+      "h": 46,
       "dst_off_x": 0,
       "dst_off_y": 0,
       "parent_name": null,
@@ -828,17 +828,17 @@
       "rotates_as_knob": true,
       "value": 0.5,
       "crop_file": "decal_56.png",
-      "decal_filename": "circle_crop_knob_22_copy_copy_copy_copy_copy_1399_458_46.png"
+      "decal_filename": null
     },
     {
-      "id": 58,
+      "id": 46,
       "name": "decal_57",
       "shape": "decal",
       "locked": false,
-      "x": 1487.7582695811338,
-      "y": 590.8876011910297,
-      "w": 36.66251782091797,
-      "h": 36.66251782091797,
+      "x": 1488,
+      "y": 591,
+      "w": 37,
+      "h": 37,
       "dst_off_x": 0,
       "dst_off_y": 0,
       "parent_name": null,
@@ -846,17 +846,17 @@
       "rotates_as_knob": true,
       "value": 0.5,
       "crop_file": "decal_57.png",
-      "decal_filename": "circle_crop_knob_32_1488_591_37.png"
+      "decal_filename": null
     },
     {
-      "id": 59,
+      "id": 47,
       "name": "decal_58",
       "shape": "decal",
       "locked": false,
-      "x": 1486.7786441412168,
-      "y": 680.5252328351745,
-      "w": 37.43154902309993,
-      "h": 37.43154902309993,
+      "x": 1487,
+      "y": 681,
+      "w": 37,
+      "h": 37,
       "dst_off_x": 0,
       "dst_off_y": 0,
       "parent_name": null,
@@ -864,17 +864,17 @@
       "rotates_as_knob": true,
       "value": 0.5,
       "crop_file": "decal_58.png",
-      "decal_filename": "circle_crop_knob_32_copy_1487_680_37.png"
+      "decal_filename": null
     },
     {
-      "id": 60,
+      "id": 48,
       "name": "decal_59",
       "shape": "decal",
       "locked": false,
-      "x": 1487.8208793588906,
-      "y": 768.2197967530245,
-      "w": 37.30636678076439,
-      "h": 37.30636678076439,
+      "x": 1488,
+      "y": 768,
+      "w": 37,
+      "h": 37,
       "dst_off_x": 0,
       "dst_off_y": 0,
       "parent_name": null,
@@ -882,10 +882,11 @@
       "rotates_as_knob": true,
       "value": 0.5,
       "crop_file": "decal_59.png",
-      "decal_filename": "circle_crop_knob_32_copy_copy_1488_768_37.png"
+      "decal_filename": null
     }
   ],
   "clone_overlay_file": "clone_overlay.png",
   "clone_overlay_pressed_file": "clone_overlay_pressed.png",
-  "paint_overlay_file": "paint_overlay.png"
+  "paint_overlay_file": "paint_overlay.png",
+  "fade_mask_file": "fade_mask.png"
 }
