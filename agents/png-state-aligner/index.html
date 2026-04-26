@@ -127,6 +127,11 @@ title: PNG State Aligner
       <label style="font-size:10px; display:flex; align-items:center; gap:4px;"><input type="checkbox" id="cloneAspectLock" checked> lock 1:1 (Y follows X)</label>
       <div class="hint">Alt+click to set source · drag to paint over with cloned pixels</div>
       <button id="btnCloneClear" class="danger" style="width:100%; font-size:10px; margin-top:3px;">Clear active layer</button>
+      <div class="hint" style="margin-top:6px; border-top:1px solid #333; padding-top:6px;">Linked clone (visible only when one specific button is pressed):</div>
+      <select id="cloneLinkedRegion" style="width:100%; font-size:10px; padding:3px; background:#111; color:var(--fg); border:1px solid #333; border-radius:3px; margin-top:3px;">
+        <option value="">(global — default)</option>
+      </select>
+      <div class="hint">Strokes go to that region's private clone layer. Render path: drawn ONLY when the linked region is pressed.</div>
     </div>
     <div id="fadeControls" style="display:none; margin-top:6px;">
       <div class="hint" style="margin-top:0;">Fade brush — softens the active clone-stamp layer wherever you drag.</div>
@@ -570,6 +575,25 @@ document.getElementById('btnLoadDefaults').addEventListener('click', async () =>
           if (reg) reg.decalImage = im;
         } catch (_) {}
       }
+      // Rehydrate per-region linked clone canvases from sample_data
+      for (const entry of (manifest.regions || []).filter(rr => rr.linked_clone_file)) {
+        try {
+          const resp = await fetch('sample_data/' + entry.linked_clone_file + '?v=' + Date.now());
+          if (!resp.ok) continue;
+          const blob = await resp.blob();
+          const im = new Image();
+          await new Promise((res) => { im.onload = res; im.onerror = res; im.src = URL.createObjectURL(blob); });
+          const reg = state.regions.find(rr => rr.name === entry.name);
+          if (reg) {
+            const canv = ensureLinkedCloneCanvas(reg);
+            if (canv) {
+              const c = canv.getContext('2d');
+              c.clearRect(0, 0, canv.width, canv.height);
+              c.drawImage(im, 0, 0);
+            }
+          }
+        } catch (_) {}
+      }
       // Rehydrate slider-handle PNG assets (overrides live capture from PNG_A)
       for (const entry of (manifest.regions || []).filter(rr => rr.handle_file)) {
         try {
@@ -910,13 +934,35 @@ function ensureCloneOverlay() {
   return state.cloneLayer === 'pressed' ? state.cloneOverlayPressed : state.cloneOverlay;
 }
 
+function ensureLinkedCloneCanvas(region) {
+  if (!state.imgA || !region) return null;
+  if (!region.linkedCloneCanvas || region.linkedCloneCanvas.width !== state.imgA.naturalWidth) {
+    const c = document.createElement('canvas');
+    c.width = state.imgA.naturalWidth;
+    c.height = state.imgA.naturalHeight;
+    region.linkedCloneCanvas = c;
+  }
+  return region.linkedCloneCanvas;
+}
+
 function getActiveCloneOverlay() {
   ensureCloneOverlay();
+  // If user has selected a linked region in the clone controls, route strokes
+  // to that region's private canvas — visible only when the region is pressed.
+  if (state.cloneLinkedRegionId != null) {
+    const reg = state.regions.find(r => r.id === state.cloneLinkedRegionId);
+    if (reg) {
+      state.cloneLayer = 'linked:' + reg.name;
+      const uBtn = document.getElementById('btnLayerU');
+      const pBtn = document.getElementById('btnLayerP');
+      if (uBtn && pBtn) { uBtn.classList.remove('active'); pBtn.classList.remove('active'); }
+      return ensureLinkedCloneCanvas(reg);
+    }
+  }
   // Auto-pick layer: if any non-dropdown/non-knob region is currently pressed,
   // paint goes to the Pressed layer. Otherwise to Unpressed.
   const anyPressed = state.regions.some(r => r.pressed && r.shape !== 'dropdown' && r.shape !== 'knob');
   state.cloneLayer = anyPressed ? 'pressed' : 'unpressed';
-  // Reflect in UI if buttons exist
   const uBtn = document.getElementById('btnLayerU');
   const pBtn = document.getElementById('btnLayerP');
   if (uBtn && pBtn) {
@@ -990,6 +1036,21 @@ function setCloneBrushY(v) {
     document.getElementById('cloneBrushX').value = v;
   }
 }
+function refreshCloneLinkedRegionDropdown() {
+  const sel = document.getElementById('cloneLinkedRegion');
+  if (!sel) return;
+  const cur = sel.value;
+  const opts = ['<option value="">(global — default)</option>'];
+  state.regions
+    .filter(r => !r.locked && r.shape !== 'decal' && r.shape !== 'dropdown' && r.shape !== 'knob' && r.shape !== 'text')
+    .forEach(r => opts.push(`<option value="${r.id}">→ when ${r.name} is pressed</option>`));
+  sel.innerHTML = opts.join('');
+  if (state.cloneLinkedRegionId != null) sel.value = String(state.cloneLinkedRegionId);
+}
+document.getElementById('cloneLinkedRegion').addEventListener('change', e => {
+  const v = e.target.value;
+  state.cloneLinkedRegionId = v ? +v : null;
+});
 document.getElementById('cloneBrushX').addEventListener('input', e => { setCloneBrushX(e.target.value); render(); });
 document.getElementById('cloneBrushY').addEventListener('input', e => { setCloneBrushY(e.target.value); render(); });
 document.getElementById('cloneAspectLock').addEventListener('change', e => {
@@ -1196,7 +1257,8 @@ function blurStamp(imgX, imgY) {
   const mw = main.width, mh = main.height;
   const cx = imgX * scale, cy = imgY * scale;
   const halfW = bx * scale, halfH = by * scale;
-  const padding = state.blurRadius * 2 + 4;
+  // Padding in canvas pixels — radius is in image px, multiply by scale.
+  const padding = state.blurRadius * scale * 2 + 8;
   const x0 = Math.max(0, Math.floor(cx - halfW - padding));
   const y0 = Math.max(0, Math.floor(cy - halfH - padding));
   const x1 = Math.min(mw, Math.ceil(cx + halfW + padding));
@@ -1853,6 +1915,7 @@ window.addEventListener('mouseup', e => {
 });
 
 function refreshRegions() {
+  refreshCloneLinkedRegionDropdown();
   const list = document.getElementById('regionList');
   list.innerHTML = '';
   state.regions.forEach(r => {
@@ -2652,6 +2715,14 @@ function render() {
         if (sw > 0 && sh > 0) ctx.drawImage(state.cloneOverlayPressed, sx, sy, sw, sh, dx2, dy2, dw2, dh2);
       }
     }
+    // Linked clone canvases — each region with its own canvas only renders when
+    // the region is currently pressed. Used for per-button overlays (e.g. DIST
+    // / OFFSET / BANDS each toggling different clone strokes).
+    for (const r of state.regions) {
+      if (r.linkedCloneCanvas && r.pressed) {
+        ctx.drawImage(r.linkedCloneCanvas, 0, 0, dw, dh);
+      }
+    }
     if (state.imgA && (state.fadeMask || (state.fadeDragging && state.fadeStroke))) {
       if (!state._fadeApply) state._fadeApply = document.createElement('canvas');
       const fa = state._fadeApply;
@@ -3051,6 +3122,18 @@ document.getElementById('btnExportAll').addEventListener('click', async () => {
     const blob = await new Promise(res => state.blurOverlay.toBlob(res, 'image/png'));
     if (blob) { zip.file('blur_overlay.png', blob); manifest.blur_overlay_file = 'blur_overlay.png'; }
   }
+  // Linked clone canvases — one PNG per region that has any
+  for (const r of state.regions) {
+    if (!r.linkedCloneCanvas) continue;
+    const blob = await new Promise(res => r.linkedCloneCanvas.toBlob(res, 'image/png'));
+    if (blob) {
+      const fname = `clone_linked_${r.name}.png`;
+      zip.file(fname, blob);
+      // Mark in manifest entry
+      const entry = manifest.regions.find(e => e.name === r.name);
+      if (entry) entry.linked_clone_file = fname;
+    }
+  }
   zip.file('manifest.json', JSON.stringify(manifest, null, 2));
   const content = await zip.generateAsync({ type: 'blob' });
   const a = document.createElement('a');
@@ -3132,6 +3215,26 @@ document.getElementById('fileJson').addEventListener('change', async e => {
         }
       }
     } catch (_) {}
+    // Linked clone canvases per region
+    const manifestObj = JSON.parse(txt);
+    for (const entry of (manifestObj.regions || []).filter(rr => rr.linked_clone_file)) {
+      const f4 = zip.file(entry.linked_clone_file);
+      if (!f4) continue;
+      try {
+        const blob = await f4.async('blob');
+        const im = new Image();
+        await new Promise(res => { im.onload = res; im.onerror = res; im.src = URL.createObjectURL(blob); });
+        const reg = state.regions.find(rr => rr.name === entry.name);
+        if (reg) {
+          const canv = ensureLinkedCloneCanvas(reg);
+          if (canv) {
+            const c = canv.getContext('2d');
+            c.clearRect(0, 0, canv.width, canv.height);
+            c.drawImage(im, 0, 0);
+          }
+        }
+      } catch (_) {}
+    }
     render();
   } else {
     const txt = await f.text();
