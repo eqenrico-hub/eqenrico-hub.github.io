@@ -106,6 +106,7 @@ title: PNG State Aligner
       <button class="tool" data-tool="select">Select / Edit</button>
       <button class="tool" data-tool="clone" title="Clone stamp — Alt+click to set source, drag to paint">Clone stamp</button>
       <button class="tool" data-tool="fade" title="Fade brush — drag to soften clone-stamp edges">Fade brush</button>
+      <button class="tool" data-tool="paint" title="Paint brush — drag to paint with a chosen colour">Paint brush</button>
     </div>
     <div id="cloneControls" style="display:none; margin-top:6px;">
       <div class="hint" style="margin-top:0;">Active clone layer (auto-detected):</div>
@@ -141,6 +142,29 @@ title: PNG State Aligner
       <input type="range" id="fadeStrength" min="1" max="100" value="25" step="1" style="width:100%;">
       <div class="hint">Drag to gradually erase whatever you see in preview (decals, clone stamps, etc) with a soft falloff. Down to 0.3 px for tight edge feathering.</div>
       <button id="btnFadeClear" class="danger" style="width:100%; font-size:10px; margin-top:3px;">Clear all fade</button>
+    </div>
+    <div id="paintControls" style="display:none; margin-top:6px;">
+      <div class="hint" style="margin-top:0;">Paint brush — draws on top of everything in the preview (decals, clones, etc).</div>
+      <div style="display:flex; gap:4px; margin-bottom:4px;">
+        <label style="flex:1; font-size:10px; cursor:pointer;"><input type="radio" name="paintShape" value="circle" checked> Circle</label>
+        <label style="flex:1; font-size:10px; cursor:pointer;"><input type="radio" name="paintShape" value="square"> Square</label>
+      </div>
+      <label style="font-size:10px;">size X <span id="pbvX">10</span>px</label>
+      <input type="number" id="paintBrushX" min="0.3" max="400" value="10" step="0.1" style="width:100%;">
+      <label style="font-size:10px;">size Y <span id="pbvY">10</span>px</label>
+      <input type="number" id="paintBrushY" min="0.3" max="400" value="10" step="0.1" style="width:100%;">
+      <label style="font-size:10px; display:flex; align-items:center; gap:4px;"><input type="checkbox" id="paintAspectLock" checked> lock 1:1</label>
+      <label style="font-size:10px;">opacity <span id="paintOpVal">100</span>%</label>
+      <input type="range" id="paintOpacity" min="1" max="100" value="100" step="1" style="width:100%;">
+      <div class="rcoords" style="grid-template-columns:1fr 1fr;">
+        <div><label>colour</label>
+          <div style="display:flex; gap:3px;">
+            <input type="color" id="paintColor" value="#ff6ec7" style="flex:1; height:24px; padding:0; border:1px solid #333;">
+            <button id="paintColorPick" title="Pick colour from preview" style="width:24px; padding:0; font-size:13px;">💧</button>
+          </div>
+        </div>
+        <div><label>&nbsp;</label><button id="btnPaintClear" class="danger" style="width:100%; font-size:10px; padding:3px;">Clear paint</button></div>
+      </div>
     </div>
     <button id="btnInteractive" style="background:#2a4a2a; margin-top:6px; width:100%;">▶ Interactive mode</button>
     <div id="stats">0 regions</div>
@@ -209,20 +233,21 @@ state.cloneUndoStack = [];
 state.cloneRedoStack = [];
 function pushCloneUndo(kind) {
   // kind: 'clone' (default) snapshots the active clone overlay; 'fade'
-  // snapshots the global fade mask. Either way the entry is pushed onto
-  // the same stack and consumed by Cmd+Z / Cmd+Shift+Z.
+  // snapshots the global fade mask; 'paint' snapshots the paint overlay.
   kind = kind || 'clone';
   let entry;
   if (kind === 'fade') {
     const m = state.fadeMask;
     if (!m) return;
-    const c = m.getContext('2d');
-    entry = { kind: 'fade', data: c.getImageData(0, 0, m.width, m.height) };
+    entry = { kind: 'fade', data: m.getContext('2d').getImageData(0, 0, m.width, m.height) };
+  } else if (kind === 'paint') {
+    const m = state.paintOverlay;
+    if (!m) return;
+    entry = { kind: 'paint', data: m.getContext('2d').getImageData(0, 0, m.width, m.height) };
   } else {
     const ovl = getActiveCloneOverlay();
     if (!ovl) return;
-    const c = ovl.getContext('2d');
-    entry = { kind: 'clone', layer: state.cloneLayer, data: c.getImageData(0, 0, ovl.width, ovl.height) };
+    entry = { kind: 'clone', layer: state.cloneLayer, data: ovl.getContext('2d').getImageData(0, 0, ovl.width, ovl.height) };
   }
   state.cloneUndoStack.push(entry);
   if (state.cloneUndoStack.length > 50) state.cloneUndoStack.shift();
@@ -231,6 +256,12 @@ function pushCloneUndo(kind) {
 function _restoreEntry(entry) {
   if (entry.kind === 'fade') {
     const m = state.fadeMask;
+    if (!m) return false;
+    m.getContext('2d').putImageData(entry.data, 0, 0);
+    return true;
+  }
+  if (entry.kind === 'paint') {
+    const m = state.paintOverlay;
     if (!m) return false;
     m.getContext('2d').putImageData(entry.data, 0, 0);
     return true;
@@ -245,6 +276,11 @@ function _captureCurrent(kind, layer) {
     const m = state.fadeMask;
     if (!m) return null;
     return { kind: 'fade', data: m.getContext('2d').getImageData(0, 0, m.width, m.height) };
+  }
+  if (kind === 'paint') {
+    const m = state.paintOverlay;
+    if (!m) return null;
+    return { kind: 'paint', data: m.getContext('2d').getImageData(0, 0, m.width, m.height) };
   }
   const ovl = layer === 'pressed' ? state.cloneOverlayPressed : state.cloneOverlay;
   if (!ovl) return null;
@@ -664,6 +700,8 @@ function setTool(t) {
   if (cc) cc.style.display = (t === 'clone') ? 'block' : 'none';
   const fc = document.getElementById('fadeControls');
   if (fc) fc.style.display = (t === 'fade') ? 'block' : 'none';
+  const pc = document.getElementById('paintControls');
+  if (pc) pc.style.display = (t === 'paint') ? 'block' : 'none';
 }
 
 // Slider handle images — captured once from PNG_A at each slider-rect's initial position
@@ -717,6 +755,25 @@ state.fadeAspectLock = true;
 state.fadeStrength = 0.25;
 state.fadeDragging = false;
 state.fadeMask = null; // accumulator canvas; opaque pixels = "show PNG_A here, not overlays"
+// Paint brush state — paints onto a global overlay drawn LAST in render order
+state.paintBrushX = 10;
+state.paintBrushY = 10;
+state.paintShape = 'circle';
+state.paintAspectLock = true;
+state.paintOpacity = 1.0;          // 0..1, per-stroke alpha
+state.paintColor = '#ff6ec7';
+state.paintDragging = false;
+state.paintOverlay = null;
+function ensurePaintOverlay() {
+  if (!state.imgA) return null;
+  if (!state.paintOverlay) {
+    const c = document.createElement('canvas');
+    c.width = state.imgA.naturalWidth;
+    c.height = state.imgA.naturalHeight;
+    state.paintOverlay = c;
+  }
+  return state.paintOverlay;
+}
 
 function ensureFadeMask() {
   if (!state.imgA) return null;
@@ -903,6 +960,71 @@ document.getElementById('btnFadeClear').addEventListener('click', () => {
     render();
   }
 });
+
+// Paint brush
+function paintStamp(imgX, imgY) {
+  const ovl = ensurePaintOverlay();
+  if (!ovl) return;
+  const c = ovl.getContext('2d');
+  const bx = state.paintBrushX, by = state.paintBrushY;
+  c.save();
+  c.globalAlpha = Math.max(0.01, Math.min(1, state.paintOpacity || 1));
+  c.fillStyle = state.paintColor || '#ff6ec7';
+  if (state.paintShape === 'square') {
+    c.fillRect(imgX - bx, imgY - by, bx * 2, by * 2);
+  } else {
+    c.beginPath();
+    c.ellipse(imgX, imgY, bx, by, 0, 0, Math.PI * 2);
+    c.fill();
+  }
+  c.restore();
+}
+function setPaintBrushX(v) {
+  state.paintBrushX = +v;
+  document.getElementById('pbvX').textContent = v;
+  if (state.paintAspectLock) {
+    state.paintBrushY = state.paintBrushX;
+    document.getElementById('pbvY').textContent = v;
+    document.getElementById('paintBrushY').value = v;
+  }
+}
+function setPaintBrushY(v) {
+  state.paintBrushY = +v;
+  document.getElementById('pbvY').textContent = v;
+  if (state.paintAspectLock) {
+    state.paintBrushX = state.paintBrushY;
+    document.getElementById('pbvX').textContent = v;
+    document.getElementById('paintBrushX').value = v;
+  }
+}
+document.getElementById('paintBrushX').addEventListener('input', e => { setPaintBrushX(e.target.value); render(); });
+document.getElementById('paintBrushY').addEventListener('input', e => { setPaintBrushY(e.target.value); render(); });
+document.getElementById('paintAspectLock').addEventListener('change', e => {
+  state.paintAspectLock = !!e.target.checked;
+  if (state.paintAspectLock) setPaintBrushX(state.paintBrushX);
+  render();
+});
+document.getElementById('paintOpacity').addEventListener('input', e => {
+  state.paintOpacity = (+e.target.value) / 100;
+  document.getElementById('paintOpVal').textContent = e.target.value;
+});
+document.getElementById('paintColor').addEventListener('input', e => {
+  state.paintColor = e.target.value;
+});
+document.getElementById('paintColorPick').addEventListener('click', () => {
+  state.colorPickTarget = { paintBrush: true };
+  canvasWrap.classList.add('drawing');
+});
+document.getElementById('btnPaintClear').addEventListener('click', () => {
+  if (state.paintOverlay) {
+    state.paintOverlay.getContext('2d').clearRect(0, 0, state.paintOverlay.width, state.paintOverlay.height);
+    render();
+  }
+});
+document.querySelectorAll('input[name="paintShape"]').forEach(r => r.addEventListener('change', e => {
+  state.paintShape = e.target.value;
+  render();
+}));
 document.getElementById('btnCloneClear').addEventListener('click', () => {
   const ovl = getActiveCloneOverlay();
   if (!ovl) return;
@@ -1005,8 +1127,8 @@ canvasWrap.addEventListener('mousedown', e => {
   const { cx, cy } = canvasMouseCoord(e);
   const { x: ix, y: iy } = canvasToImage(cx, cy);
 
-  // Eyedropper consumer — sample the main canvas pixel under the cursor and
-  // assign the hex to the targeted text region's field, then disarm.
+  // Eyedropper consumer — sample the main canvas pixel under the cursor.
+  // Targets either a text region's colour field, or the paint brush colour.
   if (state.colorPickTarget) {
     const cv = document.getElementById('canvas');
     if (cv) {
@@ -1016,10 +1138,16 @@ canvasWrap.addEventListener('mousedown', e => {
       try {
         const data = cv.getContext('2d').getImageData(px, py, 1, 1).data;
         const hex = '#' + [data[0], data[1], data[2]].map(v => v.toString(16).padStart(2, '0')).join('');
-        const reg = state.regions.find(rr => rr.id === state.colorPickTarget.regionId);
-        if (reg) {
-          pushUndo();
-          reg[state.colorPickTarget.field] = hex;
+        if (state.colorPickTarget.paintBrush) {
+          state.paintColor = hex;
+          const ci = document.getElementById('paintColor');
+          if (ci) ci.value = hex;
+        } else {
+          const reg = state.regions.find(rr => rr.id === state.colorPickTarget.regionId);
+          if (reg) {
+            pushUndo();
+            reg[state.colorPickTarget.field] = hex;
+          }
         }
       } catch (_) {}
     }
@@ -1142,6 +1270,14 @@ canvasWrap.addEventListener('mousedown', e => {
     render();
     return;
   }
+  if (state.tool === 'paint') {
+    ensurePaintOverlay();
+    pushCloneUndo('paint');
+    state.paintDragging = true;
+    paintStamp(ix, iy);
+    render();
+    return;
+  }
 
   if (state.tool === 'draw' || state.tool === 'drawring' || state.tool === 'drawknob' || state.tool === 'drawdropdown') {
     state.drawStart = { x: ix, y: iy };
@@ -1175,11 +1311,13 @@ canvasWrap.addEventListener('mousedown', e => {
 
 window.addEventListener('mousemove', e => {
   // Always track cursor position for clone brush preview
-  if (state.tool === 'clone' || state.tool === 'fade') {
+  if (state.tool === 'clone' || state.tool === 'fade' || state.tool === 'paint') {
     const { cx, cy } = canvasMouseCoord(e);
     state.cloneCursor = canvasToImage(cx, cy);
     if (state.tool === 'fade' && state.fadeDragging) {
       fadeStamp(state.cloneCursor.x, state.cloneCursor.y);
+    } else if (state.tool === 'paint' && state.paintDragging) {
+      paintStamp(state.cloneCursor.x, state.cloneCursor.y);
     }
     if (!(state.tool === 'clone' && state.cloneDragging)) render();
   } else if (state.cloneCursor) {
@@ -1435,6 +1573,7 @@ window.addEventListener('mouseup', e => {
   state.dragging = false; state.swipeDrag = false; state.editMode = null;
   state.cloneDragging = false;
   state.fadeDragging = false;
+  state.paintDragging = false;
   state.snapGuides = [];
   canvasWrap.classList.remove('grabbing');
   render();
@@ -2159,6 +2298,10 @@ function render() {
       fac.drawImage(state.imgA, 0, 0);
       ctx.drawImage(fa, 0, 0, dw, dh);
     }
+
+    // Paint overlay drawn last — sits on top of EVERYTHING (decals, clones,
+    // even the fade-mask PNG_A patch).
+    if (state.paintOverlay) ctx.drawImage(state.paintOverlay, 0, 0, dw, dh);
   }
 
   if (!state.hideBorders) drawRegions();
@@ -2175,6 +2318,22 @@ function render() {
     octx.setLineDash([3, 2]);
     octx.beginPath();
     if (state.fadeShape === 'square') octx.rect(cx - brX, cy - brY, brX * 2, brY * 2);
+    else octx.ellipse(cx, cy, Math.max(0.5, brX), Math.max(0.5, brY), 0, 0, Math.PI * 2);
+    octx.stroke();
+    octx.setLineDash([]);
+    octx.restore();
+  }
+  if (state.tool === 'paint' && state.cloneCursor) {
+    const cx = state.cloneCursor.x * state.scale;
+    const cy = state.cloneCursor.y * state.scale;
+    const brX = state.paintBrushX * state.scale;
+    const brY = state.paintBrushY * state.scale;
+    octx.save();
+    octx.strokeStyle = state.paintColor || '#ff6ec7';
+    octx.lineWidth = 1.5;
+    octx.setLineDash([3, 2]);
+    octx.beginPath();
+    if (state.paintShape === 'square') octx.rect(cx - brX, cy - brY, brX * 2, brY * 2);
     else octx.ellipse(cx, cy, Math.max(0.5, brX), Math.max(0.5, brY), 0, 0, Math.PI * 2);
     octx.stroke();
     octx.setLineDash([]);
