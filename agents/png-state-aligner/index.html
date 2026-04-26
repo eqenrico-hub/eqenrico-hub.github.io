@@ -105,6 +105,7 @@ title: PNG State Aligner
       <button class="tool" data-tool="drawdropdown">Draw dropdown</button>
       <button class="tool" data-tool="select">Select / Edit</button>
       <button class="tool" data-tool="clone" title="Clone stamp — Alt+click to set source, drag to paint">Clone stamp</button>
+      <button class="tool" data-tool="fade" title="Fade brush — drag to soften clone-stamp edges">Fade brush</button>
     </div>
     <div id="cloneControls" style="display:none; margin-top:6px;">
       <div class="hint" style="margin-top:0;">Active clone layer (auto-detected):</div>
@@ -124,6 +125,21 @@ title: PNG State Aligner
       <label style="font-size:10px; display:flex; align-items:center; gap:4px;"><input type="checkbox" id="cloneAspectLock" checked> lock 1:1 (Y follows X)</label>
       <div class="hint">Alt+click to set source · drag to paint over with cloned pixels</div>
       <button id="btnCloneClear" class="danger" style="width:100%; font-size:10px; margin-top:3px;">Clear active layer</button>
+    </div>
+    <div id="fadeControls" style="display:none; margin-top:6px;">
+      <div class="hint" style="margin-top:0;">Fade brush — softens the active clone-stamp layer wherever you drag.</div>
+      <div style="display:flex; gap:4px; margin-bottom:4px;">
+        <label style="flex:1; font-size:10px; cursor:pointer;"><input type="radio" name="fadeShape" value="circle" checked> Circle</label>
+        <label style="flex:1; font-size:10px; cursor:pointer;"><input type="radio" name="fadeShape" value="square"> Square</label>
+      </div>
+      <label style="font-size:10px;">size X <span id="fbvX">10</span>px</label>
+      <input type="number" id="fadeBrushX" min="0.3" max="400" value="10" step="0.1" style="width:100%;">
+      <label style="font-size:10px;">size Y <span id="fbvY">10</span>px</label>
+      <input type="number" id="fadeBrushY" min="0.3" max="400" value="10" step="0.1" style="width:100%;">
+      <label style="font-size:10px; display:flex; align-items:center; gap:4px;"><input type="checkbox" id="fadeAspectLock" checked> lock 1:1</label>
+      <label style="font-size:10px;">strength per stroke <span id="fadeStrengthVal">25</span>%</label>
+      <input type="range" id="fadeStrength" min="1" max="100" value="25" step="1" style="width:100%;">
+      <div class="hint">Drag to gradually erase the active clone-stamp layer with a soft falloff. Use small sizes (down to 0.3 px) for tight edge feathering.</div>
     </div>
     <button id="btnInteractive" style="background:#2a4a2a; margin-top:6px; width:100%;">▶ Interactive mode</button>
     <div id="stats">0 regions</div>
@@ -617,6 +633,8 @@ function setTool(t) {
   canvasWrap.classList.toggle('drawing', t === 'draw');
   const cc = document.getElementById('cloneControls');
   if (cc) cc.style.display = (t === 'clone') ? 'block' : 'none';
+  const fc = document.getElementById('fadeControls');
+  if (fc) fc.style.display = (t === 'fade') ? 'block' : 'none';
 }
 
 // Slider handle images — captured once from PNG_A at each slider-rect's initial position
@@ -662,6 +680,13 @@ state.cloneBrushX = 40;         // half-width of stamp (radius for circle)
 state.cloneBrushY = 40;         // half-height of stamp
 state.cloneShape = 'circle';    // 'circle' | 'square'
 state.cloneAspectLock = true;
+// Fade brush state
+state.fadeBrushX = 10;
+state.fadeBrushY = 10;
+state.fadeShape = 'circle';
+state.fadeAspectLock = true;
+state.fadeStrength = 0.25;
+state.fadeDragging = false;
 
 function ensureCloneOverlay() {
   if (!state.imgA) return null;
@@ -767,6 +792,66 @@ document.getElementById('cloneAspectLock').addEventListener('change', e => {
 });
 document.querySelectorAll('input[name="cloneShape"]').forEach(r => r.addEventListener('change', e => {
   state.cloneShape = e.target.value;
+  render();
+}));
+
+// Fade brush — soft eraser on the active clone-stamp layer
+function fadeStamp(imgX, imgY) {
+  const ovl = getActiveCloneOverlay();
+  if (!ovl) return;
+  const octx2 = ovl.getContext('2d');
+  const bx = state.fadeBrushX, by = state.fadeBrushY;
+  octx2.save();
+  octx2.globalCompositeOperation = 'destination-out';
+  // Soft falloff via radial gradient — peak at strength in centre, 0 at edge
+  const peak = Math.max(0.01, Math.min(1, state.fadeStrength || 0.25));
+  const r = Math.max(bx, by);
+  const grad = octx2.createRadialGradient(imgX, imgY, 0, imgX, imgY, r);
+  grad.addColorStop(0,   `rgba(0,0,0,${peak.toFixed(3)})`);
+  grad.addColorStop(0.6, `rgba(0,0,0,${(peak*0.45).toFixed(3)})`);
+  grad.addColorStop(1,   'rgba(0,0,0,0)');
+  octx2.fillStyle = grad;
+  if (state.fadeShape === 'square') {
+    octx2.fillRect(imgX - bx, imgY - by, bx * 2, by * 2);
+  } else {
+    octx2.beginPath();
+    octx2.ellipse(imgX, imgY, bx, by, 0, 0, Math.PI * 2);
+    octx2.fill();
+  }
+  octx2.restore();
+}
+
+function setFadeBrushX(v) {
+  state.fadeBrushX = +v;
+  document.getElementById('fbvX').textContent = v;
+  if (state.fadeAspectLock) {
+    state.fadeBrushY = state.fadeBrushX;
+    document.getElementById('fbvY').textContent = v;
+    document.getElementById('fadeBrushY').value = v;
+  }
+}
+function setFadeBrushY(v) {
+  state.fadeBrushY = +v;
+  document.getElementById('fbvY').textContent = v;
+  if (state.fadeAspectLock) {
+    state.fadeBrushX = state.fadeBrushY;
+    document.getElementById('fbvX').textContent = v;
+    document.getElementById('fadeBrushX').value = v;
+  }
+}
+document.getElementById('fadeBrushX').addEventListener('input', e => { setFadeBrushX(e.target.value); render(); });
+document.getElementById('fadeBrushY').addEventListener('input', e => { setFadeBrushY(e.target.value); render(); });
+document.getElementById('fadeAspectLock').addEventListener('change', e => {
+  state.fadeAspectLock = !!e.target.checked;
+  if (state.fadeAspectLock) setFadeBrushX(state.fadeBrushX);
+  render();
+});
+document.getElementById('fadeStrength').addEventListener('input', e => {
+  state.fadeStrength = (+e.target.value) / 100;
+  document.getElementById('fadeStrengthVal').textContent = e.target.value;
+});
+document.querySelectorAll('input[name="fadeShape"]').forEach(r => r.addEventListener('change', e => {
+  state.fadeShape = e.target.value;
   render();
 }));
 document.getElementById('btnCloneClear').addEventListener('click', () => {
@@ -1000,6 +1085,13 @@ canvasWrap.addEventListener('mousedown', e => {
     }
     return;
   }
+  if (state.tool === 'fade') {
+    pushCloneUndo();
+    state.fadeDragging = true;
+    fadeStamp(ix, iy);
+    render();
+    return;
+  }
 
   if (state.tool === 'draw' || state.tool === 'drawring' || state.tool === 'drawknob' || state.tool === 'drawdropdown') {
     state.drawStart = { x: ix, y: iy };
@@ -1033,10 +1125,13 @@ canvasWrap.addEventListener('mousedown', e => {
 
 window.addEventListener('mousemove', e => {
   // Always track cursor position for clone brush preview
-  if (state.tool === 'clone') {
+  if (state.tool === 'clone' || state.tool === 'fade') {
     const { cx, cy } = canvasMouseCoord(e);
     state.cloneCursor = canvasToImage(cx, cy);
-    if (!state.cloneDragging) render();
+    if (state.tool === 'fade' && state.fadeDragging) {
+      fadeStamp(state.cloneCursor.x, state.cloneCursor.y);
+    }
+    if (!(state.tool === 'clone' && state.cloneDragging)) render();
   } else if (state.cloneCursor) {
     state.cloneCursor = null; render();
   }
@@ -1289,6 +1384,7 @@ window.addEventListener('mouseup', e => {
   }
   state.dragging = false; state.swipeDrag = false; state.editMode = null;
   state.cloneDragging = false;
+  state.fadeDragging = false;
   state.snapGuides = [];
   canvasWrap.classList.remove('grabbing');
   render();
@@ -2000,6 +2096,23 @@ function render() {
   if (!state.hideBorders) drawRegions();
 
   // Clone tool markers: source crosshair + cursor brush preview
+  if (state.tool === 'fade' && state.cloneCursor) {
+    const cx = state.cloneCursor.x * state.scale;
+    const cy = state.cloneCursor.y * state.scale;
+    const brX = state.fadeBrushX * state.scale;
+    const brY = state.fadeBrushY * state.scale;
+    octx.save();
+    octx.strokeStyle = '#ff9f4f';
+    octx.lineWidth = 1.5;
+    octx.setLineDash([3, 2]);
+    octx.beginPath();
+    if (state.fadeShape === 'square') octx.rect(cx - brX, cy - brY, brX * 2, brY * 2);
+    else octx.ellipse(cx, cy, Math.max(0.5, brX), Math.max(0.5, brY), 0, 0, Math.PI * 2);
+    octx.stroke();
+    octx.setLineDash([]);
+    octx.restore();
+  }
+
   if (state.tool === 'clone') {
     function brushPath(c, x, y, brX, brY) {
       c.beginPath();
