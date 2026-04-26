@@ -783,6 +783,7 @@ state.paintOpacity = 1.0;          // 0..1, per-stroke alpha
 state.paintColor = '#ff6ec7';
 state.paintDragging = false;
 state.paintOverlay = null;
+state.paintStroke = null;  // ephemeral per-stroke buffer (full opacity)
 function ensurePaintOverlay() {
   if (!state.imgA) return null;
   if (!state.paintOverlay) {
@@ -792,6 +793,22 @@ function ensurePaintOverlay() {
     state.paintOverlay = c;
   }
   return state.paintOverlay;
+}
+function ensurePaintStroke() {
+  if (!state.imgA) return null;
+  if (!state.paintStroke || state.paintStroke.width !== state.imgA.naturalWidth) {
+    const c = document.createElement('canvas');
+    c.width = state.imgA.naturalWidth;
+    c.height = state.imgA.naturalHeight;
+    state.paintStroke = c;
+  }
+  return state.paintStroke;
+}
+function clearPaintStroke() {
+  if (state.paintStroke) {
+    const c = state.paintStroke.getContext('2d');
+    c.clearRect(0, 0, state.paintStroke.width, state.paintStroke.height);
+  }
 }
 
 function ensureFadeMask() {
@@ -917,17 +934,35 @@ document.querySelectorAll('input[name="cloneShape"]').forEach(r => r.addEventLis
 // are erased where the mask is opaque, so PNG_A shows through. This makes
 // fade behave as "soften whatever I currently see" instead of only erasing
 // clone strokes.
+// Fade brush — same anti-buildup pattern as paint: strokes go to an
+// ephemeral fadeStroke buffer at full opacity (flattened via max alpha
+// using lighter composite), then commit once with the chosen strength.
+function ensureFadeStroke() {
+  if (!state.imgA) return null;
+  if (!state.fadeStroke || state.fadeStroke.width !== state.imgA.naturalWidth) {
+    const c = document.createElement('canvas');
+    c.width = state.imgA.naturalWidth;
+    c.height = state.imgA.naturalHeight;
+    state.fadeStroke = c;
+  }
+  return state.fadeStroke;
+}
+function clearFadeStroke() {
+  if (state.fadeStroke) state.fadeStroke.getContext('2d').clearRect(0, 0, state.fadeStroke.width, state.fadeStroke.height);
+}
 function fadeStamp(imgX, imgY) {
-  const fade = ensureFadeMask();
-  if (!fade) return;
+  const stroke = ensureFadeStroke();
+  if (!stroke) return;
   const bx = state.fadeBrushX, by = state.fadeBrushY;
-  const peak = Math.max(0.01, Math.min(1, state.fadeStrength || 0.25));
   const r = Math.max(bx, by);
-  const c = fade.getContext('2d');
+  const c = stroke.getContext('2d');
   c.save();
+  // 'lighter' composite takes max of overlapping alpha values, so the stroke
+  // buffer never builds up beyond the per-stamp peak even on slow drags.
+  c.globalCompositeOperation = 'lighter';
   const g = c.createRadialGradient(imgX, imgY, 0, imgX, imgY, r);
-  g.addColorStop(0,   `rgba(0,0,0,${peak.toFixed(3)})`);
-  g.addColorStop(0.6, `rgba(0,0,0,${(peak*0.45).toFixed(3)})`);
+  g.addColorStop(0,   'rgba(0,0,0,1)');
+  g.addColorStop(0.6, 'rgba(0,0,0,0.45)');
   g.addColorStop(1,   'rgba(0,0,0,0)');
   c.fillStyle = g;
   if (state.fadeShape === 'square') {
@@ -938,6 +973,16 @@ function fadeStamp(imgX, imgY) {
     c.fill();
   }
   c.restore();
+}
+function commitFadeStroke() {
+  if (!state.fadeStroke || !state.fadeMask) return;
+  const peak = Math.max(0.01, Math.min(1, state.fadeStrength || 0.25));
+  const c = state.fadeMask.getContext('2d');
+  c.save();
+  c.globalAlpha = peak;
+  c.drawImage(state.fadeStroke, 0, 0);
+  c.restore();
+  clearFadeStroke();
 }
 
 function setFadeBrushX(v) {
@@ -980,14 +1025,18 @@ document.getElementById('btnFadeClear').addEventListener('click', () => {
   }
 });
 
-// Paint brush
+// Paint brush — strokes are accumulated to an ephemeral full-opacity stroke
+// buffer during the drag so overlapping stamps don't stack alpha (which made
+// the brush "intensify" where the cursor slowed down). On mouseup the stroke
+// buffer is composited onto the persistent paintOverlay with the chosen
+// opacity, exactly once.
 function paintStamp(imgX, imgY) {
-  const ovl = ensurePaintOverlay();
-  if (!ovl) return;
-  const c = ovl.getContext('2d');
+  const stroke = ensurePaintStroke();
+  if (!stroke) return;
+  const c = stroke.getContext('2d');
   const bx = state.paintBrushX, by = state.paintBrushY;
   c.save();
-  c.globalAlpha = Math.max(0.01, Math.min(1, state.paintOpacity || 1));
+  c.globalAlpha = 1; // full opacity — flatten via max alpha
   c.fillStyle = state.paintColor || '#ff6ec7';
   if (state.paintShape === 'square') {
     c.fillRect(imgX - bx, imgY - by, bx * 2, by * 2);
@@ -997,6 +1046,15 @@ function paintStamp(imgX, imgY) {
     c.fill();
   }
   c.restore();
+}
+function commitPaintStroke() {
+  if (!state.paintStroke || !state.paintOverlay) return;
+  const c = state.paintOverlay.getContext('2d');
+  c.save();
+  c.globalAlpha = Math.max(0.01, Math.min(1, state.paintOpacity || 1));
+  c.drawImage(state.paintStroke, 0, 0);
+  c.restore();
+  clearPaintStroke();
 }
 function setPaintBrushX(v) {
   state.paintBrushX = +v;
@@ -1590,6 +1648,8 @@ window.addEventListener('mouseup', e => {
     refreshRegions(); render();
   }
   state.dragging = false; state.swipeDrag = false; state.editMode = null;
+  if (state.paintDragging) commitPaintStroke();
+  if (state.fadeDragging) commitFadeStroke();
   state.cloneDragging = false;
   state.fadeDragging = false;
   state.paintDragging = false;
@@ -2313,14 +2373,21 @@ function render() {
         if (sw > 0 && sh > 0) ctx.drawImage(state.cloneOverlayPressed, sx, sy, sw, sh, dx2, dy2, dw2, dh2);
       }
     }
-    if (state.fadeMask && state.imgA) {
+    if (state.imgA && (state.fadeMask || (state.fadeDragging && state.fadeStroke))) {
       if (!state._fadeApply) state._fadeApply = document.createElement('canvas');
       const fa = state._fadeApply;
-      fa.width = state.fadeMask.width;
-      fa.height = state.fadeMask.height;
+      fa.width = state.imgA.naturalWidth;
+      fa.height = state.imgA.naturalHeight;
       const fac = fa.getContext('2d');
       fac.clearRect(0, 0, fa.width, fa.height);
-      fac.drawImage(state.fadeMask, 0, 0);
+      if (state.fadeMask) fac.drawImage(state.fadeMask, 0, 0);
+      if (state.fadeDragging && state.fadeStroke) {
+        const peak = Math.max(0.01, Math.min(1, state.fadeStrength || 0.25));
+        fac.save();
+        fac.globalAlpha = peak;
+        fac.drawImage(state.fadeStroke, 0, 0);
+        fac.restore();
+      }
       fac.globalCompositeOperation = 'source-in';
       fac.drawImage(state.imgA, 0, 0);
       ctx.drawImage(fa, 0, 0, dw, dh);
@@ -2328,6 +2395,12 @@ function render() {
     drawAlwaysVisibleDecals();
     drawWidgetOverlays();
     if (state.paintOverlay) ctx.drawImage(state.paintOverlay, 0, 0, dw, dh);
+    if (state.paintDragging && state.paintStroke) {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0.01, Math.min(1, state.paintOpacity || 1));
+      ctx.drawImage(state.paintStroke, 0, 0, dw, dh);
+      ctx.restore();
+    }
   }
 
   if (!state.hideBorders) drawRegions();
