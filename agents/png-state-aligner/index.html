@@ -2044,10 +2044,10 @@ function render() {
 
   const Bsrc = state.imgBResized || state.imgB;
 
-  // Layer 1 — chassis-level static stuff: text labels + decals. Drawn UNDER
-  // the clone overlays so user paint can sit on top of them.
+  // Layer 1 — chassis-level: text labels + parent-linked decals (e.g. the
+  // COMPLEMENT glow that appears when its button is pressed). Sits UNDER
+  // the clone overlays so user paint can mask them when needed.
   function drawChassisOverlays() {
-    // Text labels
     const textRegions = state.regions.filter(r => r.shape === 'text' && r.text);
     for (const r of textRegions) {
       const parent = r.parentId != null ? state.regions.find(o => o.id === r.parentId) : null;
@@ -2069,13 +2069,27 @@ function render() {
       ctx.fillText(r.text, cx, cy);
       ctx.restore();
     }
-    // Decals
-    const decals = state.regions.filter(r => r.shape === 'decal' && r.decalImage);
+    // Parent-linked decals only (alwaysVisible decals are drawn later, on top
+    // of the clone overlays — they're "permanent stickers" that user paint
+    // shouldn't hide).
+    const decals = state.regions.filter(r => r.shape === 'decal' && r.decalImage && !r.alwaysVisible);
     for (const r of decals) {
       const parent = r.parentId != null ? state.regions.find(o => o.id === r.parentId) : null;
       const isSelected = (r.id === state.selectedId);
-      const visible = r.alwaysVisible ? true : (parent ? !!parent.pressed : !!r.pressed);
+      const visible = parent ? !!parent.pressed : !!r.pressed;
       if (!visible && !isSelected) continue;
+      const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
+      const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
+      const rw = r.w * state.scale, rh = r.h * state.scale;
+      ctx.drawImage(r.decalImage, rx, ry, rw, rh);
+    }
+  }
+
+  // Layer 1.5 — always-visible decals drawn ABOVE clone overlays so they're
+  // never covered by accidental stamps; they sit BELOW interactive widgets.
+  function drawAlwaysVisibleDecals() {
+    const decals = state.regions.filter(r => r.shape === 'decal' && r.decalImage && r.alwaysVisible);
+    for (const r of decals) {
       const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
       const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
       const rw = r.w * state.scale, rh = r.h * state.scale;
@@ -2292,6 +2306,7 @@ function render() {
       fac.drawImage(state.imgA, 0, 0);
       ctx.drawImage(fa, 0, 0, dw, dh);
     }
+    drawAlwaysVisibleDecals();
     drawWidgetOverlays();
     if (state.paintOverlay) ctx.drawImage(state.paintOverlay, 0, 0, dw, dh);
   }
