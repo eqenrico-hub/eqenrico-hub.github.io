@@ -1743,6 +1743,15 @@ function refreshRegions() {
           </select>
         </div>
       ` : ''}
+      ${(r.shape === 'circle' || r.shape === 'knob') ? `
+        <div style="margin:3px 0;"><button class="rcropcircle" data-id="${r.id}" style="width:100%; font-size:10px; padding:4px; background:#3a4a2a;">⊙ Crop circle from PNG_A → download</button></div>
+        <div style="margin:3px 0;">
+          <select class="rcropassign" data-id="${r.id}" style="width:100%; font-size:10px; padding:2px; background:#111; color:var(--fg); border:1px solid #333; border-radius:3px;">
+            <option value="">… or assign crop to a knob region:</option>
+            ${state.regions.filter(o => o.shape === 'knob').map(o => `<option value="${o.id}">→ ${o.name}</option>`).join('')}
+          </select>
+        </div>
+      ` : ''}
       ${r.shape === 'decal' ? `
         <div style="margin:3px 0;"><label style="font-size:10px;">parent button (leave empty = always visible)</label>
           <select class="cparent" data-id="${r.id}" style="width:100%; font-size:10px; padding:2px; background:#111; color:var(--fg); border:1px solid #333; border-radius:3px;">
@@ -2012,6 +2021,54 @@ function refreshRegions() {
     render();
   }));
   list.querySelectorAll('.ccurve').forEach(i => i.addEventListener('change', () => pushUndo()));
+
+  // Circle crop from PNG_A — downloads a square PNG with the bbox cropped from
+  // PNG_A and pixels outside the inscribed circle wiped to transparent.
+  function buildCircleCrop(r) {
+    if (!state.imgA) return null;
+    const sz = Math.round(Math.max(r.w, r.h));
+    if (sz < 4) return null;
+    const c = document.createElement('canvas');
+    c.width = sz; c.height = sz;
+    const cx = c.getContext('2d');
+    // Source bbox: use the region's bbox as-is. Centre may be slightly offset
+    // if w !== h, but knobs are square so this is fine in practice.
+    const sx = r.x, sy = r.y, sw = r.w, sh = r.h;
+    cx.save();
+    cx.beginPath();
+    cx.ellipse(sz/2, sz/2, sz/2, sz/2, 0, 0, Math.PI * 2);
+    cx.clip();
+    cx.drawImage(state.imgA, sx, sy, sw, sh, 0, 0, sz, sz);
+    cx.restore();
+    return c;
+  }
+  list.querySelectorAll('.rcropcircle').forEach(btn => btn.addEventListener('click', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (!r) return;
+    const c = buildCircleCrop(r);
+    if (!c) { alert('PNG_A not loaded yet'); return; }
+    c.toBlob(blob => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `circle_crop_${r.name}_${Math.round(r.x)}_${Math.round(r.y)}_${Math.round(r.w)}.png`;
+      a.click();
+    });
+  }));
+  list.querySelectorAll('.rcropassign').forEach(sel => sel.addEventListener('change', e => {
+    const sourceR = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (!sourceR || !e.target.value) return;
+    const targetR = state.regions.find(x => x.id === +e.target.value);
+    if (!targetR) return;
+    const c = buildCircleCrop(sourceR);
+    if (!c) { alert('PNG_A not loaded yet'); return; }
+    pushUndo();
+    targetR.decalImage = c;
+    // Persist as a generated filename so bundle export writes it
+    targetR.knobImageFile = `circle_crop_${sourceR.name}.png`;
+    targetR._cropCanvas = c; // for export pipeline if needed
+    e.target.value = '';
+    refreshRegions(); render();
+  }));
 
   // Dropdown parent selector
   list.querySelectorAll('.cparent').forEach(sel => sel.addEventListener('change', e => {
