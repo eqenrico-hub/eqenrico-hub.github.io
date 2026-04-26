@@ -125,6 +125,12 @@ title: PNG State Aligner
       <label style="font-size:10px;">size Y <span id="cbvY">40</span>px</label>
       <input type="range" id="cloneBrushY" min="2" max="400" value="40" step="1" style="width:100%;">
       <label style="font-size:10px; display:flex; align-items:center; gap:4px;"><input type="checkbox" id="cloneAspectLock" checked> lock 1:1 (Y follows X)</label>
+      <label style="font-size:10px; display:flex; align-items:center; gap:4px; margin-top:4px;"><input type="checkbox" id="cloneFadeContour"> fade contour (soft edge)</label>
+      <div id="cloneContourBox" style="display:none;">
+        <label style="font-size:10px;">contour distance <span id="cfdv">10</span>px</label>
+        <input type="range" id="cloneFadeDistance" min="1" max="200" value="10" step="0.5" style="width:100%;">
+        <div class="hint">Pixels OUTSIDE the size X / size Y boundary where stamp alpha falls off to 0. Inside = full opacity.</div>
+      </div>
       <div class="hint">Alt+click to set source · drag to paint over with cloned pixels</div>
       <button id="btnCloneClear" class="danger" style="width:100%; font-size:10px; margin-top:3px;">Clear active layer</button>
       <div class="hint" style="margin-top:6px; border-top:1px solid #333; padding-top:6px;">Linked clone (visible only when one specific button is pressed):</div>
@@ -841,6 +847,8 @@ state.cloneBrushX = 40;         // half-width of stamp (radius for circle)
 state.cloneBrushY = 40;         // half-height of stamp
 state.cloneShape = 'circle';    // 'circle' | 'square'
 state.cloneAspectLock = true;
+state.cloneFadeContour = false;
+state.cloneFadeDistance = 10;   // px outside the brush body where alpha → 0
 // Fade brush state
 state.fadeBrushX = 10;
 state.fadeBrushY = 10;
@@ -1003,17 +1011,72 @@ function cloneStamp(imgX, imgY) {
   const bx = state.cloneBrushX, by = state.cloneBrushY;
   const sx = state.cloneSource.x + (imgX - state.cloneStart.x);
   const sy = state.cloneSource.y + (imgY - state.cloneStart.y);
-  octx2.save();
-  octx2.beginPath();
-  if (state.cloneShape === 'square') {
-    octx2.rect(imgX - bx, imgY - by, bx * 2, by * 2);
+
+  if (state.cloneFadeContour) {
+    // Soft-edge: full opacity inside (bx × by), alpha fades to 0 over an
+    // additional cloneFadeDistance px outside. We stage the cloned slab on
+    // an offscreen canvas, then apply an alpha mask built from a gradient
+    // that's flat-1 to the inner radius and falls off to 0 at the outer
+    // radius, then drawImage the result onto the active clone overlay.
+    const fd = Math.max(0.5, state.cloneFadeDistance);
+    const tx = bx + fd, ty = by + fd;
+    if (!state._cloneStage) state._cloneStage = document.createElement('canvas');
+    if (!state._cloneMask) state._cloneMask = document.createElement('canvas');
+    const stage = state._cloneStage, mask = state._cloneMask;
+    const W = Math.max(2, Math.ceil(tx * 2)), H = Math.max(2, Math.ceil(ty * 2));
+    stage.width = W; stage.height = H;
+    mask.width = W; mask.height = H;
+    const sctx = stage.getContext('2d');
+    sctx.clearRect(0, 0, W, H);
+    sctx.drawImage(src, sx - tx, sy - ty, tx * 2, ty * 2, 0, 0, W, H);
+
+    const mctx = mask.getContext('2d');
+    mctx.clearRect(0, 0, W, H);
+    if (state.cloneShape === 'square') {
+      // Solid inner square at full alpha
+      mctx.fillStyle = 'rgba(0,0,0,1)';
+      mctx.fillRect(W/2 - bx, H/2 - by, bx * 2, by * 2);
+      // Soft falloff outside via 4 gradient strips + 4 corner radial gradients
+      const g = mctx.createRadialGradient(W/2, H/2, Math.min(bx, by), W/2, H/2, Math.max(tx, ty));
+      g.addColorStop(0, 'rgba(0,0,0,1)');
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      mctx.fillStyle = g;
+      mctx.fillRect(0, 0, W, H);
+    } else {
+      // Ellipse case: radial alpha. Inner ellipse fully opaque, then linear
+      // falloff to 0 over the contour distance.
+      const inner = Math.max(bx, by);
+      const outer = Math.max(tx, ty);
+      const g = mctx.createRadialGradient(W/2, H/2, inner * 0.5, W/2, H/2, outer);
+      g.addColorStop(Math.min(1, inner / outer), 'rgba(0,0,0,1)');
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      mctx.fillStyle = g;
+      mctx.fillRect(0, 0, W, H);
+      // Replace the inside with a hard-fill ellipse to guarantee 100% opacity
+      mctx.globalCompositeOperation = 'source-over';
+      mctx.fillStyle = 'rgba(0,0,0,1)';
+      mctx.beginPath();
+      mctx.ellipse(W/2, H/2, bx, by, 0, 0, Math.PI * 2);
+      mctx.fill();
+    }
+    sctx.globalCompositeOperation = 'destination-in';
+    sctx.drawImage(mask, 0, 0);
+    sctx.globalCompositeOperation = 'source-over';
+
+    octx2.drawImage(stage, imgX - tx, imgY - ty);
   } else {
-    octx2.ellipse(imgX, imgY, bx, by, 0, 0, Math.PI * 2);
+    octx2.save();
+    octx2.beginPath();
+    if (state.cloneShape === 'square') {
+      octx2.rect(imgX - bx, imgY - by, bx * 2, by * 2);
+    } else {
+      octx2.ellipse(imgX, imgY, bx, by, 0, 0, Math.PI * 2);
+    }
+    octx2.clip();
+    octx2.drawImage(src, sx - bx, sy - by, bx * 2, by * 2,
+                         imgX - bx, imgY - by, bx * 2, by * 2);
+    octx2.restore();
   }
-  octx2.clip();
-  octx2.drawImage(src, sx - bx, sy - by, bx * 2, by * 2,
-                       imgX - bx, imgY - by, bx * 2, by * 2);
-  octx2.restore();
 }
 
 function setCloneBrushX(v) {
@@ -1062,6 +1125,16 @@ document.querySelectorAll('input[name="cloneShape"]').forEach(r => r.addEventLis
   state.cloneShape = e.target.value;
   render();
 }));
+document.getElementById('cloneFadeContour').addEventListener('change', e => {
+  state.cloneFadeContour = !!e.target.checked;
+  document.getElementById('cloneContourBox').style.display = state.cloneFadeContour ? 'block' : 'none';
+  render();
+});
+document.getElementById('cloneFadeDistance').addEventListener('input', e => {
+  state.cloneFadeDistance = +e.target.value;
+  document.getElementById('cfdv').textContent = e.target.value;
+  render();
+});
 
 // Fade brush — accumulates an alpha mask. At render time, pixels in the
 // composited overlay layers (decals + clone stamps + everything except PNG_A)
@@ -2907,6 +2980,16 @@ function render() {
       octx.lineWidth = 1.5;
       brushPath(octx, cx, cy, brX, brY);
       octx.stroke();
+      // Fade-contour outer ring (dotted, fainter)
+      if (state.cloneFadeContour) {
+        const fd = state.cloneFadeDistance * state.scale;
+        octx.strokeStyle = 'rgba(79, 209, 255, 0.55)';
+        octx.lineWidth = 1;
+        octx.setLineDash([2, 3]);
+        brushPath(octx, cx, cy, brX + fd, brY + fd);
+        octx.stroke();
+        octx.setLineDash([]);
+      }
       octx.restore();
     }
   }

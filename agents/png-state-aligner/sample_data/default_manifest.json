@@ -888,5 +888,5 @@
   "clone_overlay_file": "clone_overlay.png",
   "clone_overlay_pressed_file": "clone_overlay_pressed.png",
   "paint_overlay_file": "paint_overlay.png",
-  "fade_mask_file": "fade_mask.png"
+  "blur_overlay_file": "blur_overlay.png"
 }
