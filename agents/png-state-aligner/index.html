@@ -2042,7 +2042,6 @@ function render() {
       ctx.drawImage(state.imgA, 0, 0, dw, dh);
       ensureSliderHandles();
     }
-    if (state.cloneOverlay) ctx.drawImage(state.cloneOverlay, 0, 0, dw, dh);
     state.regions.filter(r => r.pressed && r.shape !== 'decal' && r.shape !== 'knob' && r.shape !== 'dropdown').forEach(r => {
       const src = (r.source === 'C') ? (state.imgCResized || state.imgC) : (state.imgBResized || state.imgB);
       if (!src) return;
@@ -2076,22 +2075,23 @@ function render() {
     renderDiff(dw, dh, Bsrc);
   }
 
-  // Clone overlay PRESSED: clipped to the UNION of currently-pressed regions' bboxes.
-  // This way a paint stroke made inside button X's bbox only shows when X is pressed,
-  // not when some other button is pressed.
-  if (state.cloneOverlayPressed) {
-    const pressedRegions = state.regions.filter(r => r.pressed && r.shape !== 'dropdown' && r.shape !== 'knob');
-    for (const r of pressedRegions) {
-      const sx = r.x, sy = r.y, sw = r.w, sh = r.h;
-      const dx2 = sx * state.scale, dy2 = sy * state.scale, dw2 = sw * state.scale, dh2 = sh * state.scale;
-      if (sw > 0 && sh > 0) ctx.drawImage(state.cloneOverlayPressed, sx, sy, sw, sh, dx2, dy2, dw2, dh2);
-    }
-  }
-  // Fallback: in non-A modes, still show unpressed clone on top of everything
-  if (state.mode !== 'A' && state.cloneOverlay) ctx.drawImage(state.cloneOverlay, 0, 0, dw, dh);
-
   // Static overlays (knob + decal + dropdown) on top in any mode EXCEPT diff/sideby
   if (state.mode !== 'diff' && state.mode !== 'sideby') drawStaticOverlays();
+
+  // Clone overlays drawn LAST (on top of decals) so the user's stamps remain
+  // visible over decal_45 / decal_46 etc. Unpressed first, then pressed clipped
+  // to the union of currently-pressed regions' bboxes.
+  if (state.mode !== 'diff' && state.mode !== 'sideby') {
+    if (state.cloneOverlay) ctx.drawImage(state.cloneOverlay, 0, 0, dw, dh);
+    if (state.cloneOverlayPressed) {
+      const pressedRegions = state.regions.filter(r => r.pressed && r.shape !== 'dropdown' && r.shape !== 'knob');
+      for (const r of pressedRegions) {
+        const sx = r.x, sy = r.y, sw = r.w, sh = r.h;
+        const dx2 = sx * state.scale, dy2 = sy * state.scale, dw2 = sw * state.scale, dh2 = sh * state.scale;
+        if (sw > 0 && sh > 0) ctx.drawImage(state.cloneOverlayPressed, sx, sy, sw, sh, dx2, dy2, dw2, dh2);
+      }
+    }
+  }
 
   if (!state.hideBorders) drawRegions();
 
