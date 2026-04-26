@@ -1241,7 +1241,8 @@ canvasWrap.addEventListener('mousedown', e => {
     let knobHit = null;
     for (let i = state.regions.length - 1; i >= 0; i--) {
       const r = state.regions[i];
-      if (r.shape !== 'knob' || r.locked) continue;
+      const isKnob = r.shape === 'knob' || (r.shape === 'decal' && r.rotatesAsKnob);
+      if (!isKnob || r.locked) continue;
       if (ix >= r.x && ix <= r.x + r.w && iy >= r.y && iy <= r.y + r.h) { knobHit = r; break; }
     }
     if (knobHit) console.log('[knob hit]', knobHit.name, 'value=', knobHit.value);
@@ -1759,6 +1760,9 @@ function refreshRegions() {
             ${state.regions.filter(o => o.shape !== 'decal' && o.shape !== 'dropdown' && o.shape !== 'knob' && o.shape !== 'annulus' && !o.locked).map(o => `<option value="${o.id}" ${r.parentId === o.id ? 'selected' : ''}>${o.name}</option>`).join('')}
           </select>
         </div>
+        <div style="margin:3px 0;"><label style="font-size:10px; display:flex; align-items:center; gap:4px;">
+          <input type="checkbox" class="crotates" data-id="${r.id}" ${r.rotatesAsKnob ? 'checked' : ''}> rotates as knob (drag to rotate −135°…+135°)
+        </label></div>
       ` : ''}
       ${r.shape === 'dropdown' ? `
         <div style="margin:3px 0;"><label style="font-size:10px;">bottom radius % <span id="rbv${r.id}">${Math.round(r.bottomRadiusPct ?? 15)}</span></label>
@@ -2070,6 +2074,15 @@ function refreshRegions() {
     refreshRegions(); render();
   }));
 
+  list.querySelectorAll('.crotates').forEach(c => c.addEventListener('change', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (!r) return;
+    pushUndo();
+    r.rotatesAsKnob = !!e.target.checked;
+    if (r.rotatesAsKnob && r.value == null) r.value = 0.5;
+    refreshRegions(); render();
+  }));
+
   // Dropdown parent selector
   list.querySelectorAll('.cparent').forEach(sel => sel.addEventListener('change', e => {
     const r = state.regions.find(x => x.id === +e.target.dataset.id);
@@ -2223,13 +2236,27 @@ function render() {
 
   // Layer 1.5 — always-visible decals drawn ABOVE clone overlays so they're
   // never covered by accidental stamps; they sit BELOW interactive widgets.
+  // Decals with rotatesAsKnob behave like knobs: rotated around their bbox
+  // centre by (-135 + 270 * value) and the procedural indicator is suppressed
+  // because the rotation is baked into the cropped pixels themselves.
   function drawAlwaysVisibleDecals() {
     const decals = state.regions.filter(r => r.shape === 'decal' && r.decalImage && r.alwaysVisible);
     for (const r of decals) {
       const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
       const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
       const rw = r.w * state.scale, rh = r.h * state.scale;
-      ctx.drawImage(r.decalImage, rx, ry, rw, rh);
+      if (r.rotatesAsKnob) {
+        const v = (r.value == null ? 0.5 : r.value);
+        const angle = (-135 + 270 * v) * Math.PI / 180;
+        const cx = rx + rw / 2, cy = ry + rh / 2;
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(angle);
+        ctx.drawImage(r.decalImage, -rw / 2, -rh / 2, rw, rh);
+        ctx.restore();
+      } else {
+        ctx.drawImage(r.decalImage, rx, ry, rw, rh);
+      }
     }
   }
 
@@ -2730,6 +2757,8 @@ document.getElementById('btnExportAll').addEventListener('click', async () => {
         dst_off_x: r.dstOffX || 0, dst_off_y: r.dstOffY || 0,
         parent_name: r.parentId != null ? (state.regions.find(rr => rr.id === r.parentId)?.name || null) : null,
         always_visible: !!r.alwaysVisible,
+        rotates_as_knob: !!r.rotatesAsKnob,
+        value: r.value ?? null,
         crop_file: fname, decal_filename: r.decalFilename || null,
       });
       continue;
@@ -2929,6 +2958,8 @@ function importShapesData(m) {
       if (shape === 'decal') {
         reg.alwaysVisible = !!r.always_visible;
         reg._pendingParentName = r.parent_name || null;
+        reg.rotatesAsKnob = !!r.rotates_as_knob;
+        if (r.value != null) reg.value = r.value;
       }
       if (shape === 'text') {
         reg.text = r.text || '';

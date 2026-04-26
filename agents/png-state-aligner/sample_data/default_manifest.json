@@ -340,22 +340,6 @@
       "crop_file": "knob_22.png"
     },
     {
-      "id": 22,
-      "name": "knob_22_copy",
-      "shape": "knob",
-      "locked": false,
-      "x": 824,
-      "y": 450,
-      "w": 72,
-      "h": 72,
-      "source": "B",
-      "src_off_x": 0,
-      "src_off_y": 0,
-      "dst_off_x": 0,
-      "dst_off_y": 0,
-      "crop_file": "knob_22_copy.png"
-    },
-    {
       "id": 23,
       "name": "knob_22_copy_copy",
       "shape": "knob",
@@ -851,6 +835,23 @@
       "pressed_offset_x": 0,
       "pressed_offset_y": 0,
       "parent_name": "rect_10"
+    },
+    {
+      "id": 49,
+      "name": "decal_47",
+      "shape": "decal",
+      "locked": false,
+      "x": 836.7836846385007,
+      "y": 461.25409594307905,
+      "w": 46.37405489658886,
+      "h": 46.37405489658886,
+      "dst_off_x": 0,
+      "dst_off_y": 0,
+      "parent_name": null,
+      "always_visible": true,
+      "crop_file": "decal_47.png",
+      "decal_filename": "circle_crop_knob_22_copy_837_462_47.png",
+      "rotates_as_knob": true
     }
   ],
   "clone_overlay_file": "clone_overlay.png",
