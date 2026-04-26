@@ -94,7 +94,7 @@ title: PNG State Aligner
     <label>Diff threshold <span id="thrVal">25</span></label>
     <input type="range" id="threshold" min="0" max="100" value="25">
     <label>Zoom <span id="zoomVal">100%</span></label>
-    <input type="range" id="zoom" min="25" max="3200" value="100">
+    <input type="range" id="zoom" min="25" max="1350" value="100">
 
     <h2>3. Draw crop regions</h2>
     <div class="tool-btns">
@@ -749,7 +749,7 @@ document.getElementById('stage').addEventListener('wheel', e => {
   const offsetY = cursorY - stageCenterY - state.panY;
 
   const delta = -Math.sign(e.deltaY) * 0.12;
-  const newZoom = Math.max(0.25, Math.min(32, state.zoom * (1 + delta)));
+  const newZoom = Math.max(0.25, Math.min(13.5, state.zoom * (1 + delta)));
   const ratio = newZoom / state.zoom;
 
   // Keep the pixel under cursor fixed during zoom
