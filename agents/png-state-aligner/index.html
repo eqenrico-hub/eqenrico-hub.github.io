@@ -113,8 +113,15 @@ title: PNG State Aligner
         <button id="btnLayerP" style="flex:1; font-size:11px; padding:4px; pointer-events:none;">Pressed</button>
       </div>
       <div class="hint">Any region pressed → paint goes to the Pressed layer.<br>All released → paint goes to the Unpressed layer.</div>
-      <label style="font-size:10px;">brush size <span id="cbv">40</span>px</label>
-      <input type="range" id="cloneBrush" min="5" max="200" value="40" step="1" style="width:100%;">
+      <div style="display:flex; gap:4px; margin-bottom:4px;">
+        <label style="flex:1; font-size:10px; cursor:pointer;"><input type="radio" name="cloneShape" id="cloneShapeCircle" value="circle" checked> Circle</label>
+        <label style="flex:1; font-size:10px; cursor:pointer;"><input type="radio" name="cloneShape" id="cloneShapeSquare" value="square"> Square</label>
+      </div>
+      <label style="font-size:10px;">size X <span id="cbvX">40</span>px</label>
+      <input type="range" id="cloneBrushX" min="2" max="400" value="40" step="1" style="width:100%;">
+      <label style="font-size:10px;">size Y <span id="cbvY">40</span>px</label>
+      <input type="range" id="cloneBrushY" min="2" max="400" value="40" step="1" style="width:100%;">
+      <label style="font-size:10px; display:flex; align-items:center; gap:4px;"><input type="checkbox" id="cloneAspectLock" checked> lock 1:1 (Y follows X)</label>
       <div class="hint">Alt+click to set source · drag to paint over with cloned pixels</div>
       <button id="btnCloneClear" class="danger" style="width:100%; font-size:10px; margin-top:3px;">Clear active layer</button>
     </div>
@@ -650,7 +657,11 @@ state.cloneLayer = 'unpressed';    // which one the user paints into
 state.cloneSource = null;
 state.cloneStart = null;
 state.cloneDragging = false;
-state.cloneBrush = 40;
+state.cloneBrush = 40;          // legacy radius (kept for back-compat)
+state.cloneBrushX = 40;         // half-width of stamp (radius for circle)
+state.cloneBrushY = 40;         // half-height of stamp
+state.cloneShape = 'circle';    // 'circle' | 'square'
+state.cloneAspectLock = true;
 
 function ensureCloneOverlay() {
   if (!state.imgA) return null;
@@ -711,23 +722,53 @@ function cloneStamp(imgX, imgY) {
   const src = getCompositeSource();
   if (!src) return;
   const octx2 = ovl.getContext('2d');
-  const brush = state.cloneBrush;
+  const bx = state.cloneBrushX, by = state.cloneBrushY;
   const sx = state.cloneSource.x + (imgX - state.cloneStart.x);
   const sy = state.cloneSource.y + (imgY - state.cloneStart.y);
   octx2.save();
   octx2.beginPath();
-  octx2.arc(imgX, imgY, brush, 0, Math.PI * 2);
+  if (state.cloneShape === 'square') {
+    octx2.rect(imgX - bx, imgY - by, bx * 2, by * 2);
+  } else {
+    octx2.ellipse(imgX, imgY, bx, by, 0, 0, Math.PI * 2);
+  }
   octx2.clip();
-  octx2.drawImage(src, sx - brush, sy - brush, brush * 2, brush * 2,
-                       imgX - brush, imgY - brush, brush * 2, brush * 2);
+  octx2.drawImage(src, sx - bx, sy - by, bx * 2, by * 2,
+                       imgX - bx, imgY - by, bx * 2, by * 2);
   octx2.restore();
 }
 
-document.getElementById('cloneBrush').addEventListener('input', e => {
-  state.cloneBrush = +e.target.value;
-  document.getElementById('cbv').textContent = e.target.value;
+function setCloneBrushX(v) {
+  state.cloneBrushX = +v;
+  state.cloneBrush = state.cloneBrushX; // keep legacy alias in sync
+  document.getElementById('cbvX').textContent = v;
+  if (state.cloneAspectLock) {
+    state.cloneBrushY = state.cloneBrushX;
+    document.getElementById('cbvY').textContent = v;
+    document.getElementById('cloneBrushY').value = v;
+  }
+}
+function setCloneBrushY(v) {
+  state.cloneBrushY = +v;
+  document.getElementById('cbvY').textContent = v;
+  if (state.cloneAspectLock) {
+    state.cloneBrushX = state.cloneBrushY;
+    state.cloneBrush = state.cloneBrushX;
+    document.getElementById('cbvX').textContent = v;
+    document.getElementById('cloneBrushX').value = v;
+  }
+}
+document.getElementById('cloneBrushX').addEventListener('input', e => { setCloneBrushX(e.target.value); render(); });
+document.getElementById('cloneBrushY').addEventListener('input', e => { setCloneBrushY(e.target.value); render(); });
+document.getElementById('cloneAspectLock').addEventListener('change', e => {
+  state.cloneAspectLock = !!e.target.checked;
+  if (state.cloneAspectLock) setCloneBrushX(state.cloneBrushX);
   render();
 });
+document.querySelectorAll('input[name="cloneShape"]').forEach(r => r.addEventListener('change', e => {
+  state.cloneShape = e.target.value;
+  render();
+}));
 document.getElementById('btnCloneClear').addEventListener('click', () => {
   const ovl = getActiveCloneOverlay();
   if (!ovl) return;
@@ -1960,57 +2001,59 @@ function render() {
 
   // Clone tool markers: source crosshair + cursor brush preview
   if (state.tool === 'clone') {
+    function brushPath(c, x, y, brX, brY) {
+      c.beginPath();
+      if (state.cloneShape === 'square') {
+        c.rect(x - brX, y - brY, brX * 2, brY * 2);
+      } else {
+        c.ellipse(x, y, brX, brY, 0, 0, Math.PI * 2);
+      }
+    }
+    const brX = state.cloneBrushX * state.scale;
+    const brY = state.cloneBrushY * state.scale;
     if (state.cloneSource) {
+      const sx = state.cloneSource.x * state.scale;
+      const sy = state.cloneSource.y * state.scale;
       octx.save();
       octx.strokeStyle = '#ffb347';
       octx.lineWidth = 2;
       octx.setLineDash([4, 2]);
-      octx.beginPath();
-      octx.arc(state.cloneSource.x * state.scale, state.cloneSource.y * state.scale, state.cloneBrush * state.scale, 0, Math.PI * 2);
+      brushPath(octx, sx, sy, brX, brY);
       octx.stroke();
       octx.setLineDash([]);
       octx.beginPath();
-      octx.moveTo(state.cloneSource.x * state.scale - 6, state.cloneSource.y * state.scale);
-      octx.lineTo(state.cloneSource.x * state.scale + 6, state.cloneSource.y * state.scale);
-      octx.moveTo(state.cloneSource.x * state.scale, state.cloneSource.y * state.scale - 6);
-      octx.lineTo(state.cloneSource.x * state.scale, state.cloneSource.y * state.scale + 6);
+      octx.moveTo(sx - 6, sy); octx.lineTo(sx + 6, sy);
+      octx.moveTo(sx, sy - 6); octx.lineTo(sx, sy + 6);
       octx.stroke();
       octx.restore();
     }
     if (state.cloneCursor) {
       const cx = state.cloneCursor.x * state.scale;
       const cy = state.cloneCursor.y * state.scale;
-      const br = state.cloneBrush * state.scale;
       // Preview: if a source is set and we're not actively dragging, show what
-      // a click here would stamp — same math as cloneStamp() at start == cursor,
-      // so offset collapses to source, centered inside the brush circle.
+      // a click here would stamp.
       if (state.cloneSource && !state.cloneDragging) {
         const src = getCompositeSource();
         if (src) {
-          const brush = state.cloneBrush;
-          const sx = state.cloneSource.x - brush;
-          const sy = state.cloneSource.y - brush;
+          const bx = state.cloneBrushX, by = state.cloneBrushY;
+          const ssx = state.cloneSource.x - bx;
+          const ssy = state.cloneSource.y - by;
           octx.save();
-          octx.beginPath();
-          octx.arc(cx, cy, br, 0, Math.PI * 2);
+          brushPath(octx, cx, cy, brX, brY);
           octx.clip();
-          // Neutral backdrop so the preview is distinguishable on dark source
-          // areas (otherwise black source pixels blend invisibly with the dark
-          // PNG behind the overlay canvas).
           octx.fillStyle = 'rgba(255,255,255,0.35)';
-          octx.fillRect(cx - br, cy - br, br * 2, br * 2);
+          octx.fillRect(cx - brX, cy - brY, brX * 2, brY * 2);
           octx.globalAlpha = 1.0;
           octx.drawImage(src,
-            sx, sy, brush * 2, brush * 2,
-            cx - br, cy - br, br * 2, br * 2);
+            ssx, ssy, bx * 2, by * 2,
+            cx - brX, cy - brY, brX * 2, brY * 2);
           octx.restore();
         }
       }
       octx.save();
       octx.strokeStyle = '#4fd1ff';
       octx.lineWidth = 1.5;
-      octx.beginPath();
-      octx.arc(cx, cy, br, 0, Math.PI * 2);
+      brushPath(octx, cx, cy, brX, brY);
       octx.stroke();
       octx.restore();
     }
