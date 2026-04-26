@@ -207,36 +207,64 @@ function snapshot() { return JSON.parse(JSON.stringify(state.regions)); }
 // Clone stamp undo: per-stroke snapshot of the cloneOverlay pixels
 state.cloneUndoStack = [];
 state.cloneRedoStack = [];
-function pushCloneUndo() {
-  const ovl = getActiveCloneOverlay();
-  if (!ovl) return;
-  const c = ovl.getContext('2d');
-  const data = c.getImageData(0, 0, ovl.width, ovl.height);
-  state.cloneUndoStack.push({ layer: state.cloneLayer, data });
+function pushCloneUndo(kind) {
+  // kind: 'clone' (default) snapshots the active clone overlay; 'fade'
+  // snapshots the global fade mask. Either way the entry is pushed onto
+  // the same stack and consumed by Cmd+Z / Cmd+Shift+Z.
+  kind = kind || 'clone';
+  let entry;
+  if (kind === 'fade') {
+    const m = state.fadeMask;
+    if (!m) return;
+    const c = m.getContext('2d');
+    entry = { kind: 'fade', data: c.getImageData(0, 0, m.width, m.height) };
+  } else {
+    const ovl = getActiveCloneOverlay();
+    if (!ovl) return;
+    const c = ovl.getContext('2d');
+    entry = { kind: 'clone', layer: state.cloneLayer, data: c.getImageData(0, 0, ovl.width, ovl.height) };
+  }
+  state.cloneUndoStack.push(entry);
   if (state.cloneUndoStack.length > 50) state.cloneUndoStack.shift();
   state.cloneRedoStack = [];
+}
+function _restoreEntry(entry) {
+  if (entry.kind === 'fade') {
+    const m = state.fadeMask;
+    if (!m) return false;
+    m.getContext('2d').putImageData(entry.data, 0, 0);
+    return true;
+  }
+  const ovl = entry.layer === 'pressed' ? state.cloneOverlayPressed : state.cloneOverlay;
+  if (!ovl) return false;
+  ovl.getContext('2d').putImageData(entry.data, 0, 0);
+  return true;
+}
+function _captureCurrent(kind, layer) {
+  if (kind === 'fade') {
+    const m = state.fadeMask;
+    if (!m) return null;
+    return { kind: 'fade', data: m.getContext('2d').getImageData(0, 0, m.width, m.height) };
+  }
+  const ovl = layer === 'pressed' ? state.cloneOverlayPressed : state.cloneOverlay;
+  if (!ovl) return null;
+  return { kind: 'clone', layer, data: ovl.getContext('2d').getImageData(0, 0, ovl.width, ovl.height) };
 }
 function cloneUndo() {
   if (!state.cloneUndoStack.length) return false;
   const entry = state.cloneUndoStack.pop();
-  const ovl = entry.layer === 'pressed' ? state.cloneOverlayPressed : state.cloneOverlay;
-  if (!ovl) return false;
-  const c = ovl.getContext('2d');
-  const cur = c.getImageData(0, 0, ovl.width, ovl.height);
-  state.cloneRedoStack.push({ layer: entry.layer, data: cur });
-  c.putImageData(entry.data, 0, 0);
+  const cur = _captureCurrent(entry.kind, entry.layer);
+  if (cur) state.cloneRedoStack.push(cur);
+  if (!_restoreEntry(entry)) return false;
   render();
   return true;
 }
 function cloneRedo() {
   if (!state.cloneRedoStack.length) return false;
   const entry = state.cloneRedoStack.pop();
-  const ovl = entry.layer === 'pressed' ? state.cloneOverlayPressed : state.cloneOverlay;
-  if (!ovl) return false;
-  const c = ovl.getContext('2d');
-  const cur = c.getImageData(0, 0, ovl.width, ovl.height);
-  state.cloneUndoStack.push({ layer: entry.layer, data: cur });
-  c.putImageData(entry.data, 0, 0);
+  const cur = _captureCurrent(entry.kind, entry.layer);
+  if (cur) state.cloneUndoStack.push(cur);
+  if (!_restoreEntry(entry)) return false;
   render();
   return true;
 }
@@ -814,37 +842,26 @@ document.querySelectorAll('input[name="cloneShape"]').forEach(r => r.addEventLis
 // fade behave as "soften whatever I currently see" instead of only erasing
 // clone strokes.
 function fadeStamp(imgX, imgY) {
-  // Also erase from active clone overlay so the user can iteratively rebuild
-  // the stamp without it interfering. Mirrors the original behaviour.
-  const ovl = getActiveCloneOverlay();
   const fade = ensureFadeMask();
   if (!fade) return;
   const bx = state.fadeBrushX, by = state.fadeBrushY;
   const peak = Math.max(0.01, Math.min(1, state.fadeStrength || 0.25));
   const r = Math.max(bx, by);
-
-  const drawTo = (canv, op) => {
-    const c = canv.getContext('2d');
-    c.save();
-    if (op) c.globalCompositeOperation = op;
-    const g = c.createRadialGradient(imgX, imgY, 0, imgX, imgY, r);
-    g.addColorStop(0,   `rgba(0,0,0,${peak.toFixed(3)})`);
-    g.addColorStop(0.6, `rgba(0,0,0,${(peak*0.45).toFixed(3)})`);
-    g.addColorStop(1,   'rgba(0,0,0,0)');
-    c.fillStyle = g;
-    if (state.fadeShape === 'square') {
-      c.fillRect(imgX - bx, imgY - by, bx * 2, by * 2);
-    } else {
-      c.beginPath();
-      c.ellipse(imgX, imgY, bx, by, 0, 0, Math.PI * 2);
-      c.fill();
-    }
-    c.restore();
-  };
-
-  if (ovl) drawTo(ovl, 'destination-out');
-  // fadeMask uses default source-over with black-with-alpha — accumulates alpha
-  drawTo(fade, null);
+  const c = fade.getContext('2d');
+  c.save();
+  const g = c.createRadialGradient(imgX, imgY, 0, imgX, imgY, r);
+  g.addColorStop(0,   `rgba(0,0,0,${peak.toFixed(3)})`);
+  g.addColorStop(0.6, `rgba(0,0,0,${(peak*0.45).toFixed(3)})`);
+  g.addColorStop(1,   'rgba(0,0,0,0)');
+  c.fillStyle = g;
+  if (state.fadeShape === 'square') {
+    c.fillRect(imgX - bx, imgY - by, bx * 2, by * 2);
+  } else {
+    c.beginPath();
+    c.ellipse(imgX, imgY, bx, by, 0, 0, Math.PI * 2);
+    c.fill();
+  }
+  c.restore();
 }
 
 function setFadeBrushX(v) {
@@ -1118,7 +1135,8 @@ canvasWrap.addEventListener('mousedown', e => {
     return;
   }
   if (state.tool === 'fade') {
-    pushCloneUndo();
+    ensureFadeMask();
+    pushCloneUndo('fade');
     state.fadeDragging = true;
     fadeStamp(ix, iy);
     render();
