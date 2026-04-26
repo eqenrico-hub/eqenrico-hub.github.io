@@ -854,5 +854,6 @@
     }
   ],
   "clone_overlay_file": "clone_overlay.png",
-  "clone_overlay_pressed_file": "clone_overlay_pressed.png"
+  "clone_overlay_pressed_file": "clone_overlay_pressed.png",
+  "paint_overlay_file": "paint_overlay.png"
 }
