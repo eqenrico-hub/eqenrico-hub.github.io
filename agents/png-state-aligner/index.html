@@ -2044,9 +2044,49 @@ function render() {
 
   const Bsrc = state.imgBResized || state.imgB;
 
-  // Helper: draw static overlays (knob + decal + dropdown) always on top, in any view mode
-  function drawStaticOverlays() {
-    // Knobs always; decals conditionally (if they have a parent linked, visible only when parent pressed OR this decal is selected)
+  // Layer 1 — chassis-level static stuff: text labels + decals. Drawn UNDER
+  // the clone overlays so user paint can sit on top of them.
+  function drawChassisOverlays() {
+    // Text labels
+    const textRegions = state.regions.filter(r => r.shape === 'text' && r.text);
+    for (const r of textRegions) {
+      const parent = r.parentId != null ? state.regions.find(o => o.id === r.parentId) : null;
+      const pressedShown = parent ? !!parent.pressed : !!r.pressed;
+      const ox = pressedShown ? (r.pressedOffsetX || 0) : 0;
+      const oy = pressedShown ? (r.pressedOffsetY || 0) : 0;
+      const fill = (pressedShown && r.pressedColor) ? r.pressedColor : (r.color || '#ffffff');
+      const px = (r.x + ox) * state.scale;
+      const py = (r.y + oy) * state.scale;
+      const pw = r.w * state.scale;
+      const ph = r.h * state.scale;
+      ctx.save();
+      ctx.fillStyle = fill;
+      ctx.font = `${r.fontWeight || '400'} ${(r.fontSize || 16) * state.scale}px ${r.fontFamily || 'sans-serif'}`;
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = (r.textAlign || 'center');
+      const cx = ctx.textAlign === 'left' ? px : (ctx.textAlign === 'right' ? px + pw : px + pw / 2);
+      const cy = py + ph / 2;
+      ctx.fillText(r.text, cx, cy);
+      ctx.restore();
+    }
+    // Decals
+    const decals = state.regions.filter(r => r.shape === 'decal' && r.decalImage);
+    for (const r of decals) {
+      const parent = r.parentId != null ? state.regions.find(o => o.id === r.parentId) : null;
+      const isSelected = (r.id === state.selectedId);
+      const visible = r.alwaysVisible ? true : (parent ? !!parent.pressed : !!r.pressed);
+      if (!visible && !isSelected) continue;
+      const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
+      const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
+      const rw = r.w * state.scale, rh = r.h * state.scale;
+      ctx.drawImage(r.decalImage, rx, ry, rw, rh);
+    }
+  }
+
+  // Layer 2 — interactive widgets: knobs + slider handles + dropdowns. Always
+  // visible above the clone overlays so user paint can't accidentally hide
+  // controls.
+  function drawWidgetOverlays() {
     const knobs = state.regions.filter(r => r.shape === 'knob' && r.decalImage);
     for (const r of knobs) {
       const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
@@ -2122,47 +2162,6 @@ function render() {
         ctx.restore();
       }
     }
-    // Text labels (drawn before decals so glow/icon decals can sit over them
-    // when desired; can be revisited).
-    const textRegions = state.regions.filter(r => r.shape === 'text' && r.text);
-    for (const r of textRegions) {
-      const parent = r.parentId != null ? state.regions.find(o => o.id === r.parentId) : null;
-      const isSelected = (r.id === state.selectedId);
-      const pressedShown = parent ? !!parent.pressed : !!r.pressed;
-      if (parent && !isSelected) {
-        // text always renders; only the position/colour changes with pressed state
-      }
-      const ox = pressedShown ? (r.pressedOffsetX || 0) : 0;
-      const oy = pressedShown ? (r.pressedOffsetY || 0) : 0;
-      const fill = (pressedShown && r.pressedColor) ? r.pressedColor : (r.color || '#ffffff');
-      const px = (r.x + ox) * state.scale;
-      const py = (r.y + oy) * state.scale;
-      const pw = r.w * state.scale;
-      const ph = r.h * state.scale;
-      ctx.save();
-      ctx.fillStyle = fill;
-      ctx.font = `${r.fontWeight || '400'} ${(r.fontSize || 16) * state.scale}px ${r.fontFamily || 'sans-serif'}`;
-      ctx.textBaseline = 'middle';
-      ctx.textAlign = (r.textAlign || 'center');
-      const cx = ctx.textAlign === 'left' ? px : (ctx.textAlign === 'right' ? px + pw : px + pw / 2);
-      const cy = py + ph / 2;
-      ctx.fillText(r.text, cx, cy);
-      ctx.restore();
-    }
-
-    const decals = state.regions.filter(r => r.shape === 'decal' && r.decalImage);
-    for (const r of decals) {
-      const parent = r.parentId != null ? state.regions.find(o => o.id === r.parentId) : null;
-      const isSelected = (r.id === state.selectedId);
-      // alwaysVisible flag bypasses the pressed gate — useful for static layers like slider rails
-      const visible = r.alwaysVisible ? true : (parent ? !!parent.pressed : !!r.pressed);
-      if (!visible && !isSelected) continue;
-      const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
-      const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
-      const rw = r.w * state.scale, rh = r.h * state.scale;
-      ctx.drawImage(r.decalImage, rx, ry, rw, rh);
-    }
-
     // Slider handles on top of decals/rails but below dropdowns
     for (const r of state.regions) {
       if (!isSliderHandle(r)) continue;
@@ -2264,13 +2263,14 @@ function render() {
     renderDiff(dw, dh, Bsrc);
   }
 
-  // Static overlays (knob + decal + dropdown) on top in any mode EXCEPT diff/sideby
-  if (state.mode !== 'diff' && state.mode !== 'sideby') drawStaticOverlays();
-
-  // Clone overlays drawn LAST (on top of decals) so the user's stamps remain
-  // visible over decal_45 / decal_46 etc. Unpressed first, then pressed clipped
-  // to the union of currently-pressed regions' bboxes.
+  // Layer order (chassis ↑ widgets):
+  //   PNG_A → pressed crops → text + decals → clone overlays → fade mask
+  //   → knobs / slider handles / dropdowns → paint overlay
+  // The clone/fade tools sit between chassis and widgets so the user's
+  // edits never hide the interactive controls. Paint sits on top of
+  // everything because the user explicitly wants it to.
   if (state.mode !== 'diff' && state.mode !== 'sideby') {
+    drawChassisOverlays();
     if (state.cloneOverlay) ctx.drawImage(state.cloneOverlay, 0, 0, dw, dh);
     if (state.cloneOverlayPressed) {
       const pressedRegions = state.regions.filter(r => r.pressed && r.shape !== 'dropdown' && r.shape !== 'knob');
@@ -2280,14 +2280,8 @@ function render() {
         if (sw > 0 && sh > 0) ctx.drawImage(state.cloneOverlayPressed, sx, sy, sw, sh, dx2, dy2, dw2, dh2);
       }
     }
-
-    // Fade mask: where the user has dragged the fade brush, restore PNG_A
-    // pixels over whatever was drawn (decals, knobs, clone stamps, etc).
-    // Implemented via an offscreen "mask × PNG_A" composite drawn on top.
     if (state.fadeMask && state.imgA) {
-      if (!state._fadeApply) {
-        state._fadeApply = document.createElement('canvas');
-      }
+      if (!state._fadeApply) state._fadeApply = document.createElement('canvas');
       const fa = state._fadeApply;
       fa.width = state.fadeMask.width;
       fa.height = state.fadeMask.height;
@@ -2298,9 +2292,7 @@ function render() {
       fac.drawImage(state.imgA, 0, 0);
       ctx.drawImage(fa, 0, 0, dw, dh);
     }
-
-    // Paint overlay drawn last — sits on top of EVERYTHING (decals, clones,
-    // even the fade-mask PNG_A patch).
+    drawWidgetOverlays();
     if (state.paintOverlay) ctx.drawImage(state.paintOverlay, 0, 0, dw, dh);
   }
 
