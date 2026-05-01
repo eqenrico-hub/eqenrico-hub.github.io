@@ -2570,7 +2570,11 @@ function render() {
   // Layer 1 — chassis-level: text labels + parent-linked decals (e.g. the
   // COMPLEMENT glow that appears when its button is pressed). Sits UNDER
   // the clone overlays so user paint can mask them when needed.
-  function drawChassisOverlays() {
+  // Text labels render as the LAST layer (after paint + blur), so user-added
+  // labels always sit on top of clone stamps, decals, widgets, and any post-
+  // process overlay. Extracted from drawChassisOverlays so chassis decals can
+  // remain underneath clone overlays while text floats above everything.
+  function drawTextLabels() {
     const textRegions = state.regions.filter(r => r.shape === 'text' && r.text);
     for (const r of textRegions) {
       const parent = r.parentId != null ? state.regions.find(o => o.id === r.parentId) : null;
@@ -2592,6 +2596,9 @@ function render() {
       ctx.fillText(r.text, cx, cy);
       ctx.restore();
     }
+  }
+
+  function drawChassisOverlays() {
     // Parent-linked decals AND rotating-as-knob decals draw in the chassis
     // layer (BELOW clone overlays). Rotating decals are knob-like graphics
     // the user wants to clone-stamp / fade over to clean up the edges of
@@ -2913,6 +2920,9 @@ function render() {
       ctx.drawImage(state.blurOverlay, 0, 0, dw, dh);
       ctx.restore();
     }
+    // Text labels: top-most layer, on top of every overlay (clone, paint, blur,
+    // decals, widgets) so user-added labels are never hidden by anything.
+    drawTextLabels();
   }
 
   if (!state.hideBorders) drawRegions();
