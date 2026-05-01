@@ -2828,7 +2828,10 @@ function render() {
     if (state.cloneOverlayPressed) {
       const pressedRegions = state.regions.filter(r => r.pressed && r.shape !== 'dropdown' && r.shape !== 'knob');
       for (const r of pressedRegions) {
-        const sx = r.x, sy = r.y, sw = r.w, sh = r.h;
+        // Apply per-region dstOff so paint anchored to the visually shifted
+        // pressed-crop position lines up with where the user actually painted.
+        const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
+        const sx = r.x + dox, sy = r.y + doy, sw = r.w, sh = r.h;
         const dx2 = sx * state.scale, dy2 = sy * state.scale, dw2 = sw * state.scale, dh2 = sh * state.scale;
         if (sw > 0 && sh > 0) ctx.drawImage(state.cloneOverlayPressed, sx, sy, sw, sh, dx2, dy2, dw2, dh2);
       }
