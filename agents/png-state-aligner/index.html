@@ -1504,6 +1504,10 @@ function hitTest(ix, iy) {
   for (let i = state.regions.length - 1; i >= 0; i--) {
     const r = state.regions[i];
     if (r.locked) continue;
+    // Bound decals share their parent's bbox, so their corner handles overlap
+    // the parent's. Skip them in handle hit-test so the parent always wins —
+    // user resizes the parent and the bound decal follows.
+    if (r.shape === 'decal' && r.boundToParent && r.parentId != null) continue;
     const corners = [
       { h: 'nw', x: r.x, y: r.y }, { h: 'ne', x: r.x+r.w, y: r.y },
       { h: 'sw', x: r.x, y: r.y+r.h }, { h: 'se', x: r.x+r.w, y: r.y+r.h },
