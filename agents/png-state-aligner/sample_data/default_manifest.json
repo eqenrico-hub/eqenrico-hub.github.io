@@ -24,7 +24,7 @@
       "shape": "rect",
       "locked": false,
       "x": 315,
-      "y": 273.0,
+      "y": 273,
       "w": 38,
       "h": 63,
       "source": "B",
@@ -257,7 +257,11 @@
       "src_off_y": 0.3,
       "dst_off_x": 0,
       "dst_off_y": 0,
-      "crop_file": "rect_44.png"
+      "crop_file": "rect_44.png",
+      "pressed_x": 572.2548980289904,
+      "pressed_y": 457.8601119616899,
+      "pressed_w": 89.74510197100938,
+      "pressed_h": 40.15292287005832
     },
     {
       "id": 17,
@@ -553,6 +557,7 @@
       "parent_name": "region_42",
       "always_visible": false,
       "rotates_as_knob": false,
+      "bound_to_parent": false,
       "value": null,
       "crop_file": "decal_45.png",
       "decal_filename": null
@@ -571,6 +576,7 @@
       "parent_name": null,
       "always_visible": true,
       "rotates_as_knob": false,
+      "bound_to_parent": false,
       "value": null,
       "crop_file": "slider_rail_mix.png",
       "decal_filename": null
@@ -589,6 +595,7 @@
       "parent_name": null,
       "always_visible": true,
       "rotates_as_knob": false,
+      "bound_to_parent": false,
       "value": null,
       "crop_file": "decal_46.png",
       "decal_filename": null
@@ -664,6 +671,7 @@
       "parent_name": null,
       "always_visible": true,
       "rotates_as_knob": true,
+      "bound_to_parent": false,
       "value": 1,
       "crop_file": "decal_47.png",
       "decal_filename": null
@@ -682,6 +690,7 @@
       "parent_name": null,
       "always_visible": true,
       "rotates_as_knob": true,
+      "bound_to_parent": false,
       "value": 0.5,
       "crop_file": "decal_48.png",
       "decal_filename": null
@@ -700,6 +709,7 @@
       "parent_name": null,
       "always_visible": true,
       "rotates_as_knob": true,
+      "bound_to_parent": false,
       "value": 0.5,
       "crop_file": "decal_49.png",
       "decal_filename": null
@@ -718,6 +728,7 @@
       "parent_name": null,
       "always_visible": true,
       "rotates_as_knob": true,
+      "bound_to_parent": false,
       "value": 0.5,
       "crop_file": "decal_50.png",
       "decal_filename": null
@@ -736,6 +747,7 @@
       "parent_name": null,
       "always_visible": true,
       "rotates_as_knob": true,
+      "bound_to_parent": false,
       "value": 0.5,
       "crop_file": "decal_51.png",
       "decal_filename": null
@@ -754,6 +766,7 @@
       "parent_name": null,
       "always_visible": true,
       "rotates_as_knob": true,
+      "bound_to_parent": false,
       "value": 0.5,
       "crop_file": "decal_52.png",
       "decal_filename": null
@@ -772,6 +785,7 @@
       "parent_name": null,
       "always_visible": true,
       "rotates_as_knob": true,
+      "bound_to_parent": false,
       "value": 0.5,
       "crop_file": "decal_53.png",
       "decal_filename": null
@@ -790,6 +804,7 @@
       "parent_name": null,
       "always_visible": true,
       "rotates_as_knob": true,
+      "bound_to_parent": false,
       "value": 0.5,
       "crop_file": "decal_54.png",
       "decal_filename": null
@@ -808,6 +823,7 @@
       "parent_name": null,
       "always_visible": true,
       "rotates_as_knob": true,
+      "bound_to_parent": false,
       "value": 0.5,
       "crop_file": "decal_55.png",
       "decal_filename": null
@@ -826,6 +842,7 @@
       "parent_name": null,
       "always_visible": true,
       "rotates_as_knob": true,
+      "bound_to_parent": false,
       "value": 0.5,
       "crop_file": "decal_56.png",
       "decal_filename": null
@@ -844,6 +861,7 @@
       "parent_name": null,
       "always_visible": true,
       "rotates_as_knob": true,
+      "bound_to_parent": false,
       "value": 0.5,
       "crop_file": "decal_57.png",
       "decal_filename": null
@@ -862,6 +880,7 @@
       "parent_name": null,
       "always_visible": true,
       "rotates_as_knob": true,
+      "bound_to_parent": false,
       "value": 0.5,
       "crop_file": "decal_58.png",
       "decal_filename": null
@@ -880,6 +899,7 @@
       "parent_name": null,
       "always_visible": true,
       "rotates_as_knob": true,
+      "bound_to_parent": false,
       "value": 0.5,
       "crop_file": "decal_59.png",
       "decal_filename": null
