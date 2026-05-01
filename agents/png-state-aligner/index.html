@@ -104,6 +104,7 @@ title: PNG State Aligner
       <button class="tool" data-tool="drawknob">Draw knob</button>
       <button class="tool" data-tool="drawdropdown">Draw dropdown</button>
       <button class="tool" data-tool="select">Select / Edit</button>
+      <button id="btnEditPressed" class="tool" style="background:#3a2a3a;" title="When ON, resize/move on regions edits the PRESSED-state bbox (separate from unpressed). Toggle to switch which state you're editing.">Edit pressed: OFF</button>
       <button class="tool" data-tool="clone" title="Clone stamp — Alt+click to set source, drag to paint">Clone stamp</button>
       <button class="tool" data-tool="fade" title="Fade brush — drag to soften clone-stamp edges">Fade brush</button>
       <button class="tool" data-tool="paint" title="Paint brush — drag to paint with a chosen colour">Paint brush</button>
@@ -254,7 +255,39 @@ const state = {
   scale: 1, dw: 0, dh: 0,
   hideBorders: false,
   undoStack: [], redoStack: [],
+  editPressedMode: false,
 };
+
+// Geometry helpers — when state.editPressedMode is ON, hit-test + drag/resize
+// operate on the region's PRESSED-state bbox (pressedX/Y/W/H). When OFF, they
+// operate on the base bbox (x/y/w/h). Pressed-state render paths consult the
+// pressed bbox separately (so users see live updates as they edit pressed).
+function regionGeo(r) {
+  if (state.editPressedMode && r.pressedX != null) {
+    return { x: r.pressedX, y: r.pressedY, w: r.pressedW, h: r.pressedH };
+  }
+  return { x: r.x, y: r.y, w: r.w, h: r.h };
+}
+function ensurePressedBbox(r) {
+  if (r.pressedX == null) {
+    r.pressedX = r.x; r.pressedY = r.y; r.pressedW = r.w; r.pressedH = r.h;
+  }
+}
+function assignBbox(r, x, y, w, h) {
+  if (state.editPressedMode) {
+    r.pressedX = x; r.pressedY = y; r.pressedW = w; r.pressedH = h;
+  } else {
+    r.x = x; r.y = y; r.w = w; r.h = h;
+  }
+}
+function pressedBboxOf(r) {
+  // Used by pressed-state render paths. Returns the bbox to use when rendering
+  // r's pressed state. Falls back to base bbox if pressed* not set.
+  if (r.pressedX != null) {
+    return { x: r.pressedX, y: r.pressedY, w: r.pressedW, h: r.pressedH };
+  }
+  return { x: r.x, y: r.y, w: r.w, h: r.h };
+}
 
 function snapshot() { return JSON.parse(JSON.stringify(state.regions)); }
 
@@ -706,6 +739,18 @@ document.querySelectorAll('[data-tool]').forEach(b => {
   b.addEventListener('click', () => {
     setTool(b.dataset.tool);
   });
+});
+
+// Edit-pressed mode toggle: switches whether geometry edits affect base bbox
+// (unpressed) or pressedX/Y/W/H (pressed). Auto-initializes pressed bbox from
+// base on first toggle of any region's drag.
+document.getElementById('btnEditPressed').addEventListener('click', () => {
+  state.editPressedMode = !state.editPressedMode;
+  const btn = document.getElementById('btnEditPressed');
+  btn.textContent = 'Edit pressed: ' + (state.editPressedMode ? 'ON' : 'OFF');
+  btn.style.background = state.editPressedMode ? '#7a3a3a' : '#3a2a3a';
+  refreshRegions();
+  render();
 });
 
 ['opacity','threshold','zoom'].forEach(id => {
@@ -1508,9 +1553,10 @@ function hitTest(ix, iy) {
     // the parent's. Skip them in handle hit-test so the parent always wins —
     // user resizes the parent and the bound decal follows.
     if (r.shape === 'decal' && r.boundToParent && r.parentId != null) continue;
+    const g = regionGeo(r);
     const corners = [
-      { h: 'nw', x: r.x, y: r.y }, { h: 'ne', x: r.x+r.w, y: r.y },
-      { h: 'sw', x: r.x, y: r.y+r.h }, { h: 'se', x: r.x+r.w, y: r.y+r.h },
+      { h: 'nw', x: g.x, y: g.y }, { h: 'ne', x: g.x+g.w, y: g.y },
+      { h: 'sw', x: g.x, y: g.y+g.h }, { h: 'se', x: g.x+g.w, y: g.y+g.h },
     ];
     for (const c of corners) {
       if (Math.abs(ix - c.x) <= HANDLE && Math.abs(iy - c.y) <= HANDLE) return { region: r, mode: 'resize-' + c.h };
@@ -1523,25 +1569,26 @@ function hitTest(ix, iy) {
       if (pass === 0 && (r.shape === 'dropdown' || r.shape === 'decal')) continue;
       if (pass === 1 && r.shape !== 'decal') continue;
       if (pass === 2 && r.shape !== 'dropdown') continue;
+      const g = regionGeo(r);
       if (r.shape === 'circle' || r.shape === 'knob') {
-        const cx = r.x + r.w/2, cy = r.y + r.h/2;
-        const rx = r.w/2, ry = r.h/2;
+        const cx = g.x + g.w/2, cy = g.y + g.h/2;
+        const rx = g.w/2, ry = g.h/2;
         if (rx > 0 && ry > 0) {
           const nx = (ix - cx) / rx, ny = (iy - cy) / ry;
           if (nx*nx + ny*ny <= 1) return { region: r, mode: 'move' };
         }
       } else if (r.shape === 'annulus') {
-        const cx = r.x + r.w/2, cy = r.y + r.h/2;
-        const outerR = Math.min(r.w, r.h) / 2;
+        const cx = g.x + g.w/2, cy = g.y + g.h/2;
+        const outerR = Math.min(g.w, g.h) / 2;
         const innerR = outerR * (r.innerPct ?? 0.5);
         const d = Math.hypot(ix - cx, iy - cy);
         if (d <= outerR && d >= innerR) return { region: r, mode: 'move' };
       } else if (r.shape === 'dropdown') {
         // Include ear extension upward so clicks on the visible ear area hit the dropdown
         const extY = r.topCornerExtY || 0;
-        if (ix >= r.x && ix <= r.x + r.w && iy >= r.y - extY && iy <= r.y + r.h) return { region: r, mode: 'move' };
+        if (ix >= g.x && ix <= g.x + g.w && iy >= g.y - extY && iy <= g.y + g.h) return { region: r, mode: 'move' };
       } else {
-        if (ix >= r.x && ix <= r.x + r.w && iy >= r.y && iy <= r.y + r.h) return { region: r, mode: 'move' };
+        if (ix >= g.x && ix <= g.x + g.w && iy >= g.y && iy <= g.y + g.h) return { region: r, mode: 'move' };
       }
     }
   }
@@ -1728,7 +1775,11 @@ canvasWrap.addEventListener('mousedown', e => {
       state.selectedId = hit.region.id;
       state.editMode = hit.mode;
       state.editStart = { ix, iy };
-      state.editRegion = { ...hit.region };
+      // In edit-pressed mode, snapshot the PRESSED bbox so the drag handler
+      // operates on it. Auto-init pressed bbox from base if not set yet.
+      if (state.editPressedMode) ensurePressedBbox(hit.region);
+      const g = regionGeo(hit.region);
+      state.editRegion = { ...hit.region, x: g.x, y: g.y, w: g.w, h: g.h };
       state._undoSnapshotForEdit = snapshot(); // capture pre-edit state
       refreshRegions(); render();
       return;
@@ -1850,13 +1901,14 @@ window.addEventListener('mousemove', e => {
     const r = state.regions.find(x => x.id === state.selectedId);
     if (!r) return;
     if (state.editMode === 'move') {
-      r.x = orig.x + dx; r.y = orig.y + dy;
+      assignBbox(r, orig.x + dx, orig.y + dy, orig.w, orig.h);
+      const _g = regionGeo(r);
       // Shift: snap to alignment with other regions
       state.snapGuides = [];
       if (e.shiftKey) {
         const SNAP = 6; // pixels in image space
-        const myL = r.x, myR = r.x + r.w, myCX = r.x + r.w/2;
-        const myT = r.y, myB = r.y + r.h, myCY = r.y + r.h/2;
+        const myL = _g.x, myR = _g.x + _g.w, myCX = _g.x + _g.w/2;
+        const myT = _g.y, myB = _g.y + _g.h, myCY = _g.y + _g.h/2;
         let bestDX = SNAP + 1, snapX = null, guideX = null;
         let bestDY = SNAP + 1, snapY = null, guideY = null;
         for (const other of state.regions) {
@@ -1883,8 +1935,12 @@ window.addEventListener('mousemove', e => {
             if (d < bestDY) { bestDY = d; snapY = newY; guideY = theirs; }
           }
         }
-        if (snapX != null) { r.x = snapX; state.snapGuides.push({ type: 'v', v: guideX }); }
-        if (snapY != null) { r.y = snapY; state.snapGuides.push({ type: 'h', v: guideY }); }
+        if (snapX != null || snapY != null) {
+          const cur = regionGeo(r);
+          assignBbox(r, snapX != null ? snapX : cur.x, snapY != null ? snapY : cur.y, cur.w, cur.h);
+          if (snapX != null) state.snapGuides.push({ type: 'v', v: guideX });
+          if (snapY != null) state.snapGuides.push({ type: 'h', v: guideY });
+        }
       }
     } else if (state.editMode.startsWith('resize-')) {
       const handle = state.editMode.split('-')[1];
@@ -1943,7 +1999,7 @@ window.addEventListener('mousemove', e => {
           }
         }
       }
-      if (nw > 2 && nh > 2) { r.x = nx; r.y = ny; r.w = nw; r.h = nh; }
+      if (nw > 2 && nh > 2) assignBbox(r, nx, ny, nw, nh);
     }
     refreshRegions(); render();
     return;
@@ -2627,13 +2683,17 @@ function render() {
       const visible = r.alwaysVisible ? true : (parent ? !!parent.pressed : !!r.pressed);
       if (!visible && !isSelected) continue;
       // boundToParent: render at the parent's bbox so resizing the parent
-      // also resizes the decal. Falls back to the decal's own bbox if the
-      // parent has gone away (was deleted or not found).
+      // also resizes the decal. When parent is currently pressed AND has
+      // pressed-state geometry defined, use the parent's pressed bbox.
+      // Falls back to the decal's own bbox if the parent has gone away.
       const useBound = r.boundToParent && parent;
-      const baseX = useBound ? parent.x : r.x;
-      const baseY = useBound ? parent.y : r.y;
-      const baseW = useBound ? parent.w : r.w;
-      const baseH = useBound ? parent.h : r.h;
+      const parentBbox = useBound
+        ? (parent.pressed ? pressedBboxOf(parent) : { x: parent.x, y: parent.y, w: parent.w, h: parent.h })
+        : null;
+      const baseX = useBound ? parentBbox.x : r.x;
+      const baseY = useBound ? parentBbox.y : r.y;
+      const baseW = useBound ? parentBbox.w : r.w;
+      const baseH = useBound ? parentBbox.h : r.h;
       const dox = (useBound ? (parent.dstOffX || 0) : (r.dstOffX || 0));
       const doy = (useBound ? (parent.dstOffY || 0) : (r.dstOffY || 0));
       const rx = (baseX + dox) * state.scale, ry = (baseY + doy) * state.scale;
@@ -2824,9 +2884,10 @@ function render() {
     state.regions.filter(r => r.pressed && r.shape !== 'decal' && r.shape !== 'knob' && r.shape !== 'dropdown').forEach(r => {
       const src = (r.source === 'C') ? (state.imgCResized || state.imgC) : (state.imgBResized || state.imgB);
       if (!src) return;
+      const pb = pressedBboxOf(r);
       const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
-      const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
-      const rw = r.w * state.scale, rh = r.h * state.scale;
+      const rx = (pb.x + dox) * state.scale, ry = (pb.y + doy) * state.scale;
+      const rw = pb.w * state.scale, rh = pb.h * state.scale;
       const sx = r.x + (r.srcOffX || 0);
       const sy = r.y + (r.srcOffY || 0);
       ctx.save();
@@ -2875,9 +2936,10 @@ function render() {
         ctx.beginPath();
         ctx.rect(0, 0, dw, dh);
         for (const r of pressedRegions) {
+          const pb = pressedBboxOf(r);
           const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
-          const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
-          const rw = r.w * state.scale, rh = r.h * state.scale;
+          const rx = (pb.x + dox) * state.scale, ry = (pb.y + doy) * state.scale;
+          const rw = pb.w * state.scale, rh = pb.h * state.scale;
           ctx.rect(rx, ry, rw, rh);
         }
         ctx.clip('evenodd');
@@ -2889,8 +2951,9 @@ function render() {
       for (const r of pressedRegions) {
         // Apply per-region dstOff so paint anchored to the visually shifted
         // pressed-crop position lines up with where the user actually painted.
+        const pb = pressedBboxOf(r);
         const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
-        const sx = r.x + dox, sy = r.y + doy, sw = r.w, sh = r.h;
+        const sx = pb.x + dox, sy = pb.y + doy, sw = pb.w, sh = pb.h;
         const dx2 = sx * state.scale, dy2 = sy * state.scale, dw2 = sw * state.scale, dh2 = sh * state.scale;
         if (sw > 0 && sh > 0) ctx.drawImage(state.cloneOverlayPressed, sx, sy, sw, sh, dx2, dy2, dw2, dh2);
       }
@@ -3083,12 +3146,19 @@ function render() {
 function drawRegions() {
   octx.lineWidth = 1.5;
   state.regions.forEach(r => {
-    const x = r.x * state.scale, y = r.y * state.scale;
-    const w = r.w * state.scale, h = r.h * state.scale;
+    // In edit-pressed mode, show the pressed bbox (orange-ish) so the user
+    // knows what they're dragging. In normal mode, show the base bbox.
+    const g = regionGeo(r);
+    const x = g.x * state.scale, y = g.y * state.scale;
+    const w = g.w * state.scale, h = g.h * state.scale;
     const sel = r.id === state.selectedId;
-    const stroke = r.locked ? '#666' : (sel ? '#4fd1ff' : (r.pressed ? '#ffc14f' : (r.shape === 'decal' ? '#7fff9f' : '#ff6ec7')));
-    const fill = r.shape === 'decal' ? (sel ? 'rgba(79,209,255,0.06)' : 'rgba(127,255,159,0.00)')
-               : (r.locked ? 'rgba(120,120,120,0.04)' : (sel ? 'rgba(79,209,255,0.12)' : (r.pressed ? 'rgba(255,193,79,0.10)' : 'rgba(255,110,199,0.08)')));
+    const stroke = state.editPressedMode
+      ? (sel ? '#ff8c4f' : (r.shape === 'decal' ? '#bb6644' : '#ff6633'))
+      : (r.locked ? '#666' : (sel ? '#4fd1ff' : (r.pressed ? '#ffc14f' : (r.shape === 'decal' ? '#7fff9f' : '#ff6ec7'))));
+    const fill = state.editPressedMode
+      ? (sel ? 'rgba(255,140,79,0.18)' : 'rgba(255,102,51,0.08)')
+      : (r.shape === 'decal' ? (sel ? 'rgba(79,209,255,0.06)' : 'rgba(127,255,159,0.00)')
+       : (r.locked ? 'rgba(120,120,120,0.04)' : (sel ? 'rgba(79,209,255,0.12)' : (r.pressed ? 'rgba(255,193,79,0.10)' : 'rgba(255,110,199,0.08)'))));
     octx.strokeStyle = stroke; octx.fillStyle = fill;
     octx.setLineDash(r.shape === 'decal' && !sel ? [6, 4] : []);
     if (r.shape === 'circle' || r.shape === 'knob') {
@@ -3280,6 +3350,10 @@ document.getElementById('btnExportAll').addEventListener('click', async () => {
     const fname = `${r.name}.png`;
     zip.file(fname, blob);
     const entry = { id: r.id, name: r.name, shape: r.shape || 'rect', locked: !!r.locked, x: r.x, y: r.y, w: r.w, h: r.h, inner_pct: r.innerPct, source: r.source || 'B', src_off_x: r.srcOffX || 0, src_off_y: r.srcOffY || 0, dst_off_x: r.dstOffX || 0, dst_off_y: r.dstOffY || 0, crop_file: fname };
+    if (r.pressedX != null) {
+      entry.pressed_x = r.pressedX; entry.pressed_y = r.pressedY;
+      entry.pressed_w = r.pressedW; entry.pressed_h = r.pressedH;
+    }
     if (r.shape === 'knob' && r.knobImageFile) {
       entry.knob_image_file = r.knobImageFile;
     }
@@ -3489,6 +3563,10 @@ function importShapesData(m) {
         dstOffY: r.dst_off_y || r.dstOffY || 0,
         innerPct: (r.inner_pct ?? r.innerPct ?? (shape === 'annulus' ? 0.5 : undefined)),
         x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.w), h: Math.round(r.h),
+        pressedX: r.pressed_x != null ? Math.round(r.pressed_x) : null,
+        pressedY: r.pressed_y != null ? Math.round(r.pressed_y) : null,
+        pressedW: r.pressed_w != null ? Math.round(r.pressed_w) : null,
+        pressedH: r.pressed_h != null ? Math.round(r.pressed_h) : null,
       };
       if (shape === 'knob' && state.imgKnobRender) reg.decalImage = state.imgKnobRender;
       if (shape === 'knob' && r.knob_image_file) reg._pendingKnobImage = r.knob_image_file;
