@@ -2824,9 +2824,30 @@ function render() {
   // everything because the user explicitly wants it to.
   if (state.mode !== 'diff' && state.mode !== 'sideby') {
     drawChassisOverlays();
-    if (state.cloneOverlay) ctx.drawImage(state.cloneOverlay, 0, 0, dw, dh);
+    // Clone layers swap by pressed state: the unpressed PNG renders everywhere
+    // EXCEPT the bboxes of currently-pressed regions; the pressed PNG fills
+    // those bboxes. Without the mask, both PNGs would composite and the user
+    // sees doubled imagery (e.g. an unpressed icon ghosted under the pressed one).
+    const pressedRegions = state.regions.filter(r => r.pressed && r.shape !== 'dropdown' && r.shape !== 'knob');
+    if (state.cloneOverlay) {
+      if (pressedRegions.length === 0) {
+        ctx.drawImage(state.cloneOverlay, 0, 0, dw, dh);
+      } else {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, 0, dw, dh);
+        for (const r of pressedRegions) {
+          const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
+          const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
+          const rw = r.w * state.scale, rh = r.h * state.scale;
+          ctx.rect(rx, ry, rw, rh);
+        }
+        ctx.clip('evenodd');
+        ctx.drawImage(state.cloneOverlay, 0, 0, dw, dh);
+        ctx.restore();
+      }
+    }
     if (state.cloneOverlayPressed) {
-      const pressedRegions = state.regions.filter(r => r.pressed && r.shape !== 'dropdown' && r.shape !== 'knob');
       for (const r of pressedRegions) {
         // Apply per-region dstOff so paint anchored to the visually shifted
         // pressed-crop position lines up with where the user actually painted.
