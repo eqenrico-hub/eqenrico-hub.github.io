@@ -258,10 +258,10 @@
       "dst_off_x": 0,
       "dst_off_y": 0,
       "crop_file": "rect_44.png",
-      "pressed_x": 572.2548980289904,
-      "pressed_y": 457.8601119616899,
-      "pressed_w": 89.74510197100938,
-      "pressed_h": 40.15292287005832
+      "pressed_x": 572,
+      "pressed_y": 457.65258826077536,
+      "pressed_w": 90,
+      "pressed_h": 40.65258826077536
     },
     {
       "id": 17,
