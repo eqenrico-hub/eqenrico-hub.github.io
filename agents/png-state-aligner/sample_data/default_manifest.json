@@ -257,11 +257,7 @@
       "src_off_y": 0.3,
       "dst_off_x": 0,
       "dst_off_y": 0,
-      "crop_file": "rect_44.png",
-      "pressed_x": 572,
-      "pressed_y": 457.65258826077536,
-      "pressed_w": 90,
-      "pressed_h": 40.65258826077536
+      "crop_file": "rect_44.png"
     },
     {
       "id": 17,
@@ -496,7 +492,7 @@
       "tex_scale": 1,
       "tex_off_x": 0,
       "tex_off_y": 0,
-      "top_corner_ext_x": 3.5,
+      "top_corner_ext_x": 6.5,
       "top_corner_ext_y": 16.5,
       "top_corner_curve_pct": 100,
       "parent_name": null,
