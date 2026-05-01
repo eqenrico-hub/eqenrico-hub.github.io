@@ -2122,6 +2122,9 @@ function refreshRegions() {
         <div style="margin:3px 0;"><label style="font-size:10px; display:flex; align-items:center; gap:4px;">
           <input type="checkbox" class="crotates" data-id="${r.id}" ${r.rotatesAsKnob ? 'checked' : ''}> rotates as knob (drag to rotate −135°…+135°)
         </label></div>
+        <div style="margin:3px 0;"><label style="font-size:10px; display:flex; align-items:center; gap:4px;">
+          <input type="checkbox" class="cbound" data-id="${r.id}" ${r.boundToParent ? 'checked' : ''}> lock size to parent (decal tracks parent's bbox)
+        </label></div>
       ` : ''}
       ${r.shape === 'dropdown' ? `
         <div style="margin:3px 0;"><label style="font-size:10px;">bottom radius % <span id="rbv${r.id}">${Math.round(r.bottomRadiusPct ?? 15)}</span></label>
@@ -2457,6 +2460,14 @@ function refreshRegions() {
     refreshRegions(); render();
   }));
 
+  list.querySelectorAll('.cbound').forEach(c => c.addEventListener('change', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (!r) return;
+    pushUndo();
+    r.boundToParent = !!e.target.checked;
+    render();
+  }));
+
   // Dropdown parent selector
   list.querySelectorAll('.cparent').forEach(sel => sel.addEventListener('change', e => {
     const r = state.regions.find(x => x.id === +e.target.dataset.id);
@@ -2611,9 +2622,18 @@ function render() {
       const isSelected = (r.id === state.selectedId);
       const visible = r.alwaysVisible ? true : (parent ? !!parent.pressed : !!r.pressed);
       if (!visible && !isSelected) continue;
-      const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
-      const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
-      const rw = r.w * state.scale, rh = r.h * state.scale;
+      // boundToParent: render at the parent's bbox so resizing the parent
+      // also resizes the decal. Falls back to the decal's own bbox if the
+      // parent has gone away (was deleted or not found).
+      const useBound = r.boundToParent && parent;
+      const baseX = useBound ? parent.x : r.x;
+      const baseY = useBound ? parent.y : r.y;
+      const baseW = useBound ? parent.w : r.w;
+      const baseH = useBound ? parent.h : r.h;
+      const dox = (useBound ? (parent.dstOffX || 0) : (r.dstOffX || 0));
+      const doy = (useBound ? (parent.dstOffY || 0) : (r.dstOffY || 0));
+      const rx = (baseX + dox) * state.scale, ry = (baseY + doy) * state.scale;
+      const rw = baseW * state.scale, rh = baseH * state.scale;
       if (r.rotatesAsKnob) {
         const v = (r.value == null ? 0.5 : r.value);
         const angle = (-135 + 270 * v) * Math.PI / 180;
@@ -2636,9 +2656,16 @@ function render() {
   function drawAlwaysVisibleDecals() {
     const decals = state.regions.filter(r => r.shape === 'decal' && r.decalImage && r.alwaysVisible && !r.rotatesAsKnob);
     for (const r of decals) {
-      const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
-      const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
-      const rw = r.w * state.scale, rh = r.h * state.scale;
+      const parent = r.parentId != null ? state.regions.find(o => o.id === r.parentId) : null;
+      const useBound = r.boundToParent && parent;
+      const baseX = useBound ? parent.x : r.x;
+      const baseY = useBound ? parent.y : r.y;
+      const baseW = useBound ? parent.w : r.w;
+      const baseH = useBound ? parent.h : r.h;
+      const dox = (useBound ? (parent.dstOffX || 0) : (r.dstOffX || 0));
+      const doy = (useBound ? (parent.dstOffY || 0) : (r.dstOffY || 0));
+      const rx = (baseX + dox) * state.scale, ry = (baseY + doy) * state.scale;
+      const rw = baseW * state.scale, rh = baseH * state.scale;
       ctx.drawImage(r.decalImage, rx, ry, rw, rh);
     }
   }
@@ -3212,6 +3239,7 @@ document.getElementById('btnExportAll').addEventListener('click', async () => {
         parent_name: r.parentId != null ? (state.regions.find(rr => rr.id === r.parentId)?.name || null) : null,
         always_visible: !!r.alwaysVisible,
         rotates_as_knob: !!r.rotatesAsKnob,
+        bound_to_parent: !!r.boundToParent,
         value: r.value ?? null,
         crop_file: fname, decal_filename: r.decalFilename || null,
       });
@@ -3464,6 +3492,7 @@ function importShapesData(m) {
         reg.alwaysVisible = !!r.always_visible;
         reg._pendingParentName = r.parent_name || null;
         reg.rotatesAsKnob = !!r.rotates_as_knob;
+        reg.boundToParent = !!r.bound_to_parent;
         if (r.value != null) reg.value = r.value;
       }
       if (shape === 'text') {
@@ -3599,31 +3628,60 @@ function addDroppedImageAsDecal(file, dropImageX, dropImageY) {
   if (!file || !file.type || !file.type.startsWith('image/')) return;
   const im = new Image();
   im.onload = () => {
-    const refW = state.imgA ? state.imgA.naturalWidth : im.naturalWidth;
-    const refH = state.imgA ? state.imgA.naturalHeight : im.naturalHeight;
-    const initW = Math.max(60, Math.round(Math.min(refW, refH) * 0.15));
-    const initH = Math.round(initW * (im.naturalHeight / im.naturalWidth));
     pushUndo();
-    // Unique name: pick max existing decal_N + 1, so dropped images never
-    // collide with existing decals (which would overwrite each other on
-    // bundle export since crop_file is keyed on name).
     let maxN = 0;
     for (const other of state.regions) {
       const m = /^decal_(\d+)$/.exec(other.name || '');
       if (m) maxN = Math.max(maxN, parseInt(m[1], 10));
     }
-    const r = {
-      id: state.nextId++,
-      name: `decal_${maxN + 1}`,
-      shape: 'decal',
-      pressed: false,
-      x: Math.round(dropImageX - initW / 2),
-      y: Math.round(dropImageY - initH / 2),
-      w: initW, h: initH,
-      decalImage: im,
-      decalFilename: file.name,
-      alwaysVisible: true,
-    };
+    // If the drop point is inside a rect/circle/annulus, auto-bind the new
+    // decal to that region: parentId + boundToParent so resizing the parent
+    // also resizes the decal. Visibility gates on parent.pressed (not always
+    // visible) so the decal acts like the "pressed-state graphic" of the
+    // button. User can untick "lock to parent" later in the region editor.
+    let parentRegion = null;
+    for (let i = state.regions.length - 1; i >= 0; i--) {
+      const o = state.regions[i];
+      if (o.locked) continue;
+      if (o.shape === 'decal' || o.shape === 'dropdown' || o.shape === 'knob' || o.shape === 'text') continue;
+      if (dropImageX >= o.x && dropImageX <= o.x + o.w && dropImageY >= o.y && dropImageY <= o.y + o.h) {
+        parentRegion = o;
+        break;
+      }
+    }
+    let r;
+    if (parentRegion) {
+      r = {
+        id: state.nextId++,
+        name: `decal_${maxN + 1}`,
+        shape: 'decal',
+        pressed: false,
+        x: parentRegion.x, y: parentRegion.y,
+        w: parentRegion.w, h: parentRegion.h,
+        decalImage: im,
+        decalFilename: file.name,
+        alwaysVisible: false,
+        parentId: parentRegion.id,
+        boundToParent: true,
+      };
+    } else {
+      const refW = state.imgA ? state.imgA.naturalWidth : im.naturalWidth;
+      const refH = state.imgA ? state.imgA.naturalHeight : im.naturalHeight;
+      const initW = Math.max(60, Math.round(Math.min(refW, refH) * 0.15));
+      const initH = Math.round(initW * (im.naturalHeight / im.naturalWidth));
+      r = {
+        id: state.nextId++,
+        name: `decal_${maxN + 1}`,
+        shape: 'decal',
+        pressed: false,
+        x: Math.round(dropImageX - initW / 2),
+        y: Math.round(dropImageY - initH / 2),
+        w: initW, h: initH,
+        decalImage: im,
+        decalFilename: file.name,
+        alwaysVisible: true,
+      };
+    }
     state.regions.push(r);
     state.selectedId = r.id;
     setTool('select');
