@@ -1709,38 +1709,57 @@ canvasWrap.addEventListener('mousedown', e => {
         state.selectedId = hit.id;
         return;
       }
-      // Dropdown click in interactive mode: open option picker if it has options
+      // Dropdown click in interactive mode: open custom overlay option picker
       if (hit.shape === 'dropdown' && Array.isArray(hit.dropdownOptions) && hit.dropdownOptions.length > 0) {
-        // Use a positioned native <select> so the picker appears at the dropdown
+        // Remove any existing picker first (click-to-close)
+        document.querySelectorAll('.dropdown-picker-overlay').forEach(n => n.remove());
+
         const cv = document.getElementById('canvas');
         const cvRect = cv.getBoundingClientRect();
-        const screenX = cvRect.left + (hit.x + hit.w/2) * state.scale;
+        const screenX = cvRect.left + hit.x * state.scale;
         const screenY = cvRect.top + (hit.y + hit.h) * state.scale;
-        const sel = document.createElement('select');
-        sel.style.position = 'fixed';
-        sel.style.left = screenX + 'px';
-        sel.style.top = screenY + 'px';
-        sel.style.zIndex = 9999;
-        sel.style.fontSize = '14px';
-        sel.size = Math.min(12, hit.dropdownOptions.length);
+
+        const menu = document.createElement('div');
+        menu.className = 'dropdown-picker-overlay';
+        menu.style.cssText = [
+          'position:fixed', `left:${screenX}px`, `top:${screenY}px`,
+          'min-width:140px', 'max-height:60vh', 'overflow-y:auto',
+          'background:#1a1a1a', 'border:1px solid #444', 'border-radius:6px',
+          'box-shadow:0 8px 24px rgba(0,0,0,0.6)', 'z-index:99999',
+          'padding:4px 0', 'font-family:Arial,sans-serif', 'font-size:13px',
+          'color:#fff', 'user-select:none'
+        ].join(';');
+
+        const close = () => { try { menu.remove(); } catch(_){} document.removeEventListener('mousedown', outsideHandler, true); };
+        const outsideHandler = (ev) => { if (!menu.contains(ev.target)) close(); };
+        // Defer attach so the current mousedown that opened the menu doesn't close it
+        setTimeout(() => document.addEventListener('mousedown', outsideHandler, true), 0);
+
         for (let i = 0; i < hit.dropdownOptions.length; i++) {
-          const opt = document.createElement('option');
-          opt.value = String(i);
-          opt.textContent = hit.dropdownOptions[i];
-          if ((hit.selectedOption || 0) === i) opt.selected = true;
-          sel.appendChild(opt);
+          const item = document.createElement('div');
+          item.textContent = hit.dropdownOptions[i];
+          const isSel = (hit.selectedOption || 0) === i;
+          item.style.cssText = [
+            'padding:6px 14px', 'cursor:pointer', 'white-space:nowrap',
+            isSel ? 'background:#2a4a6a' : 'background:transparent',
+            isSel ? 'color:#9adfff' : 'color:#fff'
+          ].join(';');
+          item.addEventListener('mouseenter', () => { if (!isSel) item.style.background = '#2a2a2a'; });
+          item.addEventListener('mouseleave', () => { if (!isSel) item.style.background = 'transparent'; });
+          item.addEventListener('mousedown', (ev) => {
+            ev.stopPropagation(); ev.preventDefault();
+            pushUndo();
+            hit.selectedOption = i;
+            render();
+            close();
+          });
+          menu.appendChild(item);
         }
-        document.body.appendChild(sel);
-        sel.focus();
-        const cleanup = () => { try { document.body.removeChild(sel); } catch(_){} };
-        sel.addEventListener('change', () => {
-          pushUndo();
-          hit.selectedOption = parseInt(sel.value, 10);
-          render();
-          cleanup();
-        });
-        sel.addEventListener('blur', cleanup);
-        sel.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') cleanup(); });
+        document.body.appendChild(menu);
+
+        // Esc closes
+        const escHandler = (ev) => { if (ev.key === 'Escape') { close(); document.removeEventListener('keydown', escHandler); } };
+        document.addEventListener('keydown', escHandler);
         return;
       }
       pushUndo();
