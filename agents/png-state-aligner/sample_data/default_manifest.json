@@ -900,11 +900,12 @@
       "dst_off_y": 0,
       "parent_name": null,
       "always_visible": true,
-      "rotates_as_knob": false,
+      "rotates_as_knob": true,
       "bound_to_parent": false,
-      "value": null,
+      "value": 0.5,
       "crop_file": "decal_60.png",
-      "decal_filename": "MKV2_knob_USER_VIEW_single.png"
+      "decal_filename": "MKV2_knob_USER_VIEW_single.png",
+      "filmstrip_frames": 128
     }
   ],
   "clone_overlay_file": "clone_overlay.png",
