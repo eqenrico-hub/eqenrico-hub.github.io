@@ -2188,6 +2188,9 @@ function refreshRegions() {
         <div style="margin:3px 0;"><label style="font-size:10px;">filmstrip frames (0 = single image, e.g. 128 for vertical filmstrip)</label>
           <input type="number" class="cfilmstrip" data-id="${r.id}" value="${r.filmstripFrames || 0}" min="0" max="512" step="1" style="width:100%; font-size:10px; padding:2px; background:#111; color:var(--fg); border:1px solid #333; border-radius:3px;">
         </div>
+        <div style="margin:3px 0;"><label style="font-size:10px;">PNG static rotation (degrees, 0–360)</label>
+          <input type="number" class="cdecalrot" data-id="${r.id}" value="${r.decalRotation || 0}" min="-360" max="360" step="1" style="width:100%; font-size:10px; padding:2px; background:#111; color:var(--fg); border:1px solid #333; border-radius:3px;">
+        </div>
       ` : ''}
       ${r.shape === 'dropdown' ? `
         <div style="margin:3px 0;"><label style="font-size:10px;">bottom radius % <span id="rbv${r.id}">${Math.round(r.bottomRadiusPct ?? 15)}</span></label>
@@ -2541,6 +2544,15 @@ function refreshRegions() {
     render();
   }));
 
+  list.querySelectorAll('.cdecalrot').forEach(inp => inp.addEventListener('change', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (!r) return;
+    pushUndo();
+    const v = parseFloat(e.target.value);
+    r.decalRotation = isNaN(v) ? 0 : v;
+    render();
+  }));
+
   // Dropdown parent selector
   list.querySelectorAll('.cparent').forEach(sel => sel.addEventListener('change', e => {
     const r = state.regions.find(x => x.id === +e.target.dataset.id);
@@ -2724,7 +2736,17 @@ function render() {
         const idx = Math.max(0, Math.min(frames - 1, Math.floor(v * (frames - 1) + 0.5)));
         const fw = r.decalImage.naturalWidth;
         const fh = r.decalImage.naturalHeight / frames;
-        ctx.drawImage(r.decalImage, 0, idx * fh, fw, fh, rx, ry, rw, rh);
+        const staticRot = (r.decalRotation || 0) * Math.PI / 180;
+        if (staticRot !== 0) {
+          const cx = rx + rw / 2, cy = ry + rh / 2;
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.rotate(staticRot);
+          ctx.drawImage(r.decalImage, 0, idx * fh, fw, fh, -rw / 2, -rh / 2, rw, rh);
+          ctx.restore();
+        } else {
+          ctx.drawImage(r.decalImage, 0, idx * fh, fw, fh, rx, ry, rw, rh);
+        }
       } else if (r.rotatesAsKnob) {
         const v = (r.value == null ? 0.5 : r.value);
         const angle = (-135 + 270 * v) * Math.PI / 180;
@@ -2766,9 +2788,29 @@ function render() {
         const idx = Math.max(0, Math.min(frames - 1, Math.floor(v * (frames - 1) + 0.5)));
         const fw = r.decalImage.naturalWidth;
         const fh = r.decalImage.naturalHeight / frames;
-        ctx.drawImage(r.decalImage, 0, idx * fh, fw, fh, rx, ry, rw, rh);
+        const staticRot = (r.decalRotation || 0) * Math.PI / 180;
+        if (staticRot !== 0) {
+          const cx = rx + rw / 2, cy = ry + rh / 2;
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.rotate(staticRot);
+          ctx.drawImage(r.decalImage, 0, idx * fh, fw, fh, -rw / 2, -rh / 2, rw, rh);
+          ctx.restore();
+        } else {
+          ctx.drawImage(r.decalImage, 0, idx * fh, fw, fh, rx, ry, rw, rh);
+        }
       } else {
-        ctx.drawImage(r.decalImage, rx, ry, rw, rh);
+        const staticRot = (r.decalRotation || 0) * Math.PI / 180;
+        if (staticRot !== 0) {
+          const cx = rx + rw / 2, cy = ry + rh / 2;
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.rotate(staticRot);
+          ctx.drawImage(r.decalImage, -rw / 2, -rh / 2, rw, rh);
+          ctx.restore();
+        } else {
+          ctx.drawImage(r.decalImage, rx, ry, rw, rh);
+        }
       }
     }
   }
@@ -3354,6 +3396,7 @@ document.getElementById('btnExportAll').addEventListener('click', async () => {
         rotates_as_knob: !!r.rotatesAsKnob,
         bound_to_parent: !!r.boundToParent,
         filmstrip_frames: r.filmstripFrames || 0,
+        decal_rotation: r.decalRotation || 0,
         value: r.value ?? null,
         crop_file: fname, decal_filename: r.decalFilename || null,
       });
@@ -3616,6 +3659,7 @@ function importShapesData(m) {
         reg.rotatesAsKnob = !!r.rotates_as_knob;
         reg.boundToParent = !!r.bound_to_parent;
         reg.filmstripFrames = r.filmstrip_frames || 0;
+        reg.decalRotation = r.decal_rotation || 0;
         if (r.value != null) reg.value = r.value;
       }
       if (shape === 'text') {
