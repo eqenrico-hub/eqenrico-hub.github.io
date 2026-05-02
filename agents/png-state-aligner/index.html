@@ -1656,18 +1656,15 @@ canvasWrap.addEventListener('mousedown', e => {
     // PRIORITY pass: dropdowns with options that are currently open (parent
     // pressed). They're interactive UI; otherwise the parent rect underneath
     // would steal the click and close the dropdown.
-    console.log('[interactive click]', ix.toFixed(1), iy.toFixed(1));
     for (let i = state.regions.length - 1; i >= 0; i--) {
       const r = state.regions[i];
       if (r.locked || r.shape !== 'dropdown') continue;
       if (!Array.isArray(r.dropdownOptions) || r.dropdownOptions.length === 0) continue;
       const parent = findParentButton(r);
       const isVisible = (parent && parent.pressed) || (r.id === state.selectedId);
-      console.log('  dropdown', r.name, 'parent=', parent && parent.name, 'parent.pressed=', parent && parent.pressed, 'visible=', isVisible);
       if (!isVisible) continue;
       const extY = r.topCornerExtY || 0;
       if (ix >= r.x && ix <= r.x + r.w && iy >= r.y - extY && iy <= r.y + r.h) {
-        console.log('  HIT', r.name);
         hit = r; break;
       }
     }
@@ -1727,57 +1724,18 @@ canvasWrap.addEventListener('mousedown', e => {
         state.selectedId = hit.id;
         return;
       }
-      // Dropdown click in interactive mode: open custom overlay option picker
+      // Dropdown click in interactive mode: pick the row the user clicked on
+      // (since options are rendered as stacked rows inside the bbox).
       if (hit.shape === 'dropdown' && Array.isArray(hit.dropdownOptions) && hit.dropdownOptions.length > 0) {
-        // Remove any existing picker first (click-to-close)
-        document.querySelectorAll('.dropdown-picker-overlay').forEach(n => n.remove());
-
-        const cv = document.getElementById('canvas');
-        const cvRect = cv.getBoundingClientRect();
-        const screenX = cvRect.left + hit.x * state.scale;
-        const screenY = cvRect.top + (hit.y + hit.h) * state.scale;
-
-        const menu = document.createElement('div');
-        menu.className = 'dropdown-picker-overlay';
-        menu.style.cssText = [
-          'position:fixed', `left:${screenX}px`, `top:${screenY}px`,
-          'min-width:140px', 'max-height:60vh', 'overflow-y:auto',
-          'background:#1a1a1a', 'border:1px solid #444', 'border-radius:6px',
-          'box-shadow:0 8px 24px rgba(0,0,0,0.6)', 'z-index:99999',
-          'padding:4px 0', 'font-family:Arial,sans-serif', 'font-size:13px',
-          'color:#fff', 'user-select:none'
-        ].join(';');
-
-        const close = () => { try { menu.remove(); } catch(_){} document.removeEventListener('mousedown', outsideHandler, true); };
-        const outsideHandler = (ev) => { if (!menu.contains(ev.target)) close(); };
-        // Defer attach so the current mousedown that opened the menu doesn't close it
-        setTimeout(() => document.addEventListener('mousedown', outsideHandler, true), 0);
-
-        for (let i = 0; i < hit.dropdownOptions.length; i++) {
-          const item = document.createElement('div');
-          item.textContent = hit.dropdownOptions[i];
-          const isSel = (hit.selectedOption || 0) === i;
-          item.style.cssText = [
-            'padding:6px 14px', 'cursor:pointer', 'white-space:nowrap',
-            isSel ? 'background:#2a4a6a' : 'background:transparent',
-            isSel ? 'color:#9adfff' : 'color:#fff'
-          ].join(';');
-          item.addEventListener('mouseenter', () => { if (!isSel) item.style.background = '#2a2a2a'; });
-          item.addEventListener('mouseleave', () => { if (!isSel) item.style.background = 'transparent'; });
-          item.addEventListener('mousedown', (ev) => {
-            ev.stopPropagation(); ev.preventDefault();
-            pushUndo();
-            hit.selectedOption = i;
-            render();
-            close();
-          });
-          menu.appendChild(item);
+        const N = hit.dropdownOptions.length;
+        const itemH = hit.h / N;
+        const localY = iy - hit.y;
+        const newIdx = Math.max(0, Math.min(N - 1, Math.floor(localY / itemH)));
+        if (newIdx !== (hit.selectedOption || 0)) {
+          pushUndo();
+          hit.selectedOption = newIdx;
+          render();
         }
-        document.body.appendChild(menu);
-
-        // Esc closes
-        const escHandler = (ev) => { if (ev.key === 'Escape') { close(); document.removeEventListener('keydown', escHandler); } };
-        document.addEventListener('keydown', escHandler);
         return;
       }
       pushUndo();
@@ -3028,19 +2986,34 @@ function render() {
       }
       ctx.restore();
 
-      // If the dropdown has an options list, render the currently-selected option
-      // as text centered in the dropdown body. Drawn ABOVE the clip so the text
-      // isn't masked by the dropdown shape edges.
+      // If the dropdown has an options list, render ALL options as stacked rows
+      // inside the dropdown's bbox (like a real expanded combobox). The selected
+      // option is highlighted. Click on a row in interactive mode to pick it.
       if (Array.isArray(r.dropdownOptions) && r.dropdownOptions.length > 0) {
-        const idx = Math.max(0, Math.min(r.dropdownOptions.length - 1, r.selectedOption || 0));
-        const text = r.dropdownOptions[idx];
-        const fontSize = Math.max(10, rh * 0.32);
+        const opts = r.dropdownOptions;
+        const N = opts.length;
+        const idx = Math.max(0, Math.min(N - 1, r.selectedOption || 0));
+        const itemH = rh / N;
+        const fontSize = Math.max(8, Math.min(itemH * 0.55, 22));
         ctx.save();
+        // Clip to dropdown shape so rows don't bleed past rounded corners
+        tracedDropdownPath(ctx, rx, ry, rw, rh, R, extX, extY, cp);
+        ctx.clip();
         ctx.font = `${Math.round(fontSize)}px ${r.fontFamily || 'Arial, sans-serif'}`;
-        ctx.fillStyle = r.optionColor || '#ffffff';
         ctx.textBaseline = 'middle';
         ctx.textAlign = 'center';
-        ctx.fillText(text, rx + rw / 2, ry + rh / 2);
+        for (let i = 0; i < N; i++) {
+          const top = ry + i * itemH;
+          if (i === idx) {
+            // selected: blue highlight band
+            ctx.fillStyle = 'rgba(74, 144, 200, 0.65)';
+            ctx.fillRect(rx, top, rw, itemH);
+            ctx.fillStyle = '#ffffff';
+          } else {
+            ctx.fillStyle = r.optionColor || '#ddd';
+          }
+          ctx.fillText(opts[i], rx + rw / 2, top + itemH / 2);
+        }
         ctx.restore();
       }
     });

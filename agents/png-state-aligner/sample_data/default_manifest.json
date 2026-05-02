@@ -335,7 +335,7 @@
       "x": 36,
       "y": 455,
       "w": 153,
-      "h": 190,
+      "h": 300,
       "source": "B",
       "src_off_x": 0,
       "src_off_y": 0,
@@ -490,25 +490,7 @@
       "top_corner_ext_y": 9.5,
       "top_corner_curve_pct": 100,
       "parent_name": null,
-      "tex_filename": null,
-      "dropdown_options": [
-        "Major",
-        "Minor",
-        "Dorian",
-        "Phrygian",
-        "Lydian",
-        "Mixolydian",
-        "Locrian",
-        "Major Penta",
-        "Minor Penta",
-        "Blues",
-        "Harm Minor",
-        "Mel Minor",
-        "Whole Tone",
-        "Diminished",
-        "Chromatic"
-      ],
-      "selected_option": 0
+      "tex_filename": null
     },
     {
       "id": 27,
@@ -533,22 +515,7 @@
       "top_corner_ext_y": 16.5,
       "top_corner_curve_pct": 100,
       "parent_name": null,
-      "tex_filename": null,
-      "dropdown_options": [
-        "C",
-        "C#",
-        "D",
-        "D#",
-        "E",
-        "F",
-        "F#",
-        "G",
-        "G#",
-        "A",
-        "A#",
-        "B"
-      ],
-      "selected_option": 0
+      "tex_filename": null
     },
     {
       "id": 28,
