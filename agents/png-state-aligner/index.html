@@ -2689,7 +2689,12 @@ function render() {
     // their circle crop, so they need to live underneath user paint.
     // Non-rotating always_visible decals (e.g. decal_46 sticker) draw later,
     // ABOVE clone, so accidental stamps don't hide them.
-    const decals = state.regions.filter(r => r.shape === 'decal' && r.decalImage && (!r.alwaysVisible || r.rotatesAsKnob));
+    // Chassis layer: parent-pressed decals + rotating decals (so user can clone-stamp).
+    // EXCEPT: filmstrip-frame decals (e.g. MKV2 knob) draw in the always-visible
+    // layer ABOVE clone, so the static chassis can't hide them.
+    const decals = state.regions.filter(r => r.shape === 'decal' && r.decalImage
+        && (!r.alwaysVisible || r.rotatesAsKnob)
+        && !(r.filmstripFrames && r.filmstripFrames > 1));
     for (const r of decals) {
       const parent = r.parentId != null ? state.regions.find(o => o.id === r.parentId) : null;
       const isSelected = (r.id === state.selectedId);
@@ -2740,7 +2745,10 @@ function render() {
   // (decal_46 etc). Rotating decals draw in chassis layer instead so the
   // user can clone/fade-brush over them.
   function drawAlwaysVisibleDecals() {
-    const decals = state.regions.filter(r => r.shape === 'decal' && r.decalImage && r.alwaysVisible && !r.rotatesAsKnob);
+    // Always-visible layer: stickers + filmstrip-frame decals (e.g. MKV2 knob).
+    // Drawn ABOVE clone overlays so they aren't hidden by the chassis.
+    const decals = state.regions.filter(r => r.shape === 'decal' && r.decalImage && r.alwaysVisible
+        && (!r.rotatesAsKnob || (r.filmstripFrames && r.filmstripFrames > 1)));
     for (const r of decals) {
       const parent = r.parentId != null ? state.regions.find(o => o.id === r.parentId) : null;
       const useBound = r.boundToParent && parent;
