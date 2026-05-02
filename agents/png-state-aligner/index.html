@@ -591,9 +591,11 @@ document.getElementById('btnLoadDefaults').addEventListener('click', async () =>
       const manifest = await r.json();
       importShapesData(manifest);
       // Rehydrate default decals from sample_data if their crop_file sits next to the manifest
+      // Cache-bust the fetch so updates to decal PNGs (e.g. filmstrip re-renders) bypass the browser cache.
+      const _decalCacheBust = '?v=' + Date.now();
       for (const entry of (manifest.regions || []).filter(rr => rr.shape === 'decal' && rr.crop_file)) {
         try {
-          const resp = await fetch('sample_data/' + entry.crop_file);
+          const resp = await fetch('sample_data/' + entry.crop_file + _decalCacheBust);
           if (!resp.ok) continue;
           const blob = await resp.blob();
           const im = new Image();
