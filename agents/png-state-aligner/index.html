@@ -1656,15 +1656,18 @@ canvasWrap.addEventListener('mousedown', e => {
     // PRIORITY pass: dropdowns with options that are currently open (parent
     // pressed). They're interactive UI; otherwise the parent rect underneath
     // would steal the click and close the dropdown.
+    console.log('[interactive click]', ix.toFixed(1), iy.toFixed(1));
     for (let i = state.regions.length - 1; i >= 0; i--) {
       const r = state.regions[i];
       if (r.locked || r.shape !== 'dropdown') continue;
       if (!Array.isArray(r.dropdownOptions) || r.dropdownOptions.length === 0) continue;
       const parent = findParentButton(r);
       const isVisible = (parent && parent.pressed) || (r.id === state.selectedId);
+      console.log('  dropdown', r.name, 'parent=', parent && parent.name, 'parent.pressed=', parent && parent.pressed, 'visible=', isVisible);
       if (!isVisible) continue;
       const extY = r.topCornerExtY || 0;
       if (ix >= r.x && ix <= r.x + r.w && iy >= r.y - extY && iy <= r.y + r.h) {
+        console.log('  HIT', r.name);
         hit = r; break;
       }
     }
