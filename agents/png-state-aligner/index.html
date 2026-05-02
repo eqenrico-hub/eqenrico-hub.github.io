@@ -1709,6 +1709,40 @@ canvasWrap.addEventListener('mousedown', e => {
         state.selectedId = hit.id;
         return;
       }
+      // Dropdown click in interactive mode: open option picker if it has options
+      if (hit.shape === 'dropdown' && Array.isArray(hit.dropdownOptions) && hit.dropdownOptions.length > 0) {
+        // Use a positioned native <select> so the picker appears at the dropdown
+        const cv = document.getElementById('canvas');
+        const cvRect = cv.getBoundingClientRect();
+        const screenX = cvRect.left + (hit.x + hit.w/2) * state.scale;
+        const screenY = cvRect.top + (hit.y + hit.h) * state.scale;
+        const sel = document.createElement('select');
+        sel.style.position = 'fixed';
+        sel.style.left = screenX + 'px';
+        sel.style.top = screenY + 'px';
+        sel.style.zIndex = 9999;
+        sel.style.fontSize = '14px';
+        sel.size = Math.min(12, hit.dropdownOptions.length);
+        for (let i = 0; i < hit.dropdownOptions.length; i++) {
+          const opt = document.createElement('option');
+          opt.value = String(i);
+          opt.textContent = hit.dropdownOptions[i];
+          if ((hit.selectedOption || 0) === i) opt.selected = true;
+          sel.appendChild(opt);
+        }
+        document.body.appendChild(sel);
+        sel.focus();
+        const cleanup = () => { try { document.body.removeChild(sel); } catch(_){} };
+        sel.addEventListener('change', () => {
+          pushUndo();
+          hit.selectedOption = parseInt(sel.value, 10);
+          render();
+          cleanup();
+        });
+        sel.addEventListener('blur', cleanup);
+        sel.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') cleanup(); });
+        return;
+      }
       pushUndo();
       hit.pressed = !hit.pressed;
       render();
@@ -2956,6 +2990,22 @@ function render() {
         ctx.fillRect(rx, ry - extY, rw, rh + extY);
       }
       ctx.restore();
+
+      // If the dropdown has an options list, render the currently-selected option
+      // as text centered in the dropdown body. Drawn ABOVE the clip so the text
+      // isn't masked by the dropdown shape edges.
+      if (Array.isArray(r.dropdownOptions) && r.dropdownOptions.length > 0) {
+        const idx = Math.max(0, Math.min(r.dropdownOptions.length - 1, r.selectedOption || 0));
+        const text = r.dropdownOptions[idx];
+        const fontSize = Math.max(10, rh * 0.32);
+        ctx.save();
+        ctx.font = `${Math.round(fontSize)}px ${r.fontFamily || 'Arial, sans-serif'}`;
+        ctx.fillStyle = r.optionColor || '#ffffff';
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'center';
+        ctx.fillText(text, rx + rw / 2, ry + rh / 2);
+        ctx.restore();
+      }
     });
   }
 
@@ -3452,6 +3502,8 @@ document.getElementById('btnExportAll').addEventListener('click', async () => {
       entry.top_corner_curve_pct = r.topCornerCurvePct ?? 100;
       entry.parent_name = r.parentId != null ? (state.regions.find(rr => rr.id === r.parentId)?.name || null) : null;
       entry.tex_filename = r.decalFilename || null;
+      if (Array.isArray(r.dropdownOptions)) entry.dropdown_options = r.dropdownOptions;
+      if (typeof r.selectedOption === 'number') entry.selected_option = r.selectedOption;
     }
     manifest.regions.push(entry);
   }
@@ -3685,6 +3737,8 @@ function importShapesData(m) {
         reg.topCornerExtY = r.top_corner_ext_y ?? r.topCornerExtY ?? 0;
         reg.topCornerCurvePct = r.top_corner_curve_pct ?? r.topCornerCurvePct ?? 100;
         reg._pendingParentName = r.parent_name || null;
+        if (Array.isArray(r.dropdown_options)) reg.dropdownOptions = r.dropdown_options;
+        if (typeof r.selected_option === 'number') reg.selectedOption = r.selected_option;
       }
       return reg;
     });
