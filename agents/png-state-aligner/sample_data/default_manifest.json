@@ -935,7 +935,7 @@
       "rotates_as_knob": true,
       "bound_to_parent": false,
       "filmstrip_frames": 128,
-      "decal_rotation": -51,
+      "decal_rotation": 0,
       "value": 0.5,
       "crop_file": "decal_60.png",
       "decal_filename": null
