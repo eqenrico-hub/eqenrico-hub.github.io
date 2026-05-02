@@ -586,7 +586,7 @@ document.getElementById('btnLoadDefaults').addEventListener('click', async () =>
   } catch (e) { console.warn('knob indicator not loaded', e); }
 
   try {
-    const r = await fetch('sample_data/default_manifest.json');
+    const r = await fetch('sample_data/default_manifest.json?v=' + Date.now());
     if (r.ok) {
       const manifest = await r.json();
       importShapesData(manifest);
