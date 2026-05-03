@@ -2743,7 +2743,11 @@ function render() {
   // remain underneath clone overlays while text floats above everything.
   function drawTextLabels() {
     const textRegions = state.regions.filter(r => r.shape === 'text' && r.text);
+    const openRects = getOpenDropdownRects();
     for (const r of textRegions) {
+      // Suppress text labels that overlap an open dropdown panel so chassis
+      // text (e.g. "TUNING") doesn't bleed under or beside the panel.
+      if (bboxIntersectsAny(r.x, r.y, r.w, r.h, openRects)) continue;
       const parent = r.parentId != null ? state.regions.find(o => o.id === r.parentId) : null;
       const pressedShown = parent ? !!parent.pressed : !!r.pressed;
       const ox = pressedShown ? (r.pressedOffsetX || 0) : 0;
@@ -2989,15 +2993,45 @@ function render() {
 
   }
 
+  // Compute the union of all open dropdown panel rectangles (in image coords).
+  // Used to suppress conflicting text/labels under or beside the open panel.
+  function getOpenDropdownRects() {
+    const rects = [];
+    for (const r of state.regions) {
+      if (r.shape !== 'dropdown') continue;
+      if (!Array.isArray(r.dropdownOptions) || r.dropdownOptions.length === 0) continue;
+      const parent = findParentButton(r);
+      if (!parent || !parent.pressed) continue;
+      // Suppression rect: union of parent button + the option panel below.
+      // Pad slightly to also catch text bleed adjacent to the panel edge.
+      const PAD = 8;
+      rects.push({
+        x: parent.x - PAD, y: parent.y - PAD,
+        w: parent.w + PAD * 2, h: parent.h + r.h + PAD * 2,
+      });
+    }
+    return rects;
+  }
+  function bboxIntersectsAny(x, y, w, h, rects) {
+    for (const R of rects) {
+      if (x < R.x + R.w && x + w > R.x && y < R.y + R.h && y + h > R.y) return true;
+    }
+    return false;
+  }
+
   // For each dropdown that has dropdown_options, render the selected option's
   // text on its parent button. This way the parent (e.g. rect_5) shows "C" or
   // "C#" or whatever the user picked, mirroring the actual VST GUI behaviour.
   function drawDropdownParentLabels() {
+    const openRects = getOpenDropdownRects();
     state.regions.filter(r => r.shape === 'dropdown'
         && Array.isArray(r.dropdownOptions)
         && r.dropdownOptions.length > 0).forEach(r => {
       const parent = findParentButton(r);
       if (!parent) return;
+      // Skip if this parent button is OBSCURED by another open dropdown panel
+      // (so other dropdowns' parent text doesn't bleed beside an open panel).
+      if (!parent.pressed && bboxIntersectsAny(parent.x, parent.y, parent.w, parent.h, openRects)) return;
       const idx = Math.max(0, Math.min(r.dropdownOptions.length - 1, r.selectedOption || 0));
       const text = r.dropdownOptions[idx];
       const dox = parent.dstOffX || 0, doy = parent.dstOffY || 0;
