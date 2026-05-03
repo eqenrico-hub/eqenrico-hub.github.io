@@ -3062,10 +3062,13 @@ function render() {
       if (!parent || !parent.pressed) continue;
       // Suppression rect: union of parent button + the option panel below.
       // Pad slightly to also catch text bleed adjacent to the panel edge.
-      const PAD = 8;
+      // Only the option panel area below the parent button — NOT the parent
+      // button itself. Rects above/beside the parent (rect_5 / rect_6 when
+      // rect_8's panel opens) shouldn't be hidden, only what's physically
+      // covered by the panel.
       rects.push({
-        x: parent.x - PAD, y: parent.y - PAD,
-        w: parent.w + PAD * 2, h: parent.h + dropdownPanelH(r) + PAD * 2,
+        x: parent.x, y: parent.y + parent.h,
+        w: parent.w, h: dropdownPanelH(r),
       });
     }
     return rects;
