@@ -1801,6 +1801,16 @@ canvasWrap.addEventListener('mousedown', e => {
             if (p && p !== hit) p.pressed = false;
           });
         }
+        // toggle_group exclusivity: if this rect has a toggle_group, unpress
+        // all other rects in the same group so only one is pressed at a time.
+        if (hit.toggleGroup) {
+          state.regions.forEach(o => {
+            if (o === hit) return;
+            if (o.toggleGroup === hit.toggleGroup && (o.shape === 'rect' || o.shape === 'circle' || o.shape === 'annulus')) {
+              o.pressed = false;
+            }
+          });
+        }
       }
       hit.pressed = !hit.pressed;
       render();
@@ -2301,6 +2311,11 @@ function refreshRegions() {
       ${r.shape === 'rect' && !r.locked ? `
         <div style="margin:3px 0;"><button class="rcroprect" data-id="${r.id}" style="width:100%; font-size:10px; padding:4px; background:#3a4a2a;">▭ Crop rect from PNG_A → download</button></div>
       ` : ''}
+      ${(r.shape === 'rect' || r.shape === 'circle' || r.shape === 'annulus' || r.shape === 'decal') ? `
+        <div style="margin:3px 0;"><label style="font-size:10px;" title="Rects with the same group are mutually exclusive (pressing one unpresses others). Decals with the same group render when ANY group rect is pressed.">toggle group (e.g. 'cam' for DIST/OFFSET/BANDS)</label>
+          <input type="text" class="ctogglegroup" data-id="${r.id}" value="${r.toggleGroup || ''}" placeholder="(none)" style="width:100%; font-size:10px; padding:3px; background:#111; color:var(--fg); border:1px solid #333; border-radius:3px;">
+        </div>
+      ` : ''}
       ${r.shape === 'decal' ? `
         <div style="margin:3px 0;"><label style="font-size:10px;">parent button (leave empty = always visible)</label>
           <select class="cparent" data-id="${r.id}" style="width:100%; font-size:10px; padding:2px; background:#111; color:var(--fg); border:1px solid #333; border-radius:3px;">
@@ -2682,6 +2697,14 @@ function refreshRegions() {
     render();
   }));
 
+  list.querySelectorAll('.ctogglegroup').forEach(inp => inp.addEventListener('change', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (!r) return;
+    pushUndo();
+    r.toggleGroup = (e.target.value || '').trim();
+    render();
+  }));
+
   // Dropdown parent selector
   list.querySelectorAll('.cparent').forEach(sel => sel.addEventListener('change', e => {
     const r = state.regions.find(x => x.id === +e.target.dataset.id);
@@ -2839,11 +2862,18 @@ function render() {
     // layer ABOVE clone, so the static chassis can't hide them.
     const decals = state.regions.filter(r => r.shape === 'decal' && r.decalImage
         && (!r.alwaysVisible || r.rotatesAsKnob)
-        && !(r.filmstripFrames && r.filmstripFrames > 1));
+        && !(r.filmstripFrames && r.filmstripFrames > 1)
+        && !r.toggleGroup);
     for (const r of decals) {
       const parent = r.parentId != null ? state.regions.find(o => o.id === r.parentId) : null;
       const isSelected = (r.id === state.selectedId);
-      const visible = r.alwaysVisible ? true : (parent ? !!parent.pressed : !!r.pressed);
+      // Visibility: alwaysVisible OR parent.pressed OR (toggle_group has a pressed rect with same group)
+      let groupPressed = false;
+      if (r.toggleGroup) {
+        groupPressed = state.regions.some(o => o.toggleGroup === r.toggleGroup
+          && o.shape !== 'decal' && o.shape !== 'dropdown' && o.pressed);
+      }
+      const visible = r.alwaysVisible ? true : (groupPressed ? true : (parent ? !!parent.pressed : !!r.pressed));
       if (!visible && !isSelected) continue;
       // boundToParent: render at the parent's bbox so resizing the parent
       // also resizes the decal. When parent is currently pressed AND has
@@ -2902,9 +2932,19 @@ function render() {
   function drawAlwaysVisibleDecals() {
     // Always-visible layer: stickers + filmstrip-frame decals (e.g. MKV2 knob).
     // Drawn ABOVE clone overlays so they aren't hidden by the chassis.
-    const decals = state.regions.filter(r => r.shape === 'decal' && r.decalImage && r.alwaysVisible
-        && (!r.rotatesAsKnob || (r.filmstripFrames && r.filmstripFrames > 1)));
+    const decals = state.regions.filter(r => r.shape === 'decal' && r.decalImage
+        && (
+          (r.alwaysVisible && (!r.rotatesAsKnob || (r.filmstripFrames && r.filmstripFrames > 1)))
+          || r.toggleGroup
+        ));
     for (const r of decals) {
+      // Toggle-group decals: visible only when SOME rect with the same toggleGroup is pressed
+      if (r.toggleGroup && !r.alwaysVisible) {
+        const groupActive = state.regions.some(o => o.toggleGroup === r.toggleGroup
+          && o.shape !== 'decal' && o.shape !== 'dropdown' && o.pressed);
+        const isSelected = (r.id === state.selectedId);
+        if (!groupActive && !isSelected) continue;
+      }
       const parent = r.parentId != null ? state.regions.find(o => o.id === r.parentId) : null;
       const useBound = r.boundToParent && parent;
       const baseX = useBound ? parent.x : r.x;
@@ -3736,6 +3776,7 @@ document.getElementById('btnExportAll').addEventListener('click', async () => {
     const fname = `${r.name}.png`;
     zip.file(fname, blob);
     const entry = { id: r.id, name: r.name, shape: r.shape || 'rect', locked: !!r.locked, x: r.x, y: r.y, w: r.w, h: r.h, inner_pct: r.innerPct, source: r.source || 'B', src_off_x: r.srcOffX || 0, src_off_y: r.srcOffY || 0, dst_off_x: r.dstOffX || 0, dst_off_y: r.dstOffY || 0, crop_file: fname };
+    if (r.toggleGroup) entry.toggle_group = r.toggleGroup;
     if (r.pressedX != null) {
       entry.pressed_x = r.pressedX; entry.pressed_y = r.pressedY;
       entry.pressed_w = r.pressedW; entry.pressed_h = r.pressedH;
@@ -3952,6 +3993,7 @@ function importShapesData(m) {
         dstOffY: r.dst_off_y || r.dstOffY || 0,
         innerPct: (r.inner_pct ?? r.innerPct ?? (shape === 'annulus' ? 0.5 : undefined)),
         x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.w), h: Math.round(r.h),
+        toggleGroup: r.toggle_group || '',
         pressedX: r.pressed_x != null ? Math.round(r.pressed_x) : null,
         pressedY: r.pressed_y != null ? Math.round(r.pressed_y) : null,
         pressedW: r.pressed_w != null ? Math.round(r.pressed_w) : null,
