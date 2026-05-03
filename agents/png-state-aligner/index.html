@@ -1656,15 +1656,19 @@ canvasWrap.addEventListener('mousedown', e => {
     // PRIORITY pass: dropdowns with options that are currently open (parent
     // pressed). They're interactive UI; otherwise the parent rect underneath
     // would steal the click and close the dropdown.
+    // Hit-test bbox = parent button area extended down by the dropdown's height
+    // (so it matches the parent-anchored visual rendering in drawDropdownsTop).
     for (let i = state.regions.length - 1; i >= 0; i--) {
       const r = state.regions[i];
       if (r.locked || r.shape !== 'dropdown') continue;
       if (!Array.isArray(r.dropdownOptions) || r.dropdownOptions.length === 0) continue;
       const parent = findParentButton(r);
-      const isVisible = (parent && parent.pressed) || (r.id === state.selectedId);
-      if (!isVisible) continue;
-      const extY = r.topCornerExtY || 0;
-      if (ix >= r.x && ix <= r.x + r.w && iy >= r.y - extY && iy <= r.y + r.h) {
+      if (!parent || !parent.pressed) continue;
+      const hx = parent.x;
+      const hy = parent.y + parent.h;
+      const hw = parent.w;
+      const hh = r.h;
+      if (ix >= hx && ix <= hx + hw && iy >= hy && iy <= hy + hh) {
         hit = r; break;
       }
     }
@@ -1724,12 +1728,14 @@ canvasWrap.addEventListener('mousedown', e => {
         state.selectedId = hit.id;
         return;
       }
-      // Dropdown click in interactive mode: pick the row the user clicked on
-      // (since options are rendered as stacked rows inside the bbox).
+      // Dropdown click in interactive mode: pick the row clicked. Local Y is
+      // relative to the parent-anchored bbox top (parent.y + parent.h).
       if (hit.shape === 'dropdown' && Array.isArray(hit.dropdownOptions) && hit.dropdownOptions.length > 0) {
+        const parent = findParentButton(hit);
         const N = hit.dropdownOptions.length;
         const itemH = hit.h / N;
-        const localY = iy - hit.y;
+        const top = parent ? (parent.y + parent.h) : hit.y;
+        const localY = iy - top;
         const newIdx = Math.max(0, Math.min(N - 1, Math.floor(localY / itemH)));
         if (newIdx !== (hit.selectedOption || 0)) {
           pushUndo();
@@ -2987,8 +2993,22 @@ function render() {
       const parentPressed = parent && parent.pressed;
       if (!parentPressed && !isSelected) return;
       const dox = r.dstOffX || 0, doy = r.dstOffY || 0;
-      const rx = (r.x + dox) * state.scale, ry = (r.y + doy) * state.scale;
-      const rw = r.w * state.scale, rh = r.h * state.scale;
+      // For dropdowns with options (interactive), position the option-panel
+      // DIRECTLY BELOW the parent button rather than the manifest bbox, so it
+      // always appears anchored to the trigger button regardless of where the
+      // dropdown's bbox was authored. Width = parent width, height = manifest h.
+      let rx, ry, rw, rh;
+      if (Array.isArray(r.dropdownOptions) && r.dropdownOptions.length > 0 && parent) {
+        rx = (parent.x + (parent.dstOffX || 0)) * state.scale;
+        ry = (parent.y + parent.h + (parent.dstOffY || 0)) * state.scale;
+        rw = parent.w * state.scale;
+        rh = r.h * state.scale;
+      } else {
+        rx = (r.x + dox) * state.scale;
+        ry = (r.y + doy) * state.scale;
+        rw = r.w * state.scale;
+        rh = r.h * state.scale;
+      }
       const pct = (r.bottomRadiusPct ?? 15) / 100;
       const R = Math.min(r.w, r.h) * state.scale * 0.5 * pct;
       const extX = (r.topCornerExtX || 0) * state.scale;
