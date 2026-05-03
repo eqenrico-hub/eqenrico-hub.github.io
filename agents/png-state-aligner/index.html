@@ -3053,7 +3053,13 @@ function render() {
       ctx.save();
       tracedDropdownPath(ctx, rx, ry, rw, rh, R, extX, extY, cp);
       ctx.clip();
-      if (r.decalImage) {
+      // For dropdowns with an options list, skip the texture/decal body and
+      // render a fully opaque dark panel — option list is drawn on top below.
+      if (Array.isArray(r.dropdownOptions) && r.dropdownOptions.length > 0) {
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = r.optionBg || '#1a1a1a';
+        ctx.fillRect(rx, ry - extY, rw, rh + extY);
+      } else if (r.decalImage) {
         const img = r.decalImage;
         const iw = img.naturalWidth || img.width;
         const ih = img.naturalHeight || img.height;
