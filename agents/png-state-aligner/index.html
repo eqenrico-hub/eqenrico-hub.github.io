@@ -1503,6 +1503,34 @@ document.getElementById('btnCloneClear').addEventListener('click', () => {
 });
 
 document.getElementById('stage').addEventListener('wheel', e => {
+  // If we're hovering an open dropdown's option list in interactive mode,
+  // wheel scrolls the option list instead of zooming the canvas.
+  if (state.interactiveMode) {
+    const { cx, cy } = canvasMouseCoord(e);
+    const { x: ix, y: iy } = canvasToImage(cx, cy);
+    for (let i = state.regions.length - 1; i >= 0; i--) {
+      const r = state.regions[i];
+      if (r.shape !== 'dropdown') continue;
+      if (!Array.isArray(r.dropdownOptions) || r.dropdownOptions.length === 0) continue;
+      const parent = findParentButton(r);
+      if (!parent || !parent.pressed) continue;
+      const hx = parent.x;
+      const hy = parent.y + parent.h;
+      const hw = parent.w;
+      const hh = r.h;
+      if (ix >= hx && ix <= hx + hw && iy >= hy && iy <= hy + hh) {
+        const itemHCv = 24 * state.scale;
+        const totalH = r.dropdownOptions.length * itemHCv;
+        const rhCv = r.h * state.scale;
+        const maxScroll = Math.max(0, totalH - rhCv);
+        r._scrollY = Math.max(0, Math.min(maxScroll, (r._scrollY || 0) + e.deltaY));
+        r._autoScrolledFor = -1;  // user has manually scrolled
+        e.preventDefault();
+        render();
+        return;
+      }
+    }
+  }
   e.preventDefault();
   const stage = document.getElementById('stage');
   const rect = stage.getBoundingClientRect();
@@ -1735,12 +1763,14 @@ canvasWrap.addEventListener('mousedown', e => {
       if (hit.shape === 'dropdown' && Array.isArray(hit.dropdownOptions) && hit.dropdownOptions.length > 0) {
         const parent = findParentButton(hit);
         const N = hit.dropdownOptions.length;
-        const itemH = hit.h / N;
+        const itemH = 24;  // image-space, matches render
         const top = parent ? (parent.y + parent.h) : hit.y;
-        const localY = iy - top;
+        const scrollY = (hit._scrollY || 0) / state.scale;
+        const localY = iy - top + scrollY;
         const newIdx = Math.max(0, Math.min(N - 1, Math.floor(localY / itemH)));
         pushUndo();
         hit.selectedOption = newIdx;
+        hit._autoScrolledFor = undefined;  // force re-evaluate on next render
         if (parent) parent.pressed = false;  // close the dropdown
         render();
         return;
@@ -1851,8 +1881,10 @@ window.addEventListener('mousemove', e => {
       const hh = r.h;
       if (ix >= hx && ix <= hx + hw && iy >= hy && iy <= hy + hh) {
         const N = r.dropdownOptions.length;
-        const itemH = hh / N;
-        const rowIdx = Math.max(0, Math.min(N - 1, Math.floor((iy - hy) / itemH)));
+        const itemH = 24;  // image-space row height (matches render)
+        const scrollY = (r._scrollY || 0) / state.scale;  // r._scrollY is in canvas px
+        const localY = iy - hy + scrollY;
+        const rowIdx = Math.max(0, Math.min(N - 1, Math.floor(localY / itemH)));
         newHover = { regionId: r.id, rowIdx };
         break;
       }
@@ -3112,21 +3144,35 @@ function render() {
       }
       ctx.restore();
 
-      // If the dropdown has an options list, render ALL options as stacked rows
-      // inside the dropdown's bbox (like a real expanded combobox). The selected
-      // option is highlighted. Click on a row in interactive mode to pick it.
+      // If the dropdown has an options list, render with fixed-height rows and
+      // scroll when total rows exceed panel height. Selected row highlighted.
       if (Array.isArray(r.dropdownOptions) && r.dropdownOptions.length > 0) {
         const opts = r.dropdownOptions;
         const N = opts.length;
         const idx = Math.max(0, Math.min(N - 1, r.selectedOption || 0));
-        const itemH = rh / N;
-        const fontSize = Math.max(8, Math.min(itemH * 0.55, 22));
+        // Fixed row height — readable regardless of N
+        const itemH = 24 * state.scale;
+        const fontSize = Math.max(11, Math.min(itemH * 0.6, 16));
+        const totalH = N * itemH;
+        const maxScroll = Math.max(0, totalH - rh);
+        // Initialize / clamp scroll offset
+        if (typeof r._scrollY !== 'number') r._scrollY = 0;
+        // Auto-scroll selected option into view (only on first show — when
+        // previously _autoScrolled flag wasn't set this render cycle)
+        if (!r._autoScrolledFor || r._autoScrolledFor !== idx) {
+          const selTop = idx * itemH;
+          const selBot = selTop + itemH;
+          if (selTop < r._scrollY) r._scrollY = selTop;
+          else if (selBot > r._scrollY + rh) r._scrollY = selBot - rh;
+          r._autoScrolledFor = idx;
+        }
+        r._scrollY = Math.max(0, Math.min(maxScroll, r._scrollY));
+
         ctx.save();
         // Clip to dropdown shape so rows don't bleed past rounded corners
         tracedDropdownPath(ctx, rx, ry, rw, rh, R, extX, extY, cp);
         ctx.clip();
-        // Solid 100%-opaque dark background underneath the option list so the
-        // chassis art / clone overlays don't show through.
+        // Solid 100%-opaque dark background underneath the option list
         ctx.fillStyle = r.optionBg || '#1a1a1a';
         ctx.fillRect(rx, ry, rw, rh);
         ctx.font = `${Math.round(fontSize)}px ${r.fontFamily || 'Arial, sans-serif'}`;
@@ -3134,15 +3180,16 @@ function render() {
         ctx.textAlign = 'center';
         const hover = state.dropdownHover;
         const hovIdx = (hover && hover.regionId === r.id) ? hover.rowIdx : -1;
-        for (let i = 0; i < N; i++) {
-          const top = ry + i * itemH;
+        // Render only visible rows (with one-row buffer)
+        const firstVisible = Math.max(0, Math.floor(r._scrollY / itemH) - 1);
+        const lastVisible = Math.min(N - 1, Math.ceil((r._scrollY + rh) / itemH));
+        for (let i = firstVisible; i <= lastVisible; i++) {
+          const top = ry + i * itemH - r._scrollY;
           if (i === idx) {
-            // Selected: blue highlight band
             ctx.fillStyle = 'rgba(74, 144, 200, 0.65)';
             ctx.fillRect(rx, top, rw, itemH);
             ctx.fillStyle = '#ffffff';
           } else if (i === hovIdx) {
-            // Hover: grey highlight band (preview which option click will pick)
             ctx.fillStyle = 'rgba(200, 200, 200, 0.30)';
             ctx.fillRect(rx, top, rw, itemH);
             ctx.fillStyle = '#ffffff';
@@ -3150,6 +3197,19 @@ function render() {
             ctx.fillStyle = r.optionColor || '#ddd';
           }
           ctx.fillText(opts[i], rx + rw / 2, top + itemH / 2);
+        }
+        // Scrollbar indicator on the right edge if scrollable
+        if (maxScroll > 0) {
+          const trackX = rx + rw - 4;
+          const trackY = ry;
+          const trackW = 3;
+          const trackH = rh;
+          ctx.fillStyle = 'rgba(255,255,255,0.10)';
+          ctx.fillRect(trackX, trackY, trackW, trackH);
+          const thumbH = Math.max(20, rh * (rh / totalH));
+          const thumbY = trackY + (r._scrollY / maxScroll) * (trackH - thumbH);
+          ctx.fillStyle = 'rgba(255,255,255,0.45)';
+          ctx.fillRect(trackX, thumbY, trackW, thumbH);
         }
         ctx.restore();
       }
