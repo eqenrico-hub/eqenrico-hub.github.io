@@ -415,7 +415,17 @@
       "top_corner_ext_y": 15.5,
       "top_corner_curve_pct": 100,
       "parent_name": null,
-      "tex_filename": null
+      "tex_filename": null,
+      "dropdown_options": [
+        "I",
+        "ii",
+        "iii",
+        "IV",
+        "V",
+        "vi",
+        "vii"
+      ],
+      "selected_option": 0
     },
     {
       "id": 24,
