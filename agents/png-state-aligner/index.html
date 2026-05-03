@@ -1729,7 +1729,9 @@ canvasWrap.addEventListener('mousedown', e => {
         return;
       }
       // Dropdown click in interactive mode: pick the row clicked. Local Y is
-      // relative to the parent-anchored bbox top (parent.y + parent.h).
+      // relative to the parent-anchored bbox top (parent.y + parent.h). After
+      // picking, also unpress the parent so the dropdown auto-closes (standard
+      // dropdown behaviour) and the parent label renders in its black/closed style.
       if (hit.shape === 'dropdown' && Array.isArray(hit.dropdownOptions) && hit.dropdownOptions.length > 0) {
         const parent = findParentButton(hit);
         const N = hit.dropdownOptions.length;
@@ -1737,11 +1739,10 @@ canvasWrap.addEventListener('mousedown', e => {
         const top = parent ? (parent.y + parent.h) : hit.y;
         const localY = iy - top;
         const newIdx = Math.max(0, Math.min(N - 1, Math.floor(localY / itemH)));
-        if (newIdx !== (hit.selectedOption || 0)) {
-          pushUndo();
-          hit.selectedOption = newIdx;
-          render();
-        }
+        pushUndo();
+        hit.selectedOption = newIdx;
+        if (parent) parent.pressed = false;  // close the dropdown
+        render();
         return;
       }
       pushUndo();
