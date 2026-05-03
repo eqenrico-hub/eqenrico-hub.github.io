@@ -1003,7 +1003,7 @@
     },
     {
       "id": 49,
-      "name": "decal_49",
+      "name": "decal_61",
       "shape": "decal",
       "locked": false,
       "x": 420.9064327485378,
@@ -1019,7 +1019,7 @@
       "filmstrip_frames": 0,
       "decal_rotation": 0,
       "value": null,
-      "crop_file": "decal_49.png",
+      "crop_file": "decal_61.png",
       "decal_filename": "Screenshot 2026-05-04 at 01.23.54.png",
       "toggle_group": "cam"
     }
