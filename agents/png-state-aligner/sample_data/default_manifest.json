@@ -390,7 +390,25 @@
       "top_corner_ext_y": 21.5,
       "top_corner_curve_pct": 100,
       "parent_name": null,
-      "tex_filename": null
+      "tex_filename": null,
+      "dropdown_options": [
+        "Major",
+        "Minor",
+        "Dorian",
+        "Phrygian",
+        "Lydian",
+        "Mixolydian",
+        "Locrian",
+        "Major Penta",
+        "Minor Penta",
+        "Blues",
+        "Harm Minor",
+        "Mel Minor",
+        "Whole Tone",
+        "Diminished",
+        "Chromatic"
+      ],
+      "selected_option": 0
     },
     {
       "id": 23,
@@ -450,7 +468,20 @@
       "top_corner_ext_y": 7.5,
       "top_corner_curve_pct": 100,
       "parent_name": null,
-      "tex_filename": null
+      "tex_filename": null,
+      "dropdown_options": [
+        "Triad",
+        "Power",
+        "7th",
+        "9th",
+        "sus2",
+        "sus4",
+        "add9",
+        "6th",
+        "dim",
+        "Custom"
+      ],
+      "selected_option": 0
     },
     {
       "id": 25,
