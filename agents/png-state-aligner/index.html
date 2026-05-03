@@ -621,13 +621,18 @@ document.getElementById('btnLoadDefaults').addEventListener('click', async () =>
       for (const entry of (manifest.regions || []).filter(rr => rr.shape === 'decal' && rr.crop_file)) {
         try {
           const resp = await fetch('sample_data/' + entry.crop_file + _decalCacheBust);
-          if (!resp.ok) continue;
+          if (!resp.ok) { console.warn('[decal-load] fetch failed', entry.name, entry.crop_file, resp.status); continue; }
           const blob = await resp.blob();
           const im = new Image();
           await new Promise((res) => { im.onload = res; im.onerror = res; im.src = URL.createObjectURL(blob); });
           const reg = state.regions.find(rr => rr.name === entry.name && rr.shape === 'decal');
-          if (reg) reg.decalImage = im;
-        } catch (_) {}
+          if (reg) {
+            reg.decalImage = im;
+            if (entry.name === 'decal_61') console.log('[decal-load] decal_61 image bound', { w: im.naturalWidth, h: im.naturalHeight, tg: reg.toggleGroup });
+          } else {
+            console.warn('[decal-load] no region found for', entry.name);
+          }
+        } catch (e) { console.warn('[decal-load] exception', entry.name, e); }
       }
       // Rehydrate per-knob custom images (overrides shared imgKnobRender)
       for (const entry of (manifest.regions || []).filter(rr => rr.shape === 'knob' && rr.knob_image_file)) {
