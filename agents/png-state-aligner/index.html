@@ -3085,6 +3085,10 @@ function render() {
         // Clip to dropdown shape so rows don't bleed past rounded corners
         tracedDropdownPath(ctx, rx, ry, rw, rh, R, extX, extY, cp);
         ctx.clip();
+        // Solid 100%-opaque dark background underneath the option list so the
+        // chassis art / clone overlays don't show through.
+        ctx.fillStyle = r.optionBg || '#1a1a1a';
+        ctx.fillRect(rx, ry, rw, rh);
         ctx.font = `${Math.round(fontSize)}px ${r.fontFamily || 'Arial, sans-serif'}`;
         ctx.textBaseline = 'middle';
         ctx.textAlign = 'center';
