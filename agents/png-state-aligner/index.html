@@ -3085,6 +3085,11 @@ function render() {
   // "C#" or whatever the user picked, mirroring the actual VST GUI behaviour.
   function drawDropdownParentLabels() {
     const openRects = getOpenDropdownRects();
+    if (state.interactiveMode && openRects.length > 0 && !state._loggedSuppress) {
+      console.log('[dropdown openRects]', JSON.parse(JSON.stringify(openRects)));
+      state._loggedSuppress = true;
+      setTimeout(() => { state._loggedSuppress = false; }, 500);
+    }
     state.regions.filter(r => r.shape === 'dropdown'
         && Array.isArray(r.dropdownOptions)
         && r.dropdownOptions.length > 0).forEach(r => {
