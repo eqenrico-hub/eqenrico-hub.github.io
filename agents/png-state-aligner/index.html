@@ -2947,8 +2947,38 @@ function render() {
       }
     }
 
-    // Dropdowns rendered ON TOP of knobs/decals (a dropdown opens over the interface,
-    // covering everything else in its area)
+  }
+
+  // For each dropdown that has dropdown_options, render the selected option's
+  // text on its parent button. This way the parent (e.g. rect_5) shows "C" or
+  // "C#" or whatever the user picked, mirroring the actual VST GUI behaviour.
+  function drawDropdownParentLabels() {
+    state.regions.filter(r => r.shape === 'dropdown'
+        && Array.isArray(r.dropdownOptions)
+        && r.dropdownOptions.length > 0).forEach(r => {
+      const parent = findParentButton(r);
+      if (!parent) return;
+      const idx = Math.max(0, Math.min(r.dropdownOptions.length - 1, r.selectedOption || 0));
+      const text = r.dropdownOptions[idx];
+      const dox = parent.dstOffX || 0, doy = parent.dstOffY || 0;
+      const px = (parent.x + dox) * state.scale;
+      const py = (parent.y + doy) * state.scale;
+      const pw = parent.w * state.scale;
+      const ph = parent.h * state.scale;
+      ctx.save();
+      const fontSize = Math.max(10, ph * 0.55);
+      ctx.font = `${Math.round(fontSize)}px ${r.fontFamily || 'Arial, sans-serif'}`;
+      ctx.fillStyle = r.optionColor || '#ffffff';
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'center';
+      ctx.fillText(text, px + pw / 2, py + ph / 2);
+      ctx.restore();
+    });
+  }
+
+  // Dropdowns rendered as a top-level layer ABOVE clone overlays + paint + blur
+  // so the option list always sits on top of everything when expanded.
+  function drawDropdownsTop() {
     state.regions.filter(r => r.shape === 'dropdown').forEach(r => {
       // Dropdown visibility rule: only show if its linked parent button is pressed.
       // Exception: if the dropdown itself is selected (edit mode), always show so user can position it.
@@ -3157,6 +3187,12 @@ function render() {
       ctx.drawImage(state.blurOverlay, 0, 0, dw, dh);
       ctx.restore();
     }
+    // Dropdowns rendered ABOVE clone/paint/blur so the option list (when
+    // expanded) and the dropdown body always show on top.
+    drawDropdownsTop();
+    // Parent buttons of dropdowns with options show the currently-selected
+    // option as text on the button face, even when the dropdown is collapsed.
+    drawDropdownParentLabels();
     // Text labels: top-most layer, on top of every overlay (clone, paint, blur,
     // decals, widgets) so user-added labels are never hidden by anything.
     drawTextLabels();
