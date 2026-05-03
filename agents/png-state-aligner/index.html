@@ -2974,7 +2974,9 @@ function render() {
       ctx.save();
       const fontSize = Math.max(10, ph * 0.55);
       ctx.font = `${Math.round(fontSize)}px ${r.fontFamily || 'Arial, sans-serif'}`;
-      ctx.fillStyle = r.optionColor || '#ffffff';
+      // Collapsed (parent unpressed) → black text on the button face.
+      // Expanded (parent pressed) → white text matching the option-list style.
+      ctx.fillStyle = parent.pressed ? (r.optionColor || '#ffffff') : '#000000';
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'center';
       ctx.fillText(text, px + pw / 2, py + ph / 2);
