@@ -243,6 +243,23 @@ title: PNG State Aligner
 </div>
 
 <script>
+// Auto cache-buster: if the URL has no ?v= or it's older than 60s, redirect
+// to the same URL with a fresh ?v=Date.now(). Combined with the cache-busted
+// fetches inside the app (manifest + decals + assets), this ensures every
+// page visit pulls the latest build instead of a stale Safari/CDN cache.
+(function() {
+  try {
+    const params = new URLSearchParams(location.search);
+    const v = parseInt(params.get('v'), 10);
+    const STALE_MS = 60 * 1000;
+    if (!v || isNaN(v) || (Date.now() - v) > STALE_MS) {
+      params.set('v', String(Date.now()));
+      const newUrl = location.pathname + '?' + params.toString() + location.hash;
+      location.replace(newUrl);
+    }
+  } catch(_) {}
+})();
+
 const state = {
   imgA: null, imgB: null, imgBResized: null, imgC: null, imgCResized: null,
   mode: 'A', tool: 'view',
