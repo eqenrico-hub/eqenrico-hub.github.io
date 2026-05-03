@@ -3260,15 +3260,15 @@ function render() {
       ctx.drawImage(state.blurOverlay, 0, 0, dw, dh);
       ctx.restore();
     }
-    // Dropdowns rendered ABOVE clone/paint/blur so the option list (when
-    // expanded) and the dropdown body always show on top.
-    drawDropdownsTop();
     // Parent buttons of dropdowns with options show the currently-selected
-    // option as text on the button face, even when the dropdown is collapsed.
+    // option as text on the button face when the dropdown is collapsed.
     drawDropdownParentLabels();
-    // Text labels: top-most layer, on top of every overlay (clone, paint, blur,
-    // decals, widgets) so user-added labels are never hidden by anything.
+    // Text labels: above clone/paint/blur and parent labels.
     drawTextLabels();
+    // Dropdown panels (option list) render LAST so they sit above EVERY
+    // other layer — chassis text, parent labels of other dropdowns, knob
+    // overlays, etc. — when expanded. Nothing bleeds through the panel.
+    drawDropdownsTop();
   }
 
   if (!state.hideBorders) drawRegions();
