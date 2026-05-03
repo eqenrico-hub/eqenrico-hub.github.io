@@ -1833,6 +1833,39 @@ canvasWrap.addEventListener('mousedown', e => {
 });
 
 window.addEventListener('mousemove', e => {
+  // Track hover over open dropdown option lists in interactive mode for grey
+  // highlight feedback (which option will be selected on click).
+  if (state.interactiveMode) {
+    const { cx, cy } = canvasMouseCoord(e);
+    const { x: ix, y: iy } = canvasToImage(cx, cy);
+    let newHover = null;
+    for (let i = state.regions.length - 1; i >= 0; i--) {
+      const r = state.regions[i];
+      if (r.locked || r.shape !== 'dropdown') continue;
+      if (!Array.isArray(r.dropdownOptions) || r.dropdownOptions.length === 0) continue;
+      const parent = findParentButton(r);
+      if (!parent || !parent.pressed) continue;
+      const hx = parent.x;
+      const hy = parent.y + parent.h;
+      const hw = parent.w;
+      const hh = r.h;
+      if (ix >= hx && ix <= hx + hw && iy >= hy && iy <= hy + hh) {
+        const N = r.dropdownOptions.length;
+        const itemH = hh / N;
+        const rowIdx = Math.max(0, Math.min(N - 1, Math.floor((iy - hy) / itemH)));
+        newHover = { regionId: r.id, rowIdx };
+        break;
+      }
+    }
+    const prev = state.dropdownHover;
+    if (!prev !== !newHover || (prev && newHover && (prev.regionId !== newHover.regionId || prev.rowIdx !== newHover.rowIdx))) {
+      state.dropdownHover = newHover;
+      render();
+    }
+  } else if (state.dropdownHover) {
+    state.dropdownHover = null;
+    render();
+  }
   // Always track cursor position for clone brush preview
   if (state.tool === 'clone' || state.tool === 'fade' || state.tool === 'paint' || state.tool === 'blur') {
     const { cx, cy } = canvasMouseCoord(e);
@@ -3055,11 +3088,18 @@ function render() {
         ctx.font = `${Math.round(fontSize)}px ${r.fontFamily || 'Arial, sans-serif'}`;
         ctx.textBaseline = 'middle';
         ctx.textAlign = 'center';
+        const hover = state.dropdownHover;
+        const hovIdx = (hover && hover.regionId === r.id) ? hover.rowIdx : -1;
         for (let i = 0; i < N; i++) {
           const top = ry + i * itemH;
           if (i === idx) {
-            // selected: blue highlight band
+            // Selected: blue highlight band
             ctx.fillStyle = 'rgba(74, 144, 200, 0.65)';
+            ctx.fillRect(rx, top, rw, itemH);
+            ctx.fillStyle = '#ffffff';
+          } else if (i === hovIdx) {
+            // Hover: grey highlight band (preview which option click will pick)
+            ctx.fillStyle = 'rgba(200, 200, 200, 0.30)';
             ctx.fillRect(rx, top, rw, itemH);
             ctx.fillStyle = '#ffffff';
           } else {
