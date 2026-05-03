@@ -513,6 +513,14 @@ document.getElementById('btnInteractive').addEventListener('click', () => {
 });
 
 // Auto-link each dropdown to its parent button (rect whose bottom edge touches dropdown top)
+// Cap dropdown panel render height so a dropdown's authored bbox h doesn't
+// cover neighbouring rects. 6 rows × 24 px = 144 px image-space; options
+// beyond that scroll. Used by render, hit-test, wheel handler, and the
+// label-suppression overlay.
+function dropdownPanelH(r) {
+  return Math.min(r.h, 6 * 24);
+}
+
 function findParentButton(dropdown) {
   // Manual override via parentId takes priority
   if (dropdown.parentId != null) {
@@ -1517,11 +1525,11 @@ document.getElementById('stage').addEventListener('wheel', e => {
       const hx = parent.x;
       const hy = parent.y + parent.h;
       const hw = parent.w;
-      const hh = r.h;
+      const hh = dropdownPanelH(r);
       if (ix >= hx && ix <= hx + hw && iy >= hy && iy <= hy + hh) {
         const itemHCv = 24 * state.scale;
         const totalH = r.dropdownOptions.length * itemHCv;
-        const rhCv = r.h * state.scale;
+        const rhCv = dropdownPanelH(r) * state.scale;
         const maxScroll = Math.max(0, totalH - rhCv);
         r._scrollY = Math.max(0, Math.min(maxScroll, (r._scrollY || 0) + e.deltaY));
         r._autoScrolledFor = -1;  // user has manually scrolled
@@ -1695,7 +1703,7 @@ canvasWrap.addEventListener('mousedown', e => {
       const hx = parent.x;
       const hy = parent.y + parent.h;
       const hw = parent.w;
-      const hh = r.h;
+      const hh = dropdownPanelH(r);
       if (ix >= hx && ix <= hx + hw && iy >= hy && iy <= hy + hh) {
         hit = r; break;
       }
@@ -1776,6 +1784,24 @@ canvasWrap.addEventListener('mousedown', e => {
         return;
       }
       pushUndo();
+      // Single-dropdown enforcement: if we're about to OPEN a rect that is
+      // parent of a dropdown-with-options, unpress all OTHER such parents
+      // first so only one option panel is visible at a time.
+      if (!hit.pressed) {
+        const isDropdownTrigger = state.regions.some(r =>
+          r.shape === 'dropdown'
+          && Array.isArray(r.dropdownOptions) && r.dropdownOptions.length > 0
+          && findParentButton(r) === hit
+        );
+        if (isDropdownTrigger) {
+          state.regions.forEach(r => {
+            if (r.shape !== 'dropdown') return;
+            if (!Array.isArray(r.dropdownOptions) || r.dropdownOptions.length === 0) return;
+            const p = findParentButton(r);
+            if (p && p !== hit) p.pressed = false;
+          });
+        }
+      }
       hit.pressed = !hit.pressed;
       render();
     }
@@ -1878,7 +1904,7 @@ window.addEventListener('mousemove', e => {
       const hx = parent.x;
       const hy = parent.y + parent.h;
       const hw = parent.w;
-      const hh = r.h;
+      const hh = dropdownPanelH(r);
       if (ix >= hx && ix <= hx + hw && iy >= hy && iy <= hy + hh) {
         const N = r.dropdownOptions.length;
         const itemH = 24;  // image-space row height (matches render)
@@ -3039,7 +3065,7 @@ function render() {
       const PAD = 8;
       rects.push({
         x: parent.x - PAD, y: parent.y - PAD,
-        w: parent.w + PAD * 2, h: parent.h + r.h + PAD * 2,
+        w: parent.w + PAD * 2, h: parent.h + dropdownPanelH(r) + PAD * 2,
       });
     }
     return rects;
@@ -3074,9 +3100,13 @@ function render() {
       ctx.save();
       const fontSize = Math.max(10, ph * 0.55);
       ctx.font = `${Math.round(fontSize)}px ${r.fontFamily || 'Arial, sans-serif'}`;
-      // Collapsed (parent unpressed) → black text on the button face.
+      // Collapsed (parent unpressed) → black text on the button face by default.
       // Expanded (parent pressed) → white text matching the option-list style.
-      ctx.fillStyle = parent.pressed ? (r.optionColor || '#ffffff') : '#000000';
+      // r.labelAlwaysWhite forces white in both states (for buttons whose
+      // chassis art is dark enough that black is unreadable).
+      ctx.fillStyle = (parent.pressed || r.labelAlwaysWhite)
+        ? (r.optionColor || '#ffffff')
+        : '#000000';
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'center';
       ctx.fillText(text, px + pw / 2, py + ph / 2);
@@ -3104,7 +3134,7 @@ function render() {
         rx = (parent.x + (parent.dstOffX || 0)) * state.scale;
         ry = (parent.y + parent.h + (parent.dstOffY || 0)) * state.scale;
         rw = parent.w * state.scale;
-        rh = r.h * state.scale;
+        rh = dropdownPanelH(r) * state.scale;
       } else {
         rx = (r.x + dox) * state.scale;
         ry = (r.y + doy) * state.scale;
@@ -3717,6 +3747,7 @@ document.getElementById('btnExportAll').addEventListener('click', async () => {
       entry.tex_filename = r.decalFilename || null;
       if (Array.isArray(r.dropdownOptions)) entry.dropdown_options = r.dropdownOptions;
       if (typeof r.selectedOption === 'number') entry.selected_option = r.selectedOption;
+      if (r.labelAlwaysWhite) entry.label_always_white = true;
     }
     manifest.regions.push(entry);
   }
@@ -3952,6 +3983,7 @@ function importShapesData(m) {
         reg._pendingParentName = r.parent_name || null;
         if (Array.isArray(r.dropdown_options)) reg.dropdownOptions = r.dropdown_options;
         if (typeof r.selected_option === 'number') reg.selectedOption = r.selected_option;
+        if (r.label_always_white) reg.labelAlwaysWhite = true;
       }
       return reg;
     });

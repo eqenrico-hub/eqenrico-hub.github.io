@@ -408,7 +408,8 @@
         "Diminished",
         "Chromatic"
       ],
-      "selected_option": 0
+      "selected_option": 0,
+      "label_always_white": true
     },
     {
       "id": 23,
@@ -481,7 +482,8 @@
         "dim",
         "Custom"
       ],
-      "selected_option": 0
+      "selected_option": 0,
+      "label_always_white": true
     },
     {
       "id": 25,
