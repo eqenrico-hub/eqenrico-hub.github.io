@@ -621,18 +621,13 @@ document.getElementById('btnLoadDefaults').addEventListener('click', async () =>
       for (const entry of (manifest.regions || []).filter(rr => rr.shape === 'decal' && rr.crop_file)) {
         try {
           const resp = await fetch('sample_data/' + entry.crop_file + _decalCacheBust);
-          if (!resp.ok) { console.warn('[decal-load] fetch failed', entry.name, entry.crop_file, resp.status); continue; }
+          if (!resp.ok) continue;
           const blob = await resp.blob();
           const im = new Image();
           await new Promise((res) => { im.onload = res; im.onerror = res; im.src = URL.createObjectURL(blob); });
           const reg = state.regions.find(rr => rr.name === entry.name && rr.shape === 'decal');
-          if (reg) {
-            reg.decalImage = im;
-            if (entry.name === 'decal_61') console.log('[decal-load] decal_61 image bound', { w: im.naturalWidth, h: im.naturalHeight, tg: reg.toggleGroup });
-          } else {
-            console.warn('[decal-load] no region found for', entry.name);
-          }
-        } catch (e) { console.warn('[decal-load] exception', entry.name, e); }
+          if (reg) reg.decalImage = im;
+        } catch (_) {}
       }
       // Rehydrate per-knob custom images (overrides shared imgKnobRender)
       for (const entry of (manifest.regions || []).filter(rr => rr.shape === 'knob' && rr.knob_image_file)) {
@@ -2959,27 +2954,12 @@ function render() {
           (r.alwaysVisible && (!r.rotatesAsKnob || (r.filmstripFrames && r.filmstripFrames > 1)))
           || r.toggleGroup
         ));
-    if (state.interactiveMode && !state._loggedTG) {
-      console.log('[toggle-group decals candidates]',
-        decals.map(d => ({ name: d.name, hasImg: !!d.decalImage, tg: d.toggleGroup, av: d.alwaysVisible })));
-      state._loggedTG = true;
-      setTimeout(() => { state._loggedTG = false; }, 1000);
-    }
     for (const r of decals) {
       // Toggle-group decals: visible only when SOME rect with the same toggleGroup is pressed
       if (r.toggleGroup && !r.alwaysVisible) {
         const groupActive = state.regions.some(o => o.toggleGroup === r.toggleGroup
           && o.shape !== 'decal' && o.shape !== 'dropdown' && o.pressed);
         const isSelected = (r.id === state.selectedId);
-        if (state.interactiveMode && r.name === 'decal_61' && !state._loggedTG2) {
-          console.log('[decal_61 visibility]', {
-            toggleGroup: r.toggleGroup,
-            groupActive,
-            pressedRectsInGroup: state.regions.filter(o => o.toggleGroup === r.toggleGroup && o.pressed).map(o => o.name)
-          });
-          state._loggedTG2 = true;
-          setTimeout(() => { state._loggedTG2 = false; }, 1000);
-        }
         if (!groupActive && !isSelected) continue;
       }
       const parent = r.parentId != null ? state.regions.find(o => o.id === r.parentId) : null;
