@@ -1800,6 +1800,17 @@ canvasWrap.addEventListener('mousedown', e => {
         render();
         return;
       }
+      // Click gate: if this region has a clickGate, only allow the toggle
+      // when the gate region is currently pressed. State is preserved when
+      // gate is released (we just no-op the click).
+      if (hit.clickGate) {
+        const gate = state.regions.find(o => o.name === hit.clickGate);
+        if (gate && !gate.pressed) {
+          state.selectedId = hit.id;
+          render();
+          return;
+        }
+      }
       pushUndo();
       // Single-dropdown enforcement: if we're about to OPEN a rect that is
       // parent of a dropdown-with-options, unpress all OTHER such parents
@@ -2333,6 +2344,11 @@ function refreshRegions() {
           <input type="text" class="ctogglegroup" data-id="${r.id}" value="${r.toggleGroup || ''}" placeholder="(none)" style="width:100%; font-size:10px; padding:3px; background:#111; color:var(--fg); border:1px solid #333; border-radius:3px;">
         </div>
       ` : ''}
+      ${(r.shape === 'rect' || r.shape === 'circle' || r.shape === 'annulus') ? `
+        <div style="margin:3px 0;"><label style="font-size:10px;" title="Click is only registered when the gate region is pressed. Last pressed/unpressed state is preserved when gate is released.">click gate (region name that must be PRESSED for clicks to register)</label>
+          <input type="text" class="cclickgate" data-id="${r.id}" value="${r.clickGate || ''}" placeholder="(none, e.g. circle_30)" style="width:100%; font-size:10px; padding:3px; background:#111; color:var(--fg); border:1px solid #333; border-radius:3px;">
+        </div>
+      ` : ''}
       ${r.shape === 'decal' ? `
         <div style="margin:3px 0;"><label style="font-size:10px;">parent button (leave empty = always visible)</label>
           <select class="cparent" data-id="${r.id}" style="width:100%; font-size:10px; padding:2px; background:#111; color:var(--fg); border:1px solid #333; border-radius:3px;">
@@ -2719,6 +2735,14 @@ function refreshRegions() {
     if (!r) return;
     pushUndo();
     r.toggleGroup = (e.target.value || '').trim();
+    render();
+  }));
+
+  list.querySelectorAll('.cclickgate').forEach(inp => inp.addEventListener('change', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (!r) return;
+    pushUndo();
+    r.clickGate = (e.target.value || '').trim();
     render();
   }));
 
@@ -3794,6 +3818,7 @@ document.getElementById('btnExportAll').addEventListener('click', async () => {
     zip.file(fname, blob);
     const entry = { id: r.id, name: r.name, shape: r.shape || 'rect', locked: !!r.locked, x: r.x, y: r.y, w: r.w, h: r.h, inner_pct: r.innerPct, source: r.source || 'B', src_off_x: r.srcOffX || 0, src_off_y: r.srcOffY || 0, dst_off_x: r.dstOffX || 0, dst_off_y: r.dstOffY || 0, crop_file: fname };
     if (r.toggleGroup) entry.toggle_group = r.toggleGroup;
+    if (r.clickGate) entry.click_gate = r.clickGate;
     if (r.pressedX != null) {
       entry.pressed_x = r.pressedX; entry.pressed_y = r.pressedY;
       entry.pressed_w = r.pressedW; entry.pressed_h = r.pressedH;
@@ -4011,6 +4036,7 @@ function importShapesData(m) {
         innerPct: (r.inner_pct ?? r.innerPct ?? (shape === 'annulus' ? 0.5 : undefined)),
         x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.w), h: Math.round(r.h),
         toggleGroup: r.toggle_group || '',
+        clickGate: r.click_gate || '',
         pressedX: r.pressed_x != null ? Math.round(r.pressed_x) : null,
         pressedY: r.pressed_y != null ? Math.round(r.pressed_y) : null,
         pressedW: r.pressed_w != null ? Math.round(r.pressed_w) : null,
