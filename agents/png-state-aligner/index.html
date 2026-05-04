@@ -3006,6 +3006,24 @@ function render() {
           || r.toggleGroup
         )
         && (!!r.topLayer === topPass));
+    if (state.interactiveMode && !state._loggedD62 && !topPass) {
+      const d62 = state.regions.find(r => r.name === 'decal_62');
+      const d61 = state.regions.find(r => r.name === 'decal_61');
+      console.log('[decal_62 diag]', {
+        d62_exists: !!d62,
+        d62_hasImage: d62 ? !!d62.decalImage : null,
+        d62_tg: d62 ? d62.toggleGroup : null,
+        d62_tgi: d62 ? d62.toggleGroupInverse : null,
+        d62_av: d62 ? d62.alwaysVisible : null,
+        d62_tl: d62 ? d62.topLayer : null,
+        d62_in_filter: !!decals.find(d => d.name === 'decal_62'),
+        d61_exists: !!d61,
+        d61_hasImage: d61 ? !!d61.decalImage : null,
+        decals_in_pass: decals.map(d => d.name),
+      });
+      state._loggedD62 = true;
+      setTimeout(() => { state._loggedD62 = false; }, 2000);
+    }
     for (const r of decals) {
       // Toggle-group decals: visible only when SOME rect with the same toggleGroup is pressed
       // (or when the toggleGroupInverse flag is set, only when NONE are pressed).
