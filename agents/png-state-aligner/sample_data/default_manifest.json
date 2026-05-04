@@ -535,8 +535,18 @@
       "top_corner_ext_x": 9,
       "top_corner_ext_y": 9.5,
       "top_corner_curve_pct": 100,
-      "parent_name": null,
-      "tex_filename": null
+      "parent_name": "rect_12",
+      "tex_filename": null,
+      "dropdown_options": [
+        "Self",
+        "External",
+        "Noise",
+        "Saw",
+        "Square",
+        "Pitch Track"
+      ],
+      "selected_option": 0,
+      "label_always_white": true
     },
     {
       "id": 27,
@@ -560,8 +570,15 @@
       "top_corner_ext_x": 3.5,
       "top_corner_ext_y": 16.5,
       "top_corner_curve_pct": 100,
-      "parent_name": null,
-      "tex_filename": null
+      "parent_name": "rect_11",
+      "tex_filename": null,
+      "dropdown_options": [
+        "Ritual",
+        "Linked",
+        "Split"
+      ],
+      "selected_option": 1,
+      "label_always_white": true
     },
     {
       "id": 28,
