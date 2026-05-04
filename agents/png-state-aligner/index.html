@@ -2344,6 +2344,14 @@ function refreshRegions() {
           <input type="text" class="ctogglegroup" data-id="${r.id}" value="${r.toggleGroup || ''}" placeholder="(none)" style="width:100%; font-size:10px; padding:3px; background:#111; color:var(--fg); border:1px solid #333; border-radius:3px;">
         </div>
       ` : ''}
+      ${r.shape === 'decal' && r.toggleGroup ? `
+        <div style="margin:3px 0;"><label style="font-size:10px; display:flex; align-items:center; gap:4px;" title="When checked, decal shows ONLY when NO rect in the toggle group is pressed (inverse). Use to display a default PNG when DIST/OFFSET/BANDS are all off.">
+          <input type="checkbox" class="ctoggleinverse" data-id="${r.id}" ${r.toggleGroupInverse ? 'checked' : ''}> inverse (show when group INACTIVE)
+        </label></div>
+        <div style="margin:3px 0;"><label style="font-size:10px; display:flex; align-items:center; gap:4px;" title="Render this decal in the top layer (above knobs/dropdowns).">
+          <input type="checkbox" class="ctoplayer" data-id="${r.id}" ${r.topLayer ? 'checked' : ''}> render on top (above all widgets)
+        </label></div>
+      ` : ''}
       ${(r.shape === 'rect' || r.shape === 'circle' || r.shape === 'annulus') ? `
         <div style="margin:3px 0;"><label style="font-size:10px;" title="Click is only registered when the gate region is pressed. Last pressed/unpressed state is preserved when gate is released.">click gate (region name that must be PRESSED for clicks to register)</label>
           <input type="text" class="cclickgate" data-id="${r.id}" value="${r.clickGate || ''}" placeholder="(none, e.g. circle_30)" style="width:100%; font-size:10px; padding:3px; background:#111; color:var(--fg); border:1px solid #333; border-radius:3px;">
@@ -2746,6 +2754,22 @@ function refreshRegions() {
     render();
   }));
 
+  list.querySelectorAll('.ctoggleinverse').forEach(inp => inp.addEventListener('change', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (!r) return;
+    pushUndo();
+    r.toggleGroupInverse = !!e.target.checked;
+    render();
+  }));
+
+  list.querySelectorAll('.ctoplayer').forEach(inp => inp.addEventListener('change', e => {
+    const r = state.regions.find(x => x.id === +e.target.dataset.id);
+    if (!r) return;
+    pushUndo();
+    r.topLayer = !!e.target.checked;
+    render();
+  }));
+
   // Dropdown parent selector
   list.querySelectorAll('.cparent').forEach(sel => sel.addEventListener('change', e => {
     const r = state.regions.find(x => x.id === +e.target.dataset.id);
@@ -2970,21 +2994,26 @@ function render() {
   // ABOVE clone overlays so accidental stamps don't hide permanent stickers
   // (decal_46 etc). Rotating decals draw in chassis layer instead so the
   // user can clone/fade-brush over them.
-  function drawAlwaysVisibleDecals() {
+  function drawAlwaysVisibleDecals(opts) {
     // Always-visible layer: stickers + filmstrip-frame decals (e.g. MKV2 knob).
     // Drawn ABOVE clone overlays so they aren't hidden by the chassis.
+    // opts.topPass: when true, only render decals with topLayer=true; when false/undefined, only render decals with topLayer falsy.
+    const topPass = !!(opts && opts.topPass);
     const decals = state.regions.filter(r => r.shape === 'decal' && r.decalImage
         && (
           (r.alwaysVisible && (!r.rotatesAsKnob || (r.filmstripFrames && r.filmstripFrames > 1)))
           || r.toggleGroup
-        ));
+        )
+        && (!!r.topLayer === topPass));
     for (const r of decals) {
       // Toggle-group decals: visible only when SOME rect with the same toggleGroup is pressed
+      // (or when the toggleGroupInverse flag is set, only when NONE are pressed).
       if (r.toggleGroup && !r.alwaysVisible) {
         const groupActive = state.regions.some(o => o.toggleGroup === r.toggleGroup
           && o.shape !== 'decal' && o.shape !== 'dropdown' && o.pressed);
         const isSelected = (r.id === state.selectedId);
-        if (!groupActive && !isSelected) continue;
+        const wantVisible = r.toggleGroupInverse ? !groupActive : groupActive;
+        if (!wantVisible && !isSelected) continue;
       }
       const parent = r.parentId != null ? state.regions.find(o => o.id === r.parentId) : null;
       const useBound = r.boundToParent && parent;
@@ -3446,6 +3475,7 @@ function render() {
     }
     drawAlwaysVisibleDecals();
     drawWidgetOverlays();
+    drawAlwaysVisibleDecals({ topPass: true });
     // Paint overlay drawn last (on top of EVERYTHING). Defensive save/restore
     // + explicit globalAlpha = 1 so any earlier-leaked transform / alpha state
     // can't dim the paint.
@@ -3818,6 +3848,8 @@ document.getElementById('btnExportAll').addEventListener('click', async () => {
     zip.file(fname, blob);
     const entry = { id: r.id, name: r.name, shape: r.shape || 'rect', locked: !!r.locked, x: r.x, y: r.y, w: r.w, h: r.h, inner_pct: r.innerPct, source: r.source || 'B', src_off_x: r.srcOffX || 0, src_off_y: r.srcOffY || 0, dst_off_x: r.dstOffX || 0, dst_off_y: r.dstOffY || 0, crop_file: fname };
     if (r.toggleGroup) entry.toggle_group = r.toggleGroup;
+    if (r.toggleGroupInverse) entry.toggle_group_inverse = true;
+    if (r.topLayer) entry.top_layer = true;
     if (r.clickGate) entry.click_gate = r.clickGate;
     if (r.pressedX != null) {
       entry.pressed_x = r.pressedX; entry.pressed_y = r.pressedY;
@@ -4036,6 +4068,8 @@ function importShapesData(m) {
         innerPct: (r.inner_pct ?? r.innerPct ?? (shape === 'annulus' ? 0.5 : undefined)),
         x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.w), h: Math.round(r.h),
         toggleGroup: r.toggle_group || '',
+        toggleGroupInverse: !!r.toggle_group_inverse,
+        topLayer: !!r.top_layer,
         clickGate: r.click_gate || '',
         pressedX: r.pressed_x != null ? Math.round(r.pressed_x) : null,
         pressedY: r.pressed_y != null ? Math.round(r.pressed_y) : null,
