@@ -17,8 +17,8 @@ const CONFIG = {
   tier4_resp_mf: 70, tier4_resp_unknown: 1164, tier4_resp_sent: 2991,
   final_resp_mf: 1293, final_resp_both: 24, final_resp_unknown: 2948,
   noReply: 1754,
-  filter_before: 88, filter_falsePos: 0, filter_hallucination: 14,
-  filter_passed: 74, filter_bypassed: 5, filter_rejection: 15.9,
+  filter_before: 89, filter_falsePos: 0, filter_hallucination: 14,
+  filter_passed: 75, filter_bypassed: 5, filter_rejection: 15.7,
   agree_req_pairs: 3568, agree_req_agree: 3551,
   agree_resp_pairs: 937, agree_resp_agree: 847,
   knownSexPairs: 1201,
@@ -788,12 +788,12 @@ Reply EXACTLY: <span class="str">GENDER: &lt;M or F or UNKNOWN&gt; | NAME: &lt;f
   <div class="anim" style="font-weight:700;margin:16px 0 8px;">Filter Results (All Tier 4 — Requester + Respondent Combined)</div>
   <div class="card anim" style="border-left:4px solid #7c3aed;background:#ede9fe;">
     <div style="font-size:14px;line-height:1.9;">
-      Before filtering: <strong>88</strong> LLM M/F responses<br>
+      Before filtering: <strong>89</strong> LLM M/F responses<br>
       False positive filter: <strong style="color:#16a34a;">0 caught</strong> <span style="color:#64748b;">(Qwen never returned function words as names)</span><br>
       Hallucination filter: <strong style="color:#dc2626;">14 caught</strong> <span style="color:#64748b;">(names not in text, e.g., fabricated names)</span><br>
-      After filtering: <strong style="color:#16a34a;">74 clean M/F accepted</strong> <span style="color:#64748b;">(15.9% rejection rate)</span><br>
+      After filtering: <strong style="color:#16a34a;">75 clean M/F accepted</strong> <span style="color:#64748b;">(15.7% rejection rate)</span><br>
       LLM returned M/F without name (bypassed filters): <strong>5</strong> <span style="color:#64748b;">(no name to check &rarr; kept as-is)</span><br>
-      Total Tier 4 M/F: <strong>79</strong> (74 filtered + 5 bypassed = 9 req + 70 resp)
+      Total Tier 4 M/F: <strong>80</strong> (75 filtered + 5 bypassed = 9 req + 71 resp)
     </div>
   </div>
 
