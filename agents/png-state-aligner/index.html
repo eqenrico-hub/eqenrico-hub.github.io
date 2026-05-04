@@ -3006,7 +3006,7 @@ function render() {
           || r.toggleGroup
         )
         && (!!r.topLayer === topPass));
-    if (state.interactiveMode && !state._loggedD62 && !topPass) {
+    if (!state._loggedD62 && !topPass) {
       const d62 = state.regions.find(r => r.name === 'decal_62');
       const d61 = state.regions.find(r => r.name === 'decal_61');
       console.log('[decal_62 diag]', {
